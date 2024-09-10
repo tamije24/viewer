@@ -38,7 +38,10 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
 
     // TODO: have to convert this to calling using apiClient
     axios
-      .post("http://127.0.0.1:8000/auth/jwt/create", user)
+      .post(
+        "https://signal-analyser-prod-f706849603dd.herokuapp.com/auth/jwt/create",
+        user
+      )
       .then((response) => {
         const accessCodes: AccessCodes = {
           access: response.data["access"],
