@@ -5,7 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import LogoutIcon from "@mui/icons-material/LogoutSharp";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import WavesIcon from "@mui/icons-material/Waves";
+import AdbSharpIcon from "@mui/icons-material/AdbSharp";
 
 interface User {
   id: number;
@@ -30,11 +30,14 @@ const TopBar = ({ user, onLogoutRequest }: Props) => {
         p: 0,
       }}
     >
-      <AppBar position="static" enableColorOnDark>
+      <AppBar
+        position="fixed"
+        enableColorOnDark
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      >
         <Toolbar>
-          <WavesIcon fontSize="medium" sx={{ ml: 0, mr: 2 }} />
-
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <AdbSharpIcon sx={{ ml: 0, mr: 2 }} />
+          <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
             Signal Analyser
           </Typography>
 

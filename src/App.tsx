@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useState, createContext } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import CssBaseline from "@mui/material/CssBaseline";
 import BottomNavigation from "@mui/material/BottomNavigation";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
 
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import apiClient, { CanceledError } from "./services/api-client";
+import apiClient from "./services/api-client";
 
 import MainComponent from "./components/MainComponent";
 import SignIn from "./components/SignIn";
 import TopBar from "./components/TopBar";
 import Paper from "@mui/material/Paper";
+import BottomNavigationAction from "@mui/material/BottomNavigationAction";
 
 export interface AccessCodes {
   access: string;
@@ -85,7 +85,7 @@ function App() {
             backgroundColor: (theme) =>
               theme.palette.mode === "light"
                 ? theme.palette.grey[100]
-                : theme.palette.grey[900],
+                : theme.palette.grey[800],
             height: "100vh",
             overflow: "auto",
           }}
@@ -98,35 +98,41 @@ function App() {
         </Box>
 
         <Paper
-          sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
+          sx={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+          }}
           elevation={3}
         >
-          <BottomNavigation>
-            <Box
-              sx={{
-                display: "flex",
-                width: "100%",
-                alignItems: "center",
-                justifyContent: "left",
-                bgcolor: "background.default",
-                color: "text.primary",
-                borderRadius: 1,
-                paddingLeft: "10px",
-              }}
-            >
-              <IconButton
-                sx={{ ml: 1 }}
-                onClick={colorMode.toggleColorMode}
-                color="inherit"
-              >
-                {theme.palette.mode === "dark" ? (
+          <BottomNavigation
+            showLabels
+            sx={{
+              display: "flex",
+              width: "100%",
+              alignItems: "center",
+              justifyContent: "left",
+              bgcolor: "background.default",
+              color: "text.primary",
+              borderRadius: 1,
+              paddingLeft: "10px",
+            }}
+          >
+            <BottomNavigationAction
+              sx={{ ml: 1 }}
+              label={`${theme.palette.mode} mode`}
+              value="recents"
+              icon={
+                theme.palette.mode === "dark" ? (
                   <Brightness7Icon />
                 ) : (
                   <Brightness4Icon />
-                )}
-              </IconButton>
-              {theme.palette.mode} mode
-            </Box>
+                )
+              }
+              onClick={colorMode.toggleColorMode}
+            />
           </BottomNavigation>
         </Paper>
       </Box>
