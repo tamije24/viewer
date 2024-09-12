@@ -19,12 +19,12 @@ import { ChartsLoadingOverlay } from "@mui/x-charts/ChartsOverlay/ChartsLoadingO
 import {
   ChartsAxisHighlight,
   ChartsGrid,
-  ChartsLegend,
+  //  ChartsLegend,
   ChartsOnAxisClickHandler,
   ChartsReferenceLine,
   ChartsTooltip,
   //  ChartsXAxis,
-  ChartsYAxis,
+  // ChartsYAxis,
   LinePlot,
   LineSeriesType,
   ResponsiveChartContainerPro,
@@ -32,6 +32,7 @@ import {
 
 interface Props {
   analogSignals: AnalogSignal[];
+  analogSignalNames: string[];
   error: string;
   isLoading: boolean;
   cursorValues: {
@@ -62,6 +63,7 @@ interface Props {
 
 const MultipleAxis = ({
   analogSignals,
+  analogSignalNames,
   error,
   isLoading,
   cursorValues,
@@ -94,7 +96,6 @@ const MultipleAxis = ({
 
   let timeValues: number[] = [];
   let series: LineSeriesType[] = [];
-  let seriesCount = 0;
 
   const handleTooltipStatusChange = (toolTipStatus: boolean) => {
     setIsTooltip(toolTipStatus);
@@ -159,23 +160,29 @@ const MultipleAxis = ({
     const analog_values = [];
 
     if (!isLoading && analogSignals !== undefined && analogSignals.length > 0) {
-      let names = Object.keys(analogSignals[0]);
       let L = analogSignals.length;
       for (let i = 0; i < L; i++) {
         let value = Object.values(analogSignals[i]);
         analog_values.push(value);
       }
       timeValues = arrayColumn(analog_values, 0);
-      seriesCount = names.length;
-
-      for (let i = 1; i < names.length; i++) {
-        let label = names[i] as string;
-        let values = arrayColumn(analog_values, i);
+      let color_light = [
+        "crimson",
+        "goldenrod",
+        "deepskyblue",
+        "crimson",
+        "goldenrod",
+        "deepskyblue",
+      ];
+      for (let i = 0; i < 6; i++) {
+        let label = analogSignalNames[i];
+        let values = arrayColumn(analog_values, i + 1);
         let a: LineSeriesType = {
           type: "line",
           label: label,
           yAxisId: "y-axis",
           data: values,
+          color: color_light[i],
           showMark: false,
         };
         series.push(a);
@@ -211,11 +218,7 @@ const MultipleAxis = ({
           <Grid container>
             {!loading ? (
               series.map((series) => (
-                <Grid
-                  item
-                  xs={12}
-                  height={`calc((100vh - 210px)/${seriesCount})`}
-                >
+                <Grid item xs={12} height={`calc((100vh - 330px)/6)`}>
                   <ResponsiveChartContainerPro
                     xAxis={[{ ...xAxisCommon, data: timeValues }]}
                     yAxis={[
@@ -228,8 +231,13 @@ const MultipleAxis = ({
                     margin={{
                       left: 0,
                       right: 0,
-                      top: 30,
+                      top: 0,
                       bottom: 0,
+                    }}
+                    sx={{
+                      borderLeft: 0.5,
+                      borderRight: 0.5,
+                      borderTop: 0.5,
                     }}
                   >
                     {loading && <ChartsLoadingOverlay />}
@@ -245,7 +253,7 @@ const MultipleAxis = ({
                       }}
                     />
                     <ChartsGrid vertical horizontal />
-                    <ChartsLegend
+                    {/* <ChartsLegend
                       axisDirection="x"
                       position={{ vertical: "top", horizontal: "right" }}
                       direction="row"
@@ -258,10 +266,10 @@ const MultipleAxis = ({
                           },
                         },
                       }}
-                    />
+                    /> */}
                     <LinePlot />
-                    <ChartsYAxis axisId="y-axis" position="left" label="" />
-                    <ChartsYAxis axisId="y-axis" position="right" label="" />
+                    {/* <ChartsYAxis axisId="y-axis" position="left" label="" />
+                    <ChartsYAxis axisId="y-axis" position="right" label="" /> */}
 
                     {timeValues !== undefined && timeValues.length > 0 && (
                       <ChartsReferenceLine

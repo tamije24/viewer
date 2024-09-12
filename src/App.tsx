@@ -103,7 +103,8 @@ function App() {
             bottom: 0,
             left: 0,
             right: 0,
-            zIndex: (theme) => theme.zIndex.drawer + 1,
+            // zIndex: (theme) => theme.zIndex.drawer + 1,
+            zIndex: 100,
           }}
           elevation={3}
         >

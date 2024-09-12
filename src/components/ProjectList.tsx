@@ -9,7 +9,6 @@ import Skeleton from "@mui/material/Skeleton";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
-import SearchInput from "./SearchInput";
 import Button from "@mui/material/Button";
 import AddHomeIcon from "@mui/icons-material/AddHome";
 
@@ -20,7 +19,6 @@ interface Props {
 
 const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setLoading] = useState(false);
 
@@ -31,7 +29,6 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
     request
       .then((res) => {
         setProjects(res.data);
-        setFilteredProjects(res.data);
         setLoading(false);
       })
       .catch((err) => {
@@ -47,46 +44,6 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
       projects.filter(
         (project: Project) => project.project_id === project_id
       )[0]
-    );
-  };
-
-  const handleDeleteProject = (project_id: number) => {
-    const originalProjects = [...projects];
-    projectService
-      .deleteProject(project_id)
-      .then((_res) => {
-        setProjects(
-          projects.filter(
-            (project: Project) => project.project_id !== project_id
-          )
-        );
-      })
-      .catch((err) => {
-        setError(err.message);
-        setProjects(originalProjects);
-      });
-  };
-
-  const handleStarProject = (updatedProject: Project) => {
-    const originalProjects = [...projects];
-    projectService
-      .updateProject(updatedProject)
-      .then(() => {
-        setProjects(
-          projects.map((pro) =>
-            pro.project_id === updatedProject.project_id ? updatedProject : pro
-          )
-        );
-      })
-      .catch((err) => {
-        setError(err.message);
-        setProjects(originalProjects);
-      });
-  };
-
-  const handleSearch = (searchText: string) => {
-    setFilteredProjects(
-      projects.filter((project) => project.line_name.includes(searchText))
     );
   };
 
@@ -132,9 +89,6 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
             Add Project
           </Button>
         </Grid>
-        <Grid item>
-          <SearchInput onSearch={handleSearch} />
-        </Grid>
       </Grid>
 
       <Grid
@@ -144,13 +98,11 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
         spacing={0.5}
       >
         {!isLoading ? (
-          filteredProjects.map((project) => (
+          projects.map((project) => (
             <Grid item key={project.project_id} xs={12}>
               <ProjectCard
                 project={project}
                 onSelectProject={handleSelectProject}
-                onDeleteProject={handleDeleteProject}
-                onStarProject={handleStarProject}
               />
             </Grid>
           ))
@@ -171,9 +123,6 @@ const ProjectListSkeleton = () => {
         <ProjectCardSkeleton />
       </Grid>
       <Grid item xs={12} key={2}>
-        <ProjectCardSkeleton />
-      </Grid>
-      <Grid item xs={12} key={3}>
         <ProjectCardSkeleton />
       </Grid>
     </Grid>

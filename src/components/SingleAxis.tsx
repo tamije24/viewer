@@ -35,7 +35,9 @@ import { ChartsLoadingOverlay } from "@mui/x-charts/ChartsOverlay";
 
 interface Props {
   analogSignals: AnalogSignal[];
+  analogSignalNames: string[];
   digitalSignals: DigitalSignal[];
+  digitalSignalNames: string[];
   error: string;
   isLoading: boolean;
   cursorValues: {
@@ -66,7 +68,9 @@ interface Props {
 
 const SingleAxis = ({
   analogSignals,
+  analogSignalNames,
   digitalSignals,
+  digitalSignalNames,
   error,
   isLoading,
   cursorValues,
@@ -167,23 +171,39 @@ const SingleAxis = ({
     const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
     const analog_values = [];
     if (!isLoading && analogSignals !== undefined && analogSignals.length > 0) {
-      let names = Object.keys(analogSignals[0]);
       let L = analogSignals.length;
       for (let i = 0; i < L; i++) {
         let value = Object.values(analogSignals[i]);
         analog_values.push(value);
       }
       timeValues = arrayColumn(analog_values, 0);
-      for (let i = 1; i < names.length; i++) {
-        let label = names[i] as string;
-        let values = arrayColumn(analog_values, i);
+      let color_light = [
+        "crimson",
+        "goldenrod",
+        "deepskyblue",
+        "crimson",
+        "goldenrod",
+        "deepskyblue",
+      ];
+      let y_axis_id = [
+        "leftAxis",
+        "leftAxis",
+        "leftAxis",
+        "rightAxis",
+        "rightAxis",
+        "rightAxis",
+      ];
+      for (let i = 0; i < 6; i++) {
+        let label = analogSignalNames[i];
+        let values = arrayColumn(analog_values, i + 1);
 
         let a: LineSeriesType = {
           type: "line",
           label: label,
           data: values,
-          yAxisId: "current",
+          yAxisId: y_axis_id[i],
           showMark: false,
+          color: color_light[i],
           highlightScope: {
             highlighted: "series",
             faded: "global",
@@ -200,7 +220,6 @@ const SingleAxis = ({
       digitalSignals.length > 0
     ) {
       const digital_values = [];
-      let names = Object.keys(digitalSignals[0]);
 
       let L = digitalSignals.length;
       for (let i = 0; i < L; i++) {
@@ -208,9 +227,11 @@ const SingleAxis = ({
         digital_values.push(value);
       }
 
-      for (let i = 1; i < names.length; i++) {
-        let label = names[i] as string;
-        let values = arrayColumn(digital_values, i);
+      for (let i = 0; i < 4; i++) {
+        if (digitalSignalNames[i] === "") continue;
+
+        let label = digitalSignalNames[i];
+        let values = arrayColumn(digital_values, i + 1);
         let d: LineSeriesType = {
           type: "line",
           yAxisId: "status",
@@ -257,7 +278,7 @@ const SingleAxis = ({
             <Grid
               item
               xs={12}
-              sx={{ mb: 0, height: `calc((100vh - 290px)*0.7)` }}
+              sx={{ mb: 0, height: `calc((100vh - 290px)*0.7)`, bgcolor: "" }}
             >
               <ResponsiveChartContainerPro
                 xAxis={[
@@ -267,18 +288,14 @@ const SingleAxis = ({
                     data: timeValues,
                   },
                 ]}
-                yAxis={[
-                  { id: "current" },
-                  { id: "voltage" },
-                  // { zoom: true }
-                ]}
+                yAxis={[{ id: "leftAxis" }, { id: "rightAxis" }]}
                 series={series}
                 zoom={zoom}
                 onZoomChange={setZoom}
                 margin={{
                   left: 0,
                   right: 0,
-                  top: 30,
+                  top: 40,
                   bottom: 0,
                 }}
               >
@@ -310,9 +327,16 @@ const SingleAxis = ({
                   }}
                 />
                 <LinePlot />
-                <ChartsYAxis axisId="current" position="left" label="" />
-                <ChartsYAxis axisId="current" position="right" label="" />
-                <ChartsYAxis axisId="voltage" position="right" label="" />
+                <ChartsYAxis
+                  axisId="leftAxis"
+                  position="left"
+                  label="Current"
+                />
+                <ChartsYAxis
+                  axisId="rightAxis"
+                  position="right"
+                  label="Voltage"
+                />
 
                 {/* {timeValues !== undefined && timeValues.length > 0 && (
                   <ChartsReferenceLine

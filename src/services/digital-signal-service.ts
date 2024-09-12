@@ -8,7 +8,7 @@ export interface DigitalSignal{
 class DigitalSignalService {
     
     getAllDigitalSignals(file_id: number) {
-        const endpoint = `/comtrade_reader/dsignals/${file_id}/`;
+        const endpoint = `/comtrade_reader/files/${file_id}/dsignals/`;     
         return apiClient.get<DigitalSignal[]>(endpoint)    
     }
 }

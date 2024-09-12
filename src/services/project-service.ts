@@ -39,10 +39,8 @@ class ProjectService {
   }
 
     deleteProject(id: number) {
-      // this end point does not exist. analog channels cannot be deleted
       const endpoint = `/comtrade_reader/projects/${id}/`; 
       return apiClient.delete(endpoint)
-
     }
 
     createProject(project: ProjectMin) {

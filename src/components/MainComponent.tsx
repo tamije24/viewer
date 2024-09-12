@@ -26,8 +26,13 @@ import { ComtradeFile } from "../services/comtrade-file-service";
 const analogSignals: AnalogSignal[][] = [];
 const digitalSignals: DigitalSignal[][] = [];
 const dftPhasors: Phasor[][] = [];
+
+const analogSignalNames: string[][] = [];
+const digitalSignalNames: string[][] = [];
+
 let tableValues: {
   id: string;
+  channel: string;
   inst: number;
   phasor_mag: number;
   phasor_ang: number;
@@ -47,7 +52,18 @@ const emptyFile: ComtradeFile = {
   trigger_time_stamp: new Date(),
   line_frequency: 0,
   sampling_frequency: 0,
+  ia_channel: "",
+  ib_channel: "",
+  ic_channel: "",
+  va_channel: "",
+  vb_channel: "",
+  vc_channel: "",
+  d1_channel: "",
+  d2_channel: "",
+  d3_channel: "",
+  d4_channel: "",
 };
+
 const emptyProject: Project = {
   project_id: 0,
   project_name: "",
@@ -144,15 +160,16 @@ const MainComponent = () => {
     tableValues = [];
 
     // Set table values to be displayed
-    let names = [""];
-    if (analogSignals[selectedIndex] !== undefined) {
-      if (analogSignals[selectedIndex].length > 0)
-        names = Object.keys(analogSignals[selectedIndex][0]);
+    let names: string[] = [];
+    if (analogSignalNames[selectedIndex] !== undefined) {
+      names = [...analogSignalNames[selectedIndex]];
     }
+
     let sample_values =
       analogSignals[selectedIndex] !== undefined
         ? Object.values(analogSignals[selectedIndex][dataIndex])
         : new Array(analogSignals.length).fill(0);
+
     let phasor_values =
       dftPhasors[selectedIndex] !== undefined
         ? Object.values(dftPhasors[selectedIndex][dataIndex])
@@ -172,16 +189,18 @@ const MainComponent = () => {
       a_sig.push(value);
     }
 
-    for (let i = 1; i < names.length; i++) {
+    let id = ["IA", "IB", "IC", "VA", "VB", "VC"];
+    for (let i = 0; i < names.length; i++) {
       let label = names[i];
-      let positivePeak = Math.max(...arrayColumn(a_sig, i));
-      let negativePeak = Math.min(...arrayColumn(a_sig, i));
+      let positivePeak = Math.max(...arrayColumn(a_sig, i + 1));
+      let negativePeak = Math.min(...arrayColumn(a_sig, i + 1));
 
       let rowValue = {
-        id: label,
-        inst: sample_values[i],
-        phasor_mag: phasor_values[2 * (i - 1)],
-        phasor_ang: phasor_values[2 * (i - 1) + 1],
+        id: id[i],
+        channel: label,
+        inst: sample_values[i + 1],
+        phasor_mag: phasor_values[2 * i],
+        phasor_ang: phasor_values[2 * i + 1],
         true_rms: 0,
         pos_peak: positivePeak,
         neg_peak: negativePeak,
@@ -217,13 +236,24 @@ const MainComponent = () => {
         a.length >= i + 1 ? (a[i] = true) : a.push(true);
         setAsigLoading(a);
 
+        let sig_names = [
+          project.files[i].ia_channel,
+          project.files[i].ib_channel,
+          project.files[i].ic_channel,
+          project.files[i].va_channel,
+          project.files[i].vb_channel,
+          project.files[i].vc_channel,
+        ];
+
         analogSignalService
           .getAllAnalogSignals(file_id)
           .then((res) => {
             if (analogSignals.length >= i + 1) {
-              analogSignals[i] = JSON.parse(String(res.data)).signals;
+              analogSignals[i] = res.data;
+              analogSignalNames[i] = [...sig_names];
             } else {
-              analogSignals.push(JSON.parse(String(res.data)).signals);
+              analogSignals.push(res.data);
+              analogSignalNames.push([...sig_names]);
             }
 
             a = [...asigLoading];
@@ -257,13 +287,22 @@ const MainComponent = () => {
         a.length >= i + 1 ? (a[i] = true) : a.push(true);
         setDsigLoading(a);
 
+        let sig_names = [
+          project.files[i].d1_channel,
+          project.files[i].d2_channel,
+          project.files[i].d3_channel,
+          project.files[i].d4_channel,
+        ];
+
         digitalSignalService
           .getAllDigitalSignals(file_id)
           .then((res) => {
             if (digitalSignals.length >= i + 1) {
-              digitalSignals[i] = JSON.parse(String(res.data)).signals;
+              digitalSignals[i] = res.data;
+              digitalSignalNames[i] = [...sig_names];
             } else {
-              digitalSignals.push(JSON.parse(String(res.data)).signals);
+              digitalSignals.push(res.data);
+              digitalSignalNames.push([...sig_names]);
             }
 
             a = [...dsigLoading];
@@ -365,7 +404,9 @@ const MainComponent = () => {
             {selectedPage === "SingleAxis" && (
               <SingleAxis
                 analogSignals={analogSignals[selectedIndex]}
+                analogSignalNames={analogSignalNames[selectedIndex]}
                 digitalSignals={digitalSignals[selectedIndex]}
+                digitalSignalNames={digitalSignalNames[selectedIndex]}
                 error={asigError[selectedIndex]}
                 isLoading={asigLoading[selectedIndex]}
                 cursorValues={
@@ -414,6 +455,7 @@ const MainComponent = () => {
             {selectedPage === "MultipleAxis" && (
               <MultipleAxis
                 analogSignals={analogSignals[selectedIndex]}
+                analogSignalNames={analogSignalNames[selectedIndex]}
                 error={asigError[selectedIndex]}
                 isLoading={asigLoading[selectedIndex]}
                 cursorValues={

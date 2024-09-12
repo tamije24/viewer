@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import DeviceHubSharpIcon from "@mui/icons-material/DeviceHubSharp";
 import TableChartSharpIcon from "@mui/icons-material/TableChartSharp";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
 
 import BottomNavigation from "@mui/material/BottomNavigation";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
@@ -34,6 +35,7 @@ interface Props {
   };
   tableValues: {
     id: string;
+    channel: string;
     inst: number;
     phasor_mag: number;
     phasor_ang: number;
@@ -47,6 +49,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   // set data rows
   let tempTable: {
     id: string;
+    channel: string;
     inst: string;
     phasor_mag: string;
     phasor_ang: string;
@@ -58,6 +61,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   for (let i = 0; i < tableValues.length; i++) {
     tempTable.push({
       id: tableValues[i].id,
+      channel: tableValues[i].channel,
       inst: `${(Math.round(tableValues[i].inst * 100) / 100).toFixed(2)}`,
       phasor_mag: `${(
         Math.round(tableValues[i].phasor_mag * 100) / 100
@@ -82,9 +86,20 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   const columns: GridColDef<(typeof rows)[number]>[] = [
     {
       field: "id",
-      headerName: "Signal",
+      headerName: "-",
       sortable: false,
-      headerClassName: "MuiDataGridPro-columnHeader--alignRightt",
+      headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+      align: "center",
+      headerAlign: "center",
+      width: 40,
+    },
+
+    {
+      field: "channel",
+      headerName: "Channel",
+      description: "COMTRADE file channel name",
+      sortable: false,
+      headerClassName: "MuiDataGridPro-columnHeader--alignRight",
       headerAlign: "left",
       width: 90,
     },
@@ -160,140 +175,164 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   // inst: `${(Math.round(sample_values[i] * 100) / 100).toFixed(2)}`,
 
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        mt: 10,
-        ml: 0.5,
-        mr: 1,
-        mb: 8,
-        bgcolor: "",
-        height: `calc(100vh - 150px)`,
-      }}
-    >
-      <CardContent sx={{ mb: 0.5, height: `calc(100vh - 250px)` }}>
-        <Grid
-          container
-          direction="row"
-          sx={{
-            justifyContent: "space-between",
-            alignContent: "space-between",
-            alignItems: "space-between",
-          }}
-        >
-          <Grid item sx={{ justifyContent: "space-between" }}>
-            <Typography component="h2" variant="subtitle2" gutterBottom>
-              Primary Cursor
-            </Typography>
-            <Stack sx={{ justifyContent: "space-between" }}>
-              <Stack
-                direction="row"
-                sx={{
-                  alignContent: { xs: "center", sm: "flex-start" },
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="h6" component="p">
-                  {`${(Math.round(axisClick.axisValue * 1000) / 1000).toFixed(
-                    3
-                  )} s`}
-                </Typography>
-                <Chip size="small" color="error" label={axisClick.dataIndex} />
-              </Stack>
-            </Stack>
-          </Grid>
-          <Grid item sx={{ justifyContent: "space-between" }}>
-            <Typography component="h2" variant="subtitle2" gutterBottom>
-              Secondary Cursor
-            </Typography>
-            <Stack sx={{ justifyContent: "space-between" }}>
-              <Stack
-                direction="row"
-                sx={{
-                  alignContent: { xs: "center", sm: "flex-start" },
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="h6" component="p">
-                  {`${(
-                    Math.round(axisClick.secondaryValue * 1000) / 1000
-                  ).toFixed(3)} s`}
-                </Typography>
-                <Chip
-                  size="small"
-                  color="success"
-                  label={axisClick.secondaryIndex}
-                />
-              </Stack>
-            </Stack>
-          </Grid>
-        </Grid>
-        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-          2022-03-22 18:17:13.449583
-        </Typography>
-        {selectedTab === "table" && (
-          <DataGridPro
-            rows={rows}
-            columns={columns}
-            pinnedColumns={pinnedColumns}
-            hideFooterRowCount
-            checkboxSelection={false}
-            disableRowSelectionOnClick
-            showCellVerticalBorder={true}
-            showColumnVerticalBorder={true}
-            disableColumnMenu={true}
-            //   rowHeight={100}
-            density={"compact"}
-            slots={{ toolbar: CustomToolbar }}
-            sx={{
-              width: "100%",
-              mt: 1,
-              height: `calc(100vh - 340px)`,
-              border: 0.2,
-              borderColor: "primary",
-              fontSize: "0.8rem",
-            }}
-            hideFooter={true}
-          />
-        )}
-        {selectedTab === "phasors" && <Typography>Phasors</Typography>}
-        {selectedTab === "harmonics" && <Typography>Harmonics</Typography>}
-      </CardContent>
-      <CardActions
+    <>
+      <Card
+        variant="outlined"
         sx={{
-          bgcolor: "",
+          mt: 10,
+          ml: 0.5,
+          mr: 1,
           mb: 0.5,
-          height: "100px",
+          bgcolor: "",
+          height: `calc(100vh - 260px)`,
         }}
       >
-        <BottomNavigation
-          value={selectedTab}
-          onChange={handleChange}
+        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 340px)` }}>
+          {selectedTab === "table" && (
+            <DataGridPro
+              rows={rows}
+              columns={columns}
+              pinnedColumns={pinnedColumns}
+              hideFooterRowCount
+              checkboxSelection={false}
+              disableRowSelectionOnClick
+              showCellVerticalBorder={true}
+              showColumnVerticalBorder={true}
+              disableColumnMenu={true}
+              //   rowHeight={100}
+              density={"compact"}
+              slots={{ toolbar: CustomToolbar }}
+              sx={{
+                width: "100%",
+                mt: 1,
+                height: `calc(100vh - 340px)`,
+                border: 0.2,
+                borderColor: "primary",
+                fontSize: "0.8rem",
+              }}
+              hideFooter={true}
+            />
+          )}
+          {selectedTab === "phasors" && <Typography>Phasors</Typography>}
+          {selectedTab === "harmonics" && <Typography>Harmonics</Typography>}
+          {selectedTab === "sequence" && <Typography>Sequence</Typography>}
+        </CardContent>
+        <CardActions
           sx={{
-            pb: 0,
-            width: "100%",
+            bgcolor: "",
+            mb: 0,
+            height: "100px",
           }}
         >
-          <BottomNavigationAction
-            label="Values"
-            value="table"
-            icon={<TableChartSharpIcon />}
-          />
-          <BottomNavigationAction
-            label="Phasors"
-            value="phasors"
-            icon={<DeviceHubSharpIcon />}
-          />
-          <BottomNavigationAction
-            label="Harmonics"
-            value="harmonics"
-            icon={<BarChartIcon />}
-          />
-        </BottomNavigation>
-      </CardActions>
-    </Card>
+          <BottomNavigation
+            value={selectedTab}
+            onChange={handleChange}
+            sx={{
+              pb: 0,
+              width: "100%",
+            }}
+          >
+            <BottomNavigationAction
+              label="Values"
+              value="table"
+              icon={<TableChartSharpIcon />}
+            />
+            <BottomNavigationAction
+              label="Phasors"
+              value="phasors"
+              icon={<DeviceHubSharpIcon />}
+            />
+            <BottomNavigationAction
+              label="Harmonics"
+              value="harmonics"
+              icon={<BarChartIcon />}
+            />
+            <BottomNavigationAction
+              label="Sequence"
+              value="sequence"
+              icon={<CategoryTwoToneIcon />}
+            />
+          </BottomNavigation>
+        </CardActions>
+      </Card>
+
+      <Card
+        variant="outlined"
+        sx={{
+          ml: 0.5,
+          mr: 1,
+          height: "110px",
+        }}
+      >
+        <CardContent sx={{ mt: 0 }}>
+          <Grid
+            container
+            direction="row"
+            sx={{
+              justifyContent: "space-between",
+              alignContent: "space-between",
+              alignItems: "space-between",
+            }}
+          >
+            <Grid item sx={{ justifyContent: "space-between" }}>
+              <Typography variant="overline" component="p">
+                Primary Cursor
+              </Typography>
+              <Stack sx={{ justifyContent: "space-between" }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    alignContent: { xs: "center", sm: "flex-start" },
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="subtitle2" component="p">
+                    {`${(Math.round(axisClick.axisValue * 1000) / 1000).toFixed(
+                      3
+                    )} s`}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    color="error"
+                    label={axisClick.dataIndex}
+                  />
+                </Stack>
+              </Stack>
+            </Grid>
+            <Grid item sx={{ justifyContent: "space-between" }}>
+              <Typography variant="overline" component="p">
+                Secondary Cursor
+              </Typography>
+              <Stack sx={{ justifyContent: "space-between" }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    alignContent: { xs: "center", sm: "flex-start" },
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="subtitle2" component="p">
+                    {`${(
+                      Math.round(axisClick.secondaryValue * 1000) / 1000
+                    ).toFixed(3)} s`}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    color="success"
+                    label={axisClick.secondaryIndex}
+                  />
+                </Stack>
+              </Stack>
+            </Grid>
+          </Grid>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            2022-03-22 18:17:13.449583
+          </Typography>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
