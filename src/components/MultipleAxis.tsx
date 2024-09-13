@@ -31,6 +31,7 @@ import {
 } from "@mui/x-charts-pro";
 
 interface Props {
+  stationName: string;
   analogSignals: AnalogSignal[];
   analogSignalNames: string[];
   error: string;
@@ -62,6 +63,7 @@ interface Props {
 }
 
 const MultipleAxis = ({
+  stationName,
   analogSignals,
   analogSignalNames,
   error,
@@ -211,7 +213,7 @@ const MultipleAxis = ({
               <Dns />
             </Avatar>
           }
-          title="Selected Signals"
+          title={stationName}
           subheader="Multiple Axis View"
           sx={{ paddingBottom: 0, height: 80, borderBottom: 0.5 }}
         />

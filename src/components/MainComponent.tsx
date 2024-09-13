@@ -424,6 +424,7 @@ const MainComponent = () => {
           <Grid item xs>
             {selectedPage === "SingleAxis" && (
               <SingleAxis
+                stationName={selectedProject.files[selectedIndex].station_name}
                 analogSignals={analogSignals[selectedIndex]}
                 analogSignalNames={analogSignalNames[selectedIndex]}
                 digitalSignals={digitalSignals[selectedIndex]}
@@ -481,6 +482,7 @@ const MainComponent = () => {
             )}
             {selectedPage === "MultipleAxis" && (
               <MultipleAxis
+                stationName={selectedProject.files[selectedIndex].station_name}
                 analogSignals={analogSignals[selectedIndex]}
                 analogSignalNames={analogSignalNames[selectedIndex]}
                 error={asigError[selectedIndex]}

@@ -36,6 +36,7 @@ import {
 import { ChartsLoadingOverlay } from "@mui/x-charts/ChartsOverlay";
 
 interface Props {
+  stationName: string;
   analogSignals: AnalogSignal[];
   analogSignalNames: string[];
   digitalSignals: DigitalSignal[];
@@ -71,6 +72,7 @@ interface Props {
 }
 
 const SingleAxis = ({
+  stationName,
   analogSignals,
   analogSignalNames,
   digitalSignals,
@@ -306,7 +308,7 @@ const SingleAxis = ({
               <AutoAwesomeMotionSharpIcon />
             </Avatar>
           }
-          title="Selected Signals"
+          title={stationName}
           subheader="Single Axis View"
           sx={{ paddingBottom: 0.5, height: 80, borderBottom: 0.5 }}
         />
