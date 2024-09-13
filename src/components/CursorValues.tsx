@@ -199,7 +199,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               showCellVerticalBorder={true}
               showColumnVerticalBorder={true}
               disableColumnMenu={true}
-              //   rowHeight={100}
+              //  rowHeight={100}
               density={"compact"}
               slots={{ toolbar: CustomToolbar }}
               sx={{

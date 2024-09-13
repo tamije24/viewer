@@ -77,18 +77,19 @@ const AnalogChannels = ({ file_id, onAnalogChannelListChange }: Props) => {
 
   const rows = analogChannels;
   const columns: GridColDef<(typeof rows)[number]>[] = [
-    {
-      field: "selected",
-      headerName: "Selected ?",
-      description: "Select to include for plotting",
-      headerClassName: "super-app-theme--header",
-      editable: true,
-      type: "boolean",
-    },
+    // {
+    //   field: "selected",
+    //   headerName: "Selected ?",
+    //   description: "Select to include for plotting",
+    //   headerClassName: "super-app-theme--header",
+    //   editable: true,
+    //   type: "boolean",
+    // },
     {
       field: "id",
-      headerName: "ID",
+      headerName: "Channel ID",
       headerClassName: "super-app-theme--header",
+      align: "center",
     },
     {
       field: "channel_name",
@@ -125,12 +126,12 @@ const AnalogChannels = ({ file_id, onAnalogChannelListChange }: Props) => {
       sortable: false,
       headerClassName: "super-app-theme--header",
     },
-    {
-      field: "channel_id",
-      headerName: "Channel ID",
-      width: 0,
-      maxWidth: 0,
-    },
+    // {
+    //   field: "channel_id",
+    //   headerName: "Channel ID",
+    //   width: 0,
+    //   maxWidth: 0,
+    // },
   ];
 
   if (error) {

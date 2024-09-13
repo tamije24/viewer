@@ -216,6 +216,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
           setFileAdding(false);
           onAddFiles();
           setFileAddMessage("Station added successfully");
+          resetAddFields();
         })
         .catch((err) => {
           setFileAdding(false);
@@ -709,6 +710,29 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
     );
   };
 
+  const resetAddFields = () => {
+    setIaSignal("");
+    setIbSignal("");
+    setIcSignal("");
+    setVaSignal("");
+    setVbSignal("");
+    setVcSignal("");
+    setD1Signal("");
+    setD2Signal("");
+    setD3Signal("");
+    setD4Signal("");
+
+    setCfgFileName("Select CFG File");
+    setDatFileName("Select DAT File");
+
+    setCfgSelected(false);
+    setDatSelected(false);
+
+    for (let i = 0; i < signal_list.length; i++) signal_list.pop();
+    for (let i = 0; i < digital_signal_list.length; i++)
+      digital_signal_list.pop();
+  };
+
   if (!project) {
     return (
       <Card
@@ -964,17 +988,13 @@ const FileListSkeleton = () => {
       display="flex"
       alignItems="center"
       direction="row"
-      spacing={2}
-      sx={{ ml: 2.5, mt: 1 }}
+      spacing={3}
+      sx={{ ml: 4, mt: 1 }}
     >
       <Skeleton variant="circular" width="15px" />
-      <Typography gutterBottom width="100px" variant="subtitle1">
-        <Skeleton variant="text" />
-      </Typography>
-      <Typography gutterBottom width="320px" variant="subtitle1">
-        <Skeleton variant="text" />
-      </Typography>
-      <Skeleton variant="circular" width="15px" />
+      <Skeleton variant="text" width="80px" />
+      <Skeleton variant="text" width="200px" />
+      <Skeleton variant="text" width="300px" />
     </Stack>
   );
 };

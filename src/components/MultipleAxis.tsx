@@ -23,7 +23,7 @@ import {
   ChartsOnAxisClickHandler,
   ChartsReferenceLine,
   ChartsTooltip,
-  //  ChartsXAxis,
+  ChartsXAxis,
   // ChartsYAxis,
   LinePlot,
   LineSeriesType,
@@ -187,6 +187,7 @@ const MultipleAxis = ({
         };
         series.push(a);
       }
+
       if (loading) setLoading(false);
     }
 
@@ -212,13 +213,23 @@ const MultipleAxis = ({
           }
           title="Selected Signals"
           subheader="Multiple Axis View"
-          sx={{ paddingBottom: 0.5, height: 80, borderBottom: 0.5 }}
+          sx={{ paddingBottom: 0, height: 80, borderBottom: 0.5 }}
         />
-        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 290px)` }}>
-          <Grid container>
+        <CardContent sx={{ mb: 0, height: `calc(100vh - 290px)` }}>
+          <Grid container height="100%" sx={{ bgcolor: "" }}>
             {!loading ? (
-              series.map((series) => (
-                <Grid item xs={12} height={`calc((100vh - 330px)/6)`}>
+              series.map((series, index) => (
+                <Grid
+                  key={"multiple" + index}
+                  item
+                  xs={12}
+                  height={
+                    index < 5
+                      ? `calc((100vh - 400px)/6)`
+                      : `calc((100vh - 400px)/6+50px)`
+                  }
+                  sx={{ bgcolor: "" }}
+                >
                   <ResponsiveChartContainerPro
                     xAxis={[{ ...xAxisCommon, data: timeValues }]}
                     yAxis={[
@@ -232,12 +243,16 @@ const MultipleAxis = ({
                       left: 0,
                       right: 0,
                       top: 0,
-                      bottom: 0,
+                      bottom: index < 5 ? 0 : 50,
                     }}
                     sx={{
                       borderLeft: 0.5,
                       borderRight: 0.5,
                       borderTop: 0.5,
+                      borderBottom: index < 5 ? 0 : 0.5,
+                      "& .MuiLineElement-root": {
+                        strokeWidth: 1.5,
+                      },
                     }}
                   >
                     {loading && <ChartsLoadingOverlay />}
@@ -253,24 +268,15 @@ const MultipleAxis = ({
                       }}
                     />
                     <ChartsGrid vertical horizontal />
-                    {/* <ChartsLegend
-                      axisDirection="x"
-                      position={{ vertical: "top", horizontal: "right" }}
-                      direction="row"
-                      padding={0}
-                      slotProps={{
-                        legend: {
-                          itemMarkHeight: 3,
-                          labelStyle: {
-                            fontSize: 12,
-                          },
-                        },
-                      }}
-                    /> */}
                     <LinePlot />
-                    {/* <ChartsYAxis axisId="y-axis" position="left" label="" />
-                    <ChartsYAxis axisId="y-axis" position="right" label="" /> */}
-
+                    {index === 5 && (
+                      <ChartsXAxis
+                        axisId="time-axis"
+                        position="bottom"
+                        label="Time (seconds)"
+                      />
+                    )}
+                    {/* <ChartsYAxis axisId="y-axis" position="left" label="" /> */}
                     {timeValues !== undefined && timeValues.length > 0 && (
                       <ChartsReferenceLine
                         axisId={"time-axis"}

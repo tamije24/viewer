@@ -156,6 +156,21 @@ const MainComponent = () => {
       : (aValue[selectedIndex] = newValues);
     setAxisClick(aValue);
 
+    console.log(selectedIndex);
+    console.log(axisClick.length);
+
+    if (selectedIndex <= axisClick.length) fillSideTable();
+  };
+
+  const fillSideTable = () => {
+    if (axisClick[selectedIndex] === undefined) {
+      tableValues = [];
+      return;
+    }
+
+    let dataIndex = axisClick[selectedIndex].dataIndex;
+    let secondaryIndex = axisClick[selectedIndex].secondaryIndex;
+
     // reset table values
     tableValues = [];
 
@@ -163,6 +178,8 @@ const MainComponent = () => {
     let names: string[] = [];
     if (analogSignalNames[selectedIndex] !== undefined) {
       names = [...analogSignalNames[selectedIndex]];
+    } else {
+      return;
     }
 
     let sample_values =
@@ -227,6 +244,7 @@ const MainComponent = () => {
   const getAnalogSignals = (project: Project) => {
     // reset all data
     for (let i = 0; i < analogSignals.length; i++) analogSignals.pop();
+    for (let i = 0; i < analogSignalNames.length; i++) analogSignalNames.pop();
 
     // get analog signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -236,18 +254,17 @@ const MainComponent = () => {
         a.length >= i + 1 ? (a[i] = true) : a.push(true);
         setAsigLoading(a);
 
-        let sig_names = [
-          project.files[i].ia_channel,
-          project.files[i].ib_channel,
-          project.files[i].ic_channel,
-          project.files[i].va_channel,
-          project.files[i].vb_channel,
-          project.files[i].vc_channel,
-        ];
-
         analogSignalService
           .getAllAnalogSignals(file_id)
           .then((res) => {
+            let sig_names = [
+              project.files[i].ia_channel,
+              project.files[i].ib_channel,
+              project.files[i].ic_channel,
+              project.files[i].va_channel,
+              project.files[i].vb_channel,
+              project.files[i].vc_channel,
+            ];
             if (analogSignals.length >= i + 1) {
               analogSignals[i] = res.data;
               analogSignalNames[i] = [...sig_names];
@@ -278,6 +295,8 @@ const MainComponent = () => {
   const getDigitalSignals = (project: Project) => {
     // reset all data
     for (let i = 0; i < digitalSignals.length; i++) digitalSignals.pop();
+    for (let i = 0; i < digitalSignalNames.length; i++)
+      digitalSignalNames.pop();
 
     // get digital signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -287,16 +306,16 @@ const MainComponent = () => {
         a.length >= i + 1 ? (a[i] = true) : a.push(true);
         setDsigLoading(a);
 
-        let sig_names = [
-          project.files[i].d1_channel,
-          project.files[i].d2_channel,
-          project.files[i].d3_channel,
-          project.files[i].d4_channel,
-        ];
-
         digitalSignalService
           .getAllDigitalSignals(file_id)
           .then((res) => {
+            let sig_names = [
+              project.files[i].d1_channel,
+              project.files[i].d2_channel,
+              project.files[i].d3_channel,
+              project.files[i].d4_channel,
+            ];
+
             if (digitalSignals.length >= i + 1) {
               digitalSignals[i] = res.data;
               digitalSignalNames[i] = [...sig_names];
@@ -374,6 +393,8 @@ const MainComponent = () => {
       });
   };
 
+  if (selectedIndex <= axisClick.length) fillSideTable();
+
   return (
     <Grid
       container
@@ -407,6 +428,12 @@ const MainComponent = () => {
                 analogSignalNames={analogSignalNames[selectedIndex]}
                 digitalSignals={digitalSignals[selectedIndex]}
                 digitalSignalNames={digitalSignalNames[selectedIndex]}
+                start_time_stamp={
+                  selectedProject.files[selectedIndex].start_time_stamp
+                }
+                trigger_time_stamp={
+                  selectedProject.files[selectedIndex].trigger_time_stamp
+                }
                 error={asigError[selectedIndex]}
                 isLoading={asigLoading[selectedIndex]}
                 cursorValues={

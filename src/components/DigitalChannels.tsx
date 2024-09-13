@@ -77,18 +77,19 @@ const DigitalChannels = ({ file_id, onDigitalChannelListChange }: Props) => {
 
   const rows = digitalChannels;
   const columns: GridColDef<(typeof rows)[number]>[] = [
-    {
-      field: "selected",
-      headerName: "Selected ?",
-      description: "Select to include for plotting",
-      headerClassName: "super-app-theme--header",
-      editable: true,
-      type: "boolean",
-    },
+    // {
+    //   field: "selected",
+    //   headerName: "Selected ?",
+    //   description: "Select to include for plotting",
+    //   headerClassName: "super-app-theme--header",
+    //   editable: true,
+    //   type: "boolean",
+    // },
     {
       field: "id",
-      headerName: "ID",
+      headerName: "Channel ID",
       headerClassName: "super-app-theme--header",
+      align: "center",
     },
     {
       field: "channel_name",

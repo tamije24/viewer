@@ -18,14 +18,16 @@ import ChartFooter from "./ChartFooter";
 import { AnalogSignal } from "../services/analog-signal-service";
 import { DigitalSignal } from "../services/digital-signal-service";
 import {
+  AreaPlot,
   ChartsAxisHighlight,
+  // ChartsClipPath,
   ChartsGrid,
   ChartsLegend,
   ChartsOnAxisClickHandler,
   ChartsReferenceLine,
   ChartsTooltip,
   ChartsXAxis,
-  ChartsYAxis,
+  //ChartsYAxis,
   LinePlot,
   LineSeriesType,
   ResponsiveChartContainerPro,
@@ -38,6 +40,8 @@ interface Props {
   analogSignalNames: string[];
   digitalSignals: DigitalSignal[];
   digitalSignalNames: string[];
+  start_time_stamp: Date;
+  trigger_time_stamp: Date;
   error: string;
   isLoading: boolean;
   cursorValues: {
@@ -71,6 +75,8 @@ const SingleAxis = ({
   analogSignalNames,
   digitalSignals,
   digitalSignalNames,
+  // start_time_stamp,
+  // trigger_time_stamp,
   error,
   isLoading,
   cursorValues,
@@ -101,10 +107,9 @@ const SingleAxis = ({
     end: zoomBoundary.endTime,
   });
 
-  // const [tickValues, setTickValues] = useState([0]);
-
-  let timeValues = [] as number[];
-  let series: LineSeriesType[] = [];
+  let timeValues: number[] = [];
+  let current_series: LineSeriesType[] = [];
+  let voltage_series: LineSeriesType[] = [];
   let digital_series: LineSeriesType[] = [];
 
   const handleTooltipStatusChange = (toolTipStatus: boolean) => {
@@ -119,6 +124,8 @@ const SingleAxis = ({
   };
 
   const handleZoominClick = (fromValue: number, toValue: number) => {
+    // fromValue = fromValue * 1000;
+    // toValue = toValue * 1000;
     const maxValue = timeValues[timeValues.length - 1];
     if (fromValue >= maxValue || toValue > maxValue) return;
     const fromPercent = (fromValue / maxValue) * 100;
@@ -176,7 +183,20 @@ const SingleAxis = ({
         let value = Object.values(analogSignals[i]);
         analog_values.push(value);
       }
+
+      //  for (let k = 0; k < timeValues.length; k++) timeValues.pop();
+
+      // let time = arrayColumn(analog_values, 0);
+      // for (let k = 0; k < time.length; k++) {
+      //   let start_time = new Date(start_time_stamp);
+      //   start_time.setTime(start_time.getTime() + time[k] * 1000);
+      //   timeValues.push(start_time);
+      // }
+
       timeValues = arrayColumn(analog_values, 0);
+      // for (let k = 0; k < timeValues.length; k++)
+      //   timeValues[k] = timeValues[k] * 1000;
+
       let color_light = [
         "crimson",
         "goldenrod",
@@ -185,15 +205,7 @@ const SingleAxis = ({
         "goldenrod",
         "deepskyblue",
       ];
-      let y_axis_id = [
-        "leftAxis",
-        "leftAxis",
-        "leftAxis",
-        "rightAxis",
-        "rightAxis",
-        "rightAxis",
-      ];
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 3; i++) {
         let label = analogSignalNames[i];
         let values = arrayColumn(analog_values, i + 1);
 
@@ -201,7 +213,7 @@ const SingleAxis = ({
           type: "line",
           label: label,
           data: values,
-          yAxisId: y_axis_id[i],
+          yAxisId: "currentAxis",
           showMark: false,
           color: color_light[i],
           highlightScope: {
@@ -209,8 +221,28 @@ const SingleAxis = ({
             faded: "global",
           } as HighlightScope,
         };
-        series.push(a);
+        current_series.push(a);
       }
+
+      for (let i = 3; i < 6; i++) {
+        let label = analogSignalNames[i];
+        let values = arrayColumn(analog_values, i + 1);
+
+        let a: LineSeriesType = {
+          type: "line",
+          label: label,
+          data: values,
+          yAxisId: "voltageAxis",
+          showMark: false,
+          color: color_light[i],
+          highlightScope: {
+            highlighted: "series",
+            faded: "global",
+          } as HighlightScope,
+        };
+        voltage_series.push(a);
+      }
+
       if (anLoading) setAnLoading(false);
     }
 
@@ -224,9 +256,13 @@ const SingleAxis = ({
       let L = digitalSignals.length;
       for (let i = 0; i < L; i++) {
         let value = Object.values(digitalSignals[i]);
+        value[2] += 1.5;
+        value[3] += 3;
+        value[4] += 4.5;
         digital_values.push(value);
       }
 
+      let baseline = [0, 1.5, 3, 4.5];
       for (let i = 0; i < 4; i++) {
         if (digitalSignalNames[i] === "") continue;
 
@@ -238,7 +274,8 @@ const SingleAxis = ({
           label: label,
           data: values,
           showMark: false,
-          stack: "digital",
+          area: true,
+          baseline: baseline[i],
           highlightScope: {
             highlighted: "series",
             faded: "global",
@@ -278,18 +315,18 @@ const SingleAxis = ({
             <Grid
               item
               xs={12}
-              sx={{ mb: 0, height: `calc((100vh - 290px)*0.7)`, bgcolor: "" }}
+              sx={{ mb: 0, height: `calc((100vh - 290px)*0.35)`, bgcolor: "" }}
             >
               <ResponsiveChartContainerPro
+                key="current-signals"
                 xAxis={[
                   {
                     ...xAxisCommon,
-                    dataKey: "time",
                     data: timeValues,
                   },
                 ]}
-                yAxis={[{ id: "leftAxis" }, { id: "rightAxis" }]}
-                series={series}
+                yAxis={[{ id: "currentAxis" }]}
+                series={current_series}
                 zoom={zoom}
                 onZoomChange={setZoom}
                 margin={{
@@ -297,6 +334,12 @@ const SingleAxis = ({
                   right: 0,
                   top: 40,
                   bottom: 0,
+                }}
+                sx={{
+                  "& .MuiLineElement-root": {
+                    strokeWidth: 1.5,
+                  },
+                  border: 0.5,
                 }}
               >
                 {anLoading && <ChartsLoadingOverlay />}
@@ -311,7 +354,7 @@ const SingleAxis = ({
                     );
                   }}
                 />
-                <ChartsGrid vertical horizontal />
+                <ChartsGrid horizontal vertical />
                 <ChartsLegend
                   axisDirection="x"
                   position={{ vertical: "top", horizontal: "right" }}
@@ -321,31 +364,17 @@ const SingleAxis = ({
                     legend: {
                       itemMarkHeight: 3,
                       labelStyle: {
-                        fontSize: 12,
+                        fontSize: 11,
                       },
                     },
                   }}
                 />
                 <LinePlot />
-                <ChartsYAxis
-                  axisId="leftAxis"
+                {/* <ChartsYAxis
+                  axisId="currentAxis"
                   position="left"
                   label="Current"
-                />
-                <ChartsYAxis
-                  axisId="rightAxis"
-                  position="right"
-                  label="Voltage"
-                />
-
-                {/* {timeValues !== undefined && timeValues.length > 0 && (
-                  <ChartsReferenceLine
-                    axisId={"time-axis"}
-                    x={timeValues[5000]}
-                    lineStyle={{ strokeDasharray: "10 5" }}
-                  />
-                )} */}
-
+                /> */}
                 {timeValues !== undefined && timeValues.length > 0 && (
                   <ChartsReferenceLine
                     axisId={"time-axis"}
@@ -370,6 +399,95 @@ const SingleAxis = ({
                 )}
               </ResponsiveChartContainerPro>
             </Grid>
+
+            <Grid
+              item
+              xs={12}
+              sx={{ mb: 0, height: `calc((100vh - 290px)*0.35)`, bgcolor: "" }}
+            >
+              <ResponsiveChartContainerPro
+                key="voltage-signals"
+                xAxis={[
+                  {
+                    ...xAxisCommon,
+                    data: timeValues,
+                  },
+                ]}
+                yAxis={[{ id: "voltageAxis" }]}
+                series={voltage_series}
+                zoom={zoom}
+                onZoomChange={setZoom}
+                margin={{
+                  left: 0,
+                  right: 0,
+                  top: 40,
+                  bottom: 0,
+                }}
+                sx={{
+                  "& .MuiLineElement-root": {
+                    strokeWidth: 1.5,
+                  },
+                  border: 0.5,
+                }}
+              >
+                {anLoading && <ChartsLoadingOverlay />}
+                <ChartsTooltip trigger={isTooltip ? "axis" : "none"} />
+                <ChartsAxisHighlight />
+                <ChartsOnAxisClickHandler
+                  onAxisClick={(event, data) => {
+                    handleAxisClick(
+                      event,
+                      data ? data.dataIndex : 0,
+                      data ? Number(data.axisValue ? data.axisValue : 0) : 0
+                    );
+                  }}
+                />
+                <ChartsGrid horizontal vertical />
+                <ChartsLegend
+                  axisDirection="x"
+                  position={{ vertical: "top", horizontal: "right" }}
+                  direction="row"
+                  padding={0}
+                  slotProps={{
+                    legend: {
+                      itemMarkHeight: 3,
+                      labelStyle: {
+                        fontSize: 11,
+                      },
+                    },
+                  }}
+                />
+                <LinePlot />
+                {/* <ChartsYAxis
+                  axisId="voltageAxis"
+                  position="left"
+                  label="Voltage"
+                /> */}
+                {timeValues !== undefined && timeValues.length > 0 && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={timeValues[primaryCursor.cursor]}
+                    lineStyle={{
+                      strokeDasharray: "10 5",
+                      strokeWidth: 2,
+                      stroke: "crimson",
+                    }}
+                  />
+                )}
+                {timeValues !== undefined && timeValues.length > 0 && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={timeValues[secondaryCursor.cursor]}
+                    lineStyle={{
+                      strokeDasharray: "3 3",
+                      strokeWidth: 2,
+                      stroke: "forestgreen",
+                    }}
+                  />
+                )}
+              </ResponsiveChartContainerPro>
+            </Grid>
+
             <Grid
               item
               xs={12}
@@ -380,6 +498,7 @@ const SingleAxis = ({
             >
               {!digLoading ? (
                 <ResponsiveChartContainerPro
+                  key="digital-signals"
                   xAxis={[{ ...xAxisCommon, data: timeValues }]}
                   yAxis={[
                     { id: "status" },
@@ -391,10 +510,19 @@ const SingleAxis = ({
                   margin={{
                     left: 0,
                     right: 0,
-                    top: 25,
-                    bottom: 40,
+                    top: 30,
+                    bottom: 60,
+                  }}
+                  sx={{
+                    "& .MuiLineElement-root": {
+                      strokeWidth: 1.5,
+                    },
+                    borderLeft: 0.5,
+                    borderRight: 0.5,
                   }}
                 >
+                  <ChartsGrid vertical />
+                  <AreaPlot />
                   <LinePlot />
                   <ChartsTooltip trigger={"none"} />
                   <ChartsAxisHighlight />
@@ -407,15 +535,15 @@ const SingleAxis = ({
                       );
                     }}
                   />
-                  <ChartsGrid vertical horizontal />
                   <ChartsLegend
                     axisDirection="x"
                     position={{ vertical: "top", horizontal: "right" }}
                     direction="row"
-                    padding={0}
+                    sx={{ mr: 5 }}
+                    padding={10}
                     slotProps={{
                       legend: {
-                        itemMarkHeight: 2,
+                        itemMarkHeight: 1.5,
                         labelStyle: {
                           fontSize: 10,
                         },
@@ -423,10 +551,18 @@ const SingleAxis = ({
                     }}
                   />
 
-                  <ChartsYAxis axisId="status" position="left" label="" />
-                  <ChartsYAxis axisId="status" position="right" label="" />
-                  <ChartsXAxis label="" position="bottom" axisId="time-axis" />
-
+                  <ChartsXAxis
+                    label="Time (seconds)"
+                    position="bottom"
+                    axisId="time-axis"
+                  />
+                  {/* <ChartsYAxis
+                    axisId="status"
+                    position="left"
+                    label=""
+                    disableTicks
+                    tickInterval={[10]}
+                  /> */}
                   {timeValues !== undefined && timeValues.length > 0 && (
                     <ChartsReferenceLine
                       axisId={"time-axis"}
@@ -434,7 +570,7 @@ const SingleAxis = ({
                       lineStyle={{
                         strokeDasharray: "10 5",
                         strokeWidth: 2,
-                        stroke: "crimson",
+                        stroke: "salmon",
                       }}
                     />
                   )}
