@@ -91,6 +91,8 @@ const MainComponent = () => {
       endTime: 0,
     },
   ]);
+  const [toolTipStatus, setToolTipStatus] = useState(false);
+
   const [selectedProject, setSelectedProject] = useState<Project>(emptyProject);
   const [selectedFile, setSelectedFile] = useState<number | null>(null);
   const [selectedPage, setSelectedPage] = useState("ProjectList");
@@ -192,6 +194,10 @@ const MainComponent = () => {
       endTime: toValue,
     };
     setZoomBoundary(newZb);
+  };
+
+  const handleTooltipChange = (toolTipStatus: boolean) => {
+    setToolTipStatus(toolTipStatus);
   };
 
   const fillSideTable = () => {
@@ -485,132 +491,137 @@ const MainComponent = () => {
         />
       </Grid>
       {selectedPage === "SingleAxis" || selectedPage === "MultipleAxis" ? (
-        <>
-          <Grid item xs>
-            <Stack>
-              {selectedPage === "SingleAxis" && (
-                <SingleAxis
-                  stationName={
-                    selectedProject.files[selectedIndex].station_name
-                  }
-                  analogSignals={analogSignals[selectedIndex]}
-                  analogSignalNames={analogSignalNames[selectedIndex]}
-                  digitalSignals={digitalSignals[selectedIndex]}
-                  digitalSignalNames={digitalSignalNames[selectedIndex]}
-                  start_time_stamp={
-                    selectedProject.files[selectedIndex].start_time_stamp
-                  }
-                  trigger_time_stamp={
-                    selectedProject.files[selectedIndex].trigger_time_stamp
-                  }
-                  error={asigError[selectedIndex]}
-                  isLoading={asigLoading[selectedIndex]}
-                  cursorValues={
-                    axisClick.length >= selectedIndex + 1
-                      ? {
-                          primary: axisClick[selectedIndex].dataIndex,
-                          primaryTime: axisClick[selectedIndex].axisValue,
-                          secondary: axisClick[selectedIndex].secondaryIndex,
-                          secondaryTime:
-                            axisClick[selectedIndex].secondaryValue,
-                        }
-                      : {
-                          primary: 0,
-                          primaryTime: 0,
-                          secondary: 0,
-                          secondaryTime: 0,
-                        }
-                  }
-                  onAxisClick={handleAxisClick}
-                  zoomBoundary={
-                    zoomBoundary.length >= selectedIndex + 1
-                      ? {
-                          startPercent:
-                            zoomBoundary[selectedIndex].startPercent,
-                          endPercent: zoomBoundary[selectedIndex].endPercent,
-                        }
-                      : {
-                          startPercent: 15,
-                          endPercent: 30,
-                        }
-                  }
-                />
-              )}
+        <Grid item xs>
+          <Grid container>
+            <Grid item xs={9}>
+              <Stack>
+                {selectedPage === "SingleAxis" && (
+                  <SingleAxis
+                    stationName={
+                      selectedProject.files[selectedIndex].station_name
+                    }
+                    analogSignals={analogSignals[selectedIndex]}
+                    analogSignalNames={analogSignalNames[selectedIndex]}
+                    digitalSignals={digitalSignals[selectedIndex]}
+                    digitalSignalNames={digitalSignalNames[selectedIndex]}
+                    start_time_stamp={
+                      selectedProject.files[selectedIndex].start_time_stamp
+                    }
+                    trigger_time_stamp={
+                      selectedProject.files[selectedIndex].trigger_time_stamp
+                    }
+                    error={asigError[selectedIndex]}
+                    isLoading={asigLoading[selectedIndex]}
+                    cursorValues={
+                      axisClick.length >= selectedIndex + 1
+                        ? {
+                            primary: axisClick[selectedIndex].dataIndex,
+                            primaryTime: axisClick[selectedIndex].axisValue,
+                            secondary: axisClick[selectedIndex].secondaryIndex,
+                            secondaryTime:
+                              axisClick[selectedIndex].secondaryValue,
+                          }
+                        : {
+                            primary: 0,
+                            primaryTime: 0,
+                            secondary: 0,
+                            secondaryTime: 0,
+                          }
+                    }
+                    onAxisClick={handleAxisClick}
+                    zoomBoundary={
+                      zoomBoundary.length >= selectedIndex + 1
+                        ? {
+                            startPercent:
+                              zoomBoundary[selectedIndex].startPercent,
+                            endPercent: zoomBoundary[selectedIndex].endPercent,
+                          }
+                        : {
+                            startPercent: 15,
+                            endPercent: 30,
+                          }
+                    }
+                    toolTipStatus={toolTipStatus}
+                  />
+                )}
 
-              {selectedPage === "MultipleAxis" && (
-                <MultipleAxis
-                  stationName={
-                    selectedProject.files[selectedIndex].station_name
-                  }
-                  analogSignals={analogSignals[selectedIndex]}
-                  analogSignalNames={analogSignalNames[selectedIndex]}
-                  error={asigError[selectedIndex]}
-                  isLoading={asigLoading[selectedIndex]}
-                  cursorValues={
-                    axisClick.length >= selectedIndex + 1
-                      ? {
-                          primary: axisClick[selectedIndex].dataIndex,
-                          primaryTime: axisClick[selectedIndex].axisValue,
-                          secondary: axisClick[selectedIndex].secondaryIndex,
-                          secondaryTime:
-                            axisClick[selectedIndex].secondaryValue,
-                        }
-                      : {
-                          primary: 0,
-                          primaryTime: 0,
-                          secondary: 0,
-                          secondaryTime: 0,
-                        }
-                  }
-                  onAxisClick={handleAxisClick}
+                {selectedPage === "MultipleAxis" && (
+                  <MultipleAxis
+                    stationName={
+                      selectedProject.files[selectedIndex].station_name
+                    }
+                    analogSignals={analogSignals[selectedIndex]}
+                    analogSignalNames={analogSignalNames[selectedIndex]}
+                    error={asigError[selectedIndex]}
+                    isLoading={asigLoading[selectedIndex]}
+                    cursorValues={
+                      axisClick.length >= selectedIndex + 1
+                        ? {
+                            primary: axisClick[selectedIndex].dataIndex,
+                            primaryTime: axisClick[selectedIndex].axisValue,
+                            secondary: axisClick[selectedIndex].secondaryIndex,
+                            secondaryTime:
+                              axisClick[selectedIndex].secondaryValue,
+                          }
+                        : {
+                            primary: 0,
+                            primaryTime: 0,
+                            secondary: 0,
+                            secondaryTime: 0,
+                          }
+                    }
+                    onAxisClick={handleAxisClick}
+                    zoomBoundary={
+                      zoomBoundary.length >= selectedIndex + 1
+                        ? {
+                            startPercent:
+                              zoomBoundary[selectedIndex].startPercent,
+                            endPercent: zoomBoundary[selectedIndex].endPercent,
+                          }
+                        : {
+                            startPercent: 15,
+                            endPercent: 30,
+                          }
+                    }
+                    toolTipStatus={toolTipStatus}
+                  />
+                )}
+                <ChartFooter
                   zoomBoundary={
                     zoomBoundary.length >= selectedIndex + 1
                       ? {
-                          startPercent:
-                            zoomBoundary[selectedIndex].startPercent,
-                          endPercent: zoomBoundary[selectedIndex].endPercent,
+                          startTime: zoomBoundary[selectedIndex].startTime,
+                          endTime: zoomBoundary[selectedIndex].endTime,
                         }
                       : {
-                          startPercent: 15,
-                          endPercent: 30,
+                          startTime: 0,
+                          endTime: 0,
                         }
                   }
+                  onZoomOutClick={handleZoomOutClick}
+                  onZoomInClick={handleZoomInClick}
+                  onToolTipStatusChange={handleTooltipChange}
                 />
-              )}
-              <ChartFooter
-                zoomBoundary={
-                  zoomBoundary.length >= selectedIndex + 1
-                    ? {
-                        startTime: zoomBoundary[selectedIndex].startTime,
-                        endTime: zoomBoundary[selectedIndex].endTime,
-                      }
+              </Stack>
+            </Grid>
+
+            <Grid item xs={3}>
+              <CursorValues
+                axisClick={
+                  selectedIndex <= axisClick.length - 1
+                    ? axisClick[selectedIndex]
                     : {
-                        startTime: 0,
-                        endTime: 0,
+                        dataIndex: 0,
+                        axisValue: 0,
+                        secondaryIndex: 0,
+                        secondaryValue: 0,
                       }
                 }
-                onZoomOutClick={handleZoomOutClick}
-                onZoomInClick={handleZoomInClick}
+                tableValues={tableValues}
               />
-            </Stack>
+            </Grid>
           </Grid>
-
-          <Grid item xs={3}>
-            <CursorValues
-              axisClick={
-                selectedIndex <= axisClick.length - 1
-                  ? axisClick[selectedIndex]
-                  : {
-                      dataIndex: 0,
-                      axisValue: 0,
-                      secondaryIndex: 0,
-                      secondaryValue: 0,
-                    }
-              }
-              tableValues={tableValues}
-            />
-          </Grid>
-        </>
+        </Grid>
       ) : (
         <Grid item sx={{ width: `calc(100% - 270px)` }}>
           {selectedPage === "ProjectList" && (

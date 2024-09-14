@@ -4,25 +4,37 @@ import Stack from "@mui/material/Stack";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ZoomInIcon from "@mui/icons-material/ZoomInSharp";
 import Switch from "@mui/material/Switch";
-import TextField from "@mui/material/TextField";
-import { Card, CardContent } from "@mui/material";
+import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
+import TextsmsIcon from "@mui/icons-material/Textsms";
+
+import {
+  Card,
+  CardContent,
+  Checkbox,
+  FormControl,
+  FormHelperText,
+  Grid,
+  Input,
+} from "@mui/material";
+import { useState } from "react";
 
 interface Props {
-  // onToolTipStatusChange: (toolTipStatus: boolean) => void;
   zoomBoundary: {
     startTime: number;
     endTime: number;
   };
   onZoomOutClick: () => void;
   onZoomInClick: (fromValue: number, toValue: number) => void;
+  onToolTipStatusChange: (toolTipStatus: boolean) => void;
 }
 
 const ChartFooter = ({
   zoomBoundary,
   onZoomOutClick,
   onZoomInClick,
+  onToolTipStatusChange,
 }: Props) => {
-  // const [isTooltip, setIsTooltip] = useState(false);
+  const [isTooltip, setIsTooltip] = useState(false);
 
   const handleZoomInClick = () => {
     const fValue = document.getElementById("fromValue") as HTMLInputElement;
@@ -33,10 +45,12 @@ const ChartFooter = ({
     onZoomInClick(fromValue, toValue);
   };
 
+  const label = { inputProps: { "aria-label": "Tooltip" } };
+
   return (
     <Card
       sx={{
-        mt: 0.5,
+        mt: 0,
         mb: 0.5,
         mr: 0,
         ml: 2,
@@ -44,75 +58,77 @@ const ChartFooter = ({
     >
       <CardContent
         sx={{
-          bgcolor: "cornsilk",
-          height: "60px",
+          bgcolor: "highlight",
+          height: "70px",
           alignContent: "center",
         }}
       >
         <Stack
           direction="row"
-          justifyContent="space-evenly"
-          alignItems="baseline"
+          justifyContent="space-between"
+          alignItems="start"
         >
           <Stack
             direction="row"
-            alignItems="baseline"
+            alignItems="start"
             spacing={2}
             //     sx={{ bgcolor: "red" }}
           >
-            <TextField
-              id="fromValue"
-              label="From"
-              margin="dense"
-              sx={{
-                width: "100px",
-              }}
-              type="number"
-              size="small"
-              defaultValue={zoomBoundary.startTime}
-            />
-            <TextField
-              id="toValue"
-              label="To"
-              margin="dense"
-              sx={{ width: "100px" }}
-              type="number"
-              size="small"
-              defaultValue={zoomBoundary.endTime}
-            />
-            <Button
-              variant="outlined"
-              onClick={handleZoomInClick}
-              sx={{ color: "", fontSize: "0.8rem", height: "28px", pt: 0.5 }}
-              startIcon={<ZoomInIcon fontSize="large" />}
+            <FormControl variant="standard" sx={{ width: "55px" }}>
+              <Input
+                id="fromValue"
+                type="number"
+                defaultValue={zoomBoundary.startTime}
+                aria-describedby="x-from-text"
+                inputProps={{
+                  "aria-label": "from-x",
+                }}
+              />
+              <FormHelperText id="x-from-text">from</FormHelperText>
+            </FormControl>
+
+            <FormControl
+              variant="standard"
+              sx={{ height: "30px", width: "55px" }}
             >
-              Zoom in
+              <Input
+                id="toValue"
+                type="number"
+                defaultValue={zoomBoundary.endTime}
+                aria-describedby="x-to-text"
+                inputProps={{
+                  "aria-label": "to-x",
+                }}
+              />
+              <FormHelperText id="x-to-text">to</FormHelperText>
+            </FormControl>
+
+            <Button
+              variant="contained"
+              onClick={handleZoomInClick}
+              sx={{ fontSize: "1 rem", pt: 0.5 }}
+              startIcon={<ZoomInIcon fontSize="small" />}
+            >
+              Zoom
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={onZoomOutClick}
+              sx={{ fontSize: "1 rem", pt: 0.5 }}
+              startIcon={<ZoomOutIcon fontSize="small" />}
+            >
+              Reset
             </Button>
           </Stack>
-          <Button
-            variant="outlined"
-            onClick={onZoomOutClick}
-            sx={{ color: "", fontSize: "0.8rem", height: "28px", pt: 0.5 }}
-            startIcon={<ZoomOutIcon fontSize="small" />}
-          >
-            Reset zoom
-          </Button>
-          <FormControlLabel
-            control={
-              <Switch
-                // checked={isTooltip}
-                size="small"
-                // onChange={(event) => {
-                //   setIsTooltip(event.target.checked);
-                //   onToolTipStatusChange(event.target.checked);
-                // }}
-                color="primary"
-                sx={{ ml: 1 }}
-              />
-            }
-            label="Show Tooltip"
-            labelPlacement="end"
-            sx={{ fontSize: "0.7rem", alignItems: "flex-start" }}
+          <Checkbox
+            checked={isTooltip}
+            icon={<TextsmsOutlinedIcon />}
+            checkedIcon={<TextsmsIcon />}
+            onChange={(event) => {
+              setIsTooltip(event.target.checked);
+              onToolTipStatusChange(event.target.checked);
+            }}
           />
         </Stack>
       </CardContent>

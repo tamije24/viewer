@@ -59,6 +59,7 @@ interface Props {
     startPercent: number;
     endPercent: number;
   };
+  toolTipStatus: boolean;
 }
 
 const SingleAxis = ({
@@ -74,6 +75,7 @@ const SingleAxis = ({
   cursorValues,
   onAxisClick,
   zoomBoundary,
+  toolTipStatus,
 }: Props) => {
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
@@ -85,7 +87,6 @@ const SingleAxis = ({
   });
   const [anLoading, setAnLoading] = useState(true);
   const [digLoading, setDigLoading] = useState(true);
-  const [isTooltip, setIsTooltip] = useState(false);
   const [zoom, setZoom] = useState<ZoomData[]>([
     {
       axisId: "time-axis",
@@ -98,10 +99,6 @@ const SingleAxis = ({
   let current_series: LineSeriesType[] = [];
   let voltage_series: LineSeriesType[] = [];
   let digital_series: LineSeriesType[] = [];
-
-  // const handleTooltipStatusChange = (toolTipStatus: boolean) => {
-  //   setIsTooltip(toolTipStatus);
-  // };
 
   const handleAxisClick = (
     event: MouseEvent,
@@ -321,7 +318,7 @@ const SingleAxis = ({
                 }}
               >
                 {anLoading && <ChartsLoadingOverlay />}
-                <ChartsTooltip trigger={isTooltip ? "axis" : "none"} />
+                <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
                 <ChartsAxisHighlight />
                 <ChartsOnAxisClickHandler
                   onAxisClick={(event, data) => {
@@ -409,7 +406,7 @@ const SingleAxis = ({
                 }}
               >
                 {anLoading && <ChartsLoadingOverlay />}
-                <ChartsTooltip trigger={isTooltip ? "axis" : "none"} />
+                <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
                 <ChartsAxisHighlight />
                 <ChartsOnAxisClickHandler
                   onAxisClick={(event, data) => {

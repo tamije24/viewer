@@ -50,6 +50,7 @@ interface Props {
     startPercent: number;
     endPercent: number;
   };
+  toolTipStatus: boolean;
 }
 
 const MultipleAxis = ({
@@ -61,6 +62,7 @@ const MultipleAxis = ({
   cursorValues,
   onAxisClick,
   zoomBoundary,
+  toolTipStatus,
 }: Props) => {
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
@@ -72,7 +74,6 @@ const MultipleAxis = ({
   });
 
   const [loading, setLoading] = useState(true);
-  const [isTooltip, setIsTooltip] = useState(false);
   const [zoom, setZoom] = useState<ZoomData[]>([
     {
       axisId: "time-axis",
@@ -83,10 +84,6 @@ const MultipleAxis = ({
 
   let timeValues: number[] = [];
   let series: LineSeriesType[] = [];
-
-  const handleTooltipStatusChange = (toolTipStatus: boolean) => {
-    setIsTooltip(toolTipStatus);
-  };
 
   const handleAxisClick = (
     event: MouseEvent,
@@ -234,7 +231,7 @@ const MultipleAxis = ({
                     }}
                   >
                     {loading && <ChartsLoadingOverlay />}
-                    <ChartsTooltip trigger={isTooltip ? "axis" : "none"} />
+                    <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
                     <ChartsAxisHighlight />
                     <ChartsOnAxisClickHandler
                       onAxisClick={(event, data) => {
