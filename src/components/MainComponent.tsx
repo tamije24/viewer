@@ -22,6 +22,8 @@ import digitalSignalService, {
 import phasorService, { Phasor } from "../services/phasor-service";
 import projectService, { Project } from "../services/project-service";
 import { ComtradeFile } from "../services/comtrade-file-service";
+import Stack from "@mui/material/Stack";
+import ChartFooter from "./ChartFooter";
 
 const analogSignals: AnalogSignal[][] = [];
 const digitalSignals: DigitalSignal[][] = [];
@@ -80,10 +82,11 @@ const MainComponent = () => {
   const [axisClick, setAxisClick] = useState([
     { dataIndex: 0, axisValue: 0, secondaryIndex: 0, secondaryValue: 0 },
   ]);
+
   const [zoomBoundary, setZoomBoundary] = useState([
     {
-      startPercent: 8,
-      endPercent: 40,
+      startPercent: 15,
+      endPercent: 30,
       startTime: 0,
       endTime: 0,
     },
@@ -156,10 +159,39 @@ const MainComponent = () => {
       : (aValue[selectedIndex] = newValues);
     setAxisClick(aValue);
 
-    console.log(selectedIndex);
-    console.log(axisClick.length);
-
     if (selectedIndex <= axisClick.length) fillSideTable();
+  };
+
+  const handleZoomOutClick = () => {
+    let maxTime = 0;
+    if (analogSignals[selectedIndex] !== undefined) {
+      let L = analogSignals[selectedIndex].length;
+      maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
+    }
+    let newZb = [...zoomBoundary];
+    newZb[selectedIndex] = {
+      startPercent: 0,
+      endPercent: 100,
+      startTime: 0,
+      endTime: maxTime,
+    };
+    setZoomBoundary(newZb);
+  };
+
+  const handleZoomInClick = (fromValue: number, toValue: number) => {
+    let maxTime = 1;
+    if (analogSignals[selectedIndex] !== undefined) {
+      let L = analogSignals[selectedIndex].length;
+      maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
+    }
+    let newZb = [...zoomBoundary];
+    newZb[selectedIndex] = {
+      startPercent: (fromValue / maxTime) * 100,
+      endPercent: (toValue / maxTime) * 100,
+      startTime: fromValue,
+      endTime: toValue,
+    };
+    setZoomBoundary(newZb);
   };
 
   const fillSideTable = () => {
@@ -206,11 +238,23 @@ const MainComponent = () => {
       a_sig.push(value);
     }
 
+    // indexes for rms
+    let N = 100; //TODO: to be updated to actual no of samples / cycle
+    let end_rms = dataIndex;
+    let start_rms = dataIndex > N ? dataIndex - N + 1 : 0;
+    const a_sig_rms = [];
+    for (let i = start_rms; i < end_rms; i++) {
+      let value = Object.values(analogSignals[selectedIndex][i]);
+      a_sig_rms.push(value);
+    }
+
     let id = ["IA", "IB", "IC", "VA", "VB", "VC"];
     for (let i = 0; i < names.length; i++) {
       let label = names[i];
-      let positivePeak = Math.max(...arrayColumn(a_sig, i + 1));
-      let negativePeak = Math.min(...arrayColumn(a_sig, i + 1));
+      let positivePeak =
+        a_sig.length > 0 ? Math.max(...arrayColumn(a_sig, i + 1)) : 0;
+      let negativePeak =
+        a_sig.length > 0 ? Math.min(...arrayColumn(a_sig, i + 1)) : 0;
 
       let rowValue = {
         id: id[i],
@@ -218,12 +262,27 @@ const MainComponent = () => {
         inst: sample_values[i + 1],
         phasor_mag: phasor_values[2 * i],
         phasor_ang: phasor_values[2 * i + 1],
-        true_rms: 0,
+        true_rms: 0, //calculateRMS([...arrayColumn(a_sig_rms, i + 1)]),
         pos_peak: positivePeak,
         neg_peak: negativePeak,
       };
       tableValues.push(rowValue);
     }
+  };
+
+  const calculateRMS = (values: number[]) => {
+    let N = values.length;
+
+    // squaring values
+    let rmsValue = 0;
+    for (let i = 0; i < N; i++) {
+      rmsValue = (rmsValue + values[i]) ^ 2;
+    }
+
+    // root and mean
+    rmsValue = Math.sqrt(rmsValue / N);
+
+    return rmsValue;
   };
 
   const getSignalsFromBackend = (project: Project) => {
@@ -265,13 +324,19 @@ const MainComponent = () => {
               project.files[i].vb_channel,
               project.files[i].vc_channel,
             ];
-            if (analogSignals.length >= i + 1) {
-              analogSignals[i] = res.data;
-              analogSignalNames[i] = [...sig_names];
-            } else {
-              analogSignals.push(res.data);
-              analogSignalNames.push([...sig_names]);
-            }
+            // if (analogSignals.length >= i + 1) {
+            //   analogSignals[i] = res.data;
+            //   analogSignalNames[i] = [...sig_names];
+            // } else {
+            analogSignals.push(res.data);
+            analogSignalNames.push([...sig_names]);
+            // }
+
+            // console.log(analogSignals);
+
+            // console.log(i);
+            // console.log(analogSignals[i]?.length);
+            // console.log(analogSignalNames[i]);
 
             a = [...asigLoading];
             a[i] = false;
@@ -316,13 +381,13 @@ const MainComponent = () => {
               project.files[i].d4_channel,
             ];
 
-            if (digitalSignals.length >= i + 1) {
-              digitalSignals[i] = res.data;
-              digitalSignalNames[i] = [...sig_names];
-            } else {
-              digitalSignals.push(res.data);
-              digitalSignalNames.push([...sig_names]);
-            }
+            // if (digitalSignals.length >= i + 1) {
+            //   digitalSignals[i] = res.data;
+            //   digitalSignalNames[i] = [...sig_names];
+            // } else {
+            digitalSignals.push(res.data);
+            digitalSignalNames.push([...sig_names]);
+            // }
 
             a = [...dsigLoading];
             a[i] = false;
@@ -422,115 +487,114 @@ const MainComponent = () => {
       {selectedPage === "SingleAxis" || selectedPage === "MultipleAxis" ? (
         <>
           <Grid item xs>
-            {selectedPage === "SingleAxis" && (
-              <SingleAxis
-                stationName={selectedProject.files[selectedIndex].station_name}
-                analogSignals={analogSignals[selectedIndex]}
-                analogSignalNames={analogSignalNames[selectedIndex]}
-                digitalSignals={digitalSignals[selectedIndex]}
-                digitalSignalNames={digitalSignalNames[selectedIndex]}
-                start_time_stamp={
-                  selectedProject.files[selectedIndex].start_time_stamp
-                }
-                trigger_time_stamp={
-                  selectedProject.files[selectedIndex].trigger_time_stamp
-                }
-                error={asigError[selectedIndex]}
-                isLoading={asigLoading[selectedIndex]}
-                cursorValues={
-                  axisClick.length >= selectedIndex + 1
-                    ? {
-                        primary: axisClick[selectedIndex].dataIndex,
-                        primaryTime: axisClick[selectedIndex].axisValue,
-                        secondary: axisClick[selectedIndex].secondaryIndex,
-                        secondaryTime: axisClick[selectedIndex].secondaryValue,
-                      }
-                    : {
-                        primary: 0,
-                        primaryTime: 0,
-                        secondary: 0,
-                        secondaryTime: 0,
-                      }
-                }
-                onAxisClick={handleAxisClick}
+            <Stack>
+              {selectedPage === "SingleAxis" && (
+                <SingleAxis
+                  stationName={
+                    selectedProject.files[selectedIndex].station_name
+                  }
+                  analogSignals={analogSignals[selectedIndex]}
+                  analogSignalNames={analogSignalNames[selectedIndex]}
+                  digitalSignals={digitalSignals[selectedIndex]}
+                  digitalSignalNames={digitalSignalNames[selectedIndex]}
+                  start_time_stamp={
+                    selectedProject.files[selectedIndex].start_time_stamp
+                  }
+                  trigger_time_stamp={
+                    selectedProject.files[selectedIndex].trigger_time_stamp
+                  }
+                  error={asigError[selectedIndex]}
+                  isLoading={asigLoading[selectedIndex]}
+                  cursorValues={
+                    axisClick.length >= selectedIndex + 1
+                      ? {
+                          primary: axisClick[selectedIndex].dataIndex,
+                          primaryTime: axisClick[selectedIndex].axisValue,
+                          secondary: axisClick[selectedIndex].secondaryIndex,
+                          secondaryTime:
+                            axisClick[selectedIndex].secondaryValue,
+                        }
+                      : {
+                          primary: 0,
+                          primaryTime: 0,
+                          secondary: 0,
+                          secondaryTime: 0,
+                        }
+                  }
+                  onAxisClick={handleAxisClick}
+                  zoomBoundary={
+                    zoomBoundary.length >= selectedIndex + 1
+                      ? {
+                          startPercent:
+                            zoomBoundary[selectedIndex].startPercent,
+                          endPercent: zoomBoundary[selectedIndex].endPercent,
+                        }
+                      : {
+                          startPercent: 15,
+                          endPercent: 30,
+                        }
+                  }
+                />
+              )}
+
+              {selectedPage === "MultipleAxis" && (
+                <MultipleAxis
+                  stationName={
+                    selectedProject.files[selectedIndex].station_name
+                  }
+                  analogSignals={analogSignals[selectedIndex]}
+                  analogSignalNames={analogSignalNames[selectedIndex]}
+                  error={asigError[selectedIndex]}
+                  isLoading={asigLoading[selectedIndex]}
+                  cursorValues={
+                    axisClick.length >= selectedIndex + 1
+                      ? {
+                          primary: axisClick[selectedIndex].dataIndex,
+                          primaryTime: axisClick[selectedIndex].axisValue,
+                          secondary: axisClick[selectedIndex].secondaryIndex,
+                          secondaryTime:
+                            axisClick[selectedIndex].secondaryValue,
+                        }
+                      : {
+                          primary: 0,
+                          primaryTime: 0,
+                          secondary: 0,
+                          secondaryTime: 0,
+                        }
+                  }
+                  onAxisClick={handleAxisClick}
+                  zoomBoundary={
+                    zoomBoundary.length >= selectedIndex + 1
+                      ? {
+                          startPercent:
+                            zoomBoundary[selectedIndex].startPercent,
+                          endPercent: zoomBoundary[selectedIndex].endPercent,
+                        }
+                      : {
+                          startPercent: 15,
+                          endPercent: 30,
+                        }
+                  }
+                />
+              )}
+              <ChartFooter
                 zoomBoundary={
                   zoomBoundary.length >= selectedIndex + 1
-                    ? zoomBoundary[selectedIndex]
+                    ? {
+                        startTime: zoomBoundary[selectedIndex].startTime,
+                        endTime: zoomBoundary[selectedIndex].endTime,
+                      }
                     : {
-                        startPercent: 10,
-                        endPercent: 40,
                         startTime: 0,
                         endTime: 0,
                       }
                 }
-                onZoomBoundaryChange={(
-                  startPercent,
-                  endPercent,
-                  startTime,
-                  endTime
-                ) => {
-                  let newZb = [...zoomBoundary];
-                  newZb[selectedIndex] = {
-                    startPercent: startPercent,
-                    endPercent: endPercent,
-                    startTime: startTime,
-                    endTime: endTime,
-                  };
-                  setZoomBoundary(newZb);
-                }}
+                onZoomOutClick={handleZoomOutClick}
+                onZoomInClick={handleZoomInClick}
               />
-            )}
-            {selectedPage === "MultipleAxis" && (
-              <MultipleAxis
-                stationName={selectedProject.files[selectedIndex].station_name}
-                analogSignals={analogSignals[selectedIndex]}
-                analogSignalNames={analogSignalNames[selectedIndex]}
-                error={asigError[selectedIndex]}
-                isLoading={asigLoading[selectedIndex]}
-                cursorValues={
-                  axisClick.length >= selectedIndex + 1
-                    ? {
-                        primary: axisClick[selectedIndex].dataIndex,
-                        primaryTime: axisClick[selectedIndex].axisValue,
-                        secondary: axisClick[selectedIndex].secondaryIndex,
-                        secondaryTime: axisClick[selectedIndex].secondaryValue,
-                      }
-                    : {
-                        primary: 0,
-                        primaryTime: 0,
-                        secondary: 0,
-                        secondaryTime: 0,
-                      }
-                }
-                onAxisClick={handleAxisClick}
-                zoomBoundary={
-                  zoomBoundary.length >= selectedIndex + 1
-                    ? zoomBoundary[selectedIndex]
-                    : {
-                        startPercent: 10,
-                        endPercent: 40,
-                        startTime: 0,
-                        endTime: 0,
-                      }
-                }
-                onZoomBoundaryChange={(
-                  startPercent,
-                  endPercent,
-                  startTime,
-                  endTime
-                ) => {
-                  let newZb = [...zoomBoundary];
-                  newZb[selectedIndex] = {
-                    startPercent: startPercent,
-                    endPercent: endPercent,
-                    startTime: startTime,
-                    endTime: endTime,
-                  };
-                  setZoomBoundary(newZb);
-                }}
-              />
-            )}
+            </Stack>
           </Grid>
+
           <Grid item xs={3}>
             <CursorValues
               axisClick={

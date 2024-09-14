@@ -9,8 +9,6 @@ import { useState } from "react";
 import Avatar from "@mui/material/Avatar";
 import { ZoomData } from "@mui/x-charts-pro/context";
 
-import ChartFooter from "./ChartFooter";
-import CardActions from "@mui/material/CardActions";
 import Grid from "@mui/material/Grid";
 import Dns from "@mui/icons-material/Dns";
 import { AnalogSignal } from "../services/analog-signal-service";
@@ -51,15 +49,7 @@ interface Props {
   zoomBoundary: {
     startPercent: number;
     endPercent: number;
-    startTime: number;
-    endTime: number;
   };
-  onZoomBoundaryChange: (
-    startPercent: number,
-    endPercent: number,
-    startTime: number,
-    endTime: number
-  ) => void;
 }
 
 const MultipleAxis = ({
@@ -71,7 +61,6 @@ const MultipleAxis = ({
   cursorValues,
   onAxisClick,
   zoomBoundary,
-  onZoomBoundaryChange,
 }: Props) => {
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
@@ -91,33 +80,12 @@ const MultipleAxis = ({
       end: zoomBoundary.endPercent,
     },
   ]);
-  const [zoomLimits, setZoomLimits] = useState({
-    start: zoomBoundary.startTime,
-    end: zoomBoundary.endTime,
-  });
 
   let timeValues: number[] = [];
   let series: LineSeriesType[] = [];
 
   const handleTooltipStatusChange = (toolTipStatus: boolean) => {
     setIsTooltip(toolTipStatus);
-  };
-
-  const handleZoomoutClick = () => {
-    setZoom([{ axisId: "time-axis", start: 0, end: 100 }]);
-    setZoomLimits({ start: 0, end: timeValues[timeValues.length - 1] });
-    onZoomBoundaryChange(0, 100, 0, timeValues[timeValues.length - 1]);
-  };
-
-  const handleZoominClick = (fromValue: number, toValue: number) => {
-    const maxValue = timeValues[timeValues.length - 1];
-    if (fromValue >= maxValue || toValue > maxValue) return;
-    const fromPercent = (fromValue / maxValue) * 100;
-    const toPercent = (toValue / maxValue) * 100;
-
-    setZoom([{ axisId: "time-axis", start: fromPercent, end: toPercent }]);
-    setZoomLimits({ start: fromValue, end: toValue });
-    onZoomBoundaryChange(fromPercent, toPercent, fromValue, toValue);
   };
 
   const handleAxisClick = (
@@ -143,6 +111,18 @@ const MultipleAxis = ({
       );
     }
   };
+
+  if (
+    zoom[0].start !== zoomBoundary.startPercent &&
+    zoom[0].end !== zoomBoundary.endPercent
+  )
+    setZoom([
+      {
+        axisId: "time-axis",
+        start: zoomBoundary.startPercent,
+        end: zoomBoundary.endPercent,
+      },
+    ]);
 
   if (error) {
     return (
@@ -196,12 +176,12 @@ const MultipleAxis = ({
     const xAxisCommon = {
       id: "time-axis",
       scaleType: "point",
-      zoom: true,
+      zoom: { filterMode: "discard" },
       tickInterval: (value: number) => value % 0.5 === 0,
     } as const;
 
     return (
-      <Card sx={{ mt: 10, ml: 2, mb: 8, height: `calc(100vh - 150px)` }}>
+      <Card sx={{ mt: 10, ml: 2, mb: 0.5, height: `calc(100vh - 220px)` }}>
         <CardHeader
           avatar={
             <Avatar
@@ -217,7 +197,7 @@ const MultipleAxis = ({
           subheader="Multiple Axis View"
           sx={{ paddingBottom: 0, height: 80, borderBottom: 0.5 }}
         />
-        <CardContent sx={{ mb: 0, height: `calc(100vh - 290px)` }}>
+        <CardContent sx={{ height: `calc(100vh - 290px)` }}>
           <Grid container height="100%" sx={{ bgcolor: "" }}>
             {!loading ? (
               series.map((series, index) => (
@@ -225,11 +205,7 @@ const MultipleAxis = ({
                   key={"multiple" + index}
                   item
                   xs={12}
-                  height={
-                    index < 5
-                      ? `calc((100vh - 400px)/6)`
-                      : `calc((100vh - 400px)/6+50px)`
-                  }
+                  height={index < 5 ? `calc((90%)/6)` : `calc((100%)/6+150px)`}
                   sx={{ bgcolor: "" }}
                 >
                   <ResponsiveChartContainerPro
@@ -311,19 +287,6 @@ const MultipleAxis = ({
             )}
           </Grid>
         </CardContent>
-        <CardActions
-          sx={{
-            bgcolor: "highlight",
-            mb: 0,
-          }}
-        >
-          <ChartFooter
-            onToolTipStatusChange={handleTooltipStatusChange}
-            zoomBoundary={zoomLimits}
-            onZoomOutClick={handleZoomoutClick}
-            onZoomInClick={handleZoominClick}
-          />
-        </CardActions>
       </Card>
     );
   }

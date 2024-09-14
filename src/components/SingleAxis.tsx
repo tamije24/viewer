@@ -5,7 +5,6 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
@@ -14,7 +13,6 @@ import { HighlightScope } from "@mui/x-charts/context";
 
 import AutoAwesomeMotionSharpIcon from "@mui/icons-material/AutoAwesomeMotionSharp";
 
-import ChartFooter from "./ChartFooter";
 import { AnalogSignal } from "../services/analog-signal-service";
 import { DigitalSignal } from "../services/digital-signal-service";
 import {
@@ -60,15 +58,7 @@ interface Props {
   zoomBoundary: {
     startPercent: number;
     endPercent: number;
-    startTime: number;
-    endTime: number;
   };
-  onZoomBoundaryChange: (
-    startPercent: number,
-    endPercent: number,
-    startTime: number,
-    endTime: number
-  ) => void;
 }
 
 const SingleAxis = ({
@@ -84,7 +74,6 @@ const SingleAxis = ({
   cursorValues,
   onAxisClick,
   zoomBoundary,
-  onZoomBoundaryChange,
 }: Props) => {
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
@@ -104,40 +93,15 @@ const SingleAxis = ({
       end: zoomBoundary.endPercent,
     },
   ]);
-  const [zoomLimits, setZoomLimits] = useState({
-    start: zoomBoundary.startTime,
-    end: zoomBoundary.endTime,
-  });
 
   let timeValues: number[] = [];
   let current_series: LineSeriesType[] = [];
   let voltage_series: LineSeriesType[] = [];
   let digital_series: LineSeriesType[] = [];
 
-  const handleTooltipStatusChange = (toolTipStatus: boolean) => {
-    setIsTooltip(toolTipStatus);
-  };
-
-  const handleZoomoutClick = () => {
-    setZoom([{ axisId: "time-axis", start: 0, end: 100 }]);
-    setZoomLimits({ start: 0, end: timeValues[timeValues.length - 1] });
-    onZoomBoundaryChange(0, 100, 0, timeValues[timeValues.length - 1]);
-    //  calculateTickValues();
-  };
-
-  const handleZoominClick = (fromValue: number, toValue: number) => {
-    // fromValue = fromValue * 1000;
-    // toValue = toValue * 1000;
-    const maxValue = timeValues[timeValues.length - 1];
-    if (fromValue >= maxValue || toValue > maxValue) return;
-    const fromPercent = (fromValue / maxValue) * 100;
-    const toPercent = (toValue / maxValue) * 100;
-
-    setZoom([{ axisId: "time-axis", start: fromPercent, end: toPercent }]);
-    setZoomLimits({ start: fromValue, end: toValue });
-    onZoomBoundaryChange(fromPercent, toPercent, fromValue, toValue);
-    //  calculateTickValues();
-  };
+  // const handleTooltipStatusChange = (toolTipStatus: boolean) => {
+  //   setIsTooltip(toolTipStatus);
+  // };
 
   const handleAxisClick = (
     event: MouseEvent,
@@ -163,6 +127,18 @@ const SingleAxis = ({
     }
   };
 
+  if (
+    zoom[0].start !== zoomBoundary.startPercent &&
+    zoom[0].end !== zoomBoundary.endPercent
+  )
+    setZoom([
+      {
+        axisId: "time-axis",
+        start: zoomBoundary.startPercent,
+        end: zoomBoundary.endPercent,
+      },
+    ]);
+
   if (error) {
     return (
       <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
@@ -186,18 +162,11 @@ const SingleAxis = ({
         analog_values.push(value);
       }
 
-      //  for (let k = 0; k < timeValues.length; k++) timeValues.pop();
-
-      // let time = arrayColumn(analog_values, 0);
-      // for (let k = 0; k < time.length; k++) {
-      //   let start_time = new Date(start_time_stamp);
-      //   start_time.setTime(start_time.getTime() + time[k] * 1000);
-      //   timeValues.push(start_time);
-      // }
+      for (let k = 0; k < timeValues.length; k++) timeValues.pop();
+      for (let k = 0; k < current_series.length; k++) current_series.pop();
+      for (let k = 0; k < voltage_series.length; k++) voltage_series.pop();
 
       timeValues = arrayColumn(analog_values, 0);
-      // for (let k = 0; k < timeValues.length; k++)
-      //   timeValues[k] = timeValues[k] * 1000;
 
       let color_light = [
         "crimson",
@@ -207,9 +176,11 @@ const SingleAxis = ({
         "goldenrod",
         "deepskyblue",
       ];
+
       for (let i = 0; i < 3; i++) {
         let label = analogSignalNames[i];
         let values = arrayColumn(analog_values, i + 1);
+        // console.log(label, ": ", values.length);
 
         let a: LineSeriesType = {
           type: "line",
@@ -265,11 +236,16 @@ const SingleAxis = ({
       }
 
       let baseline = [0, 1.5, 3, 4.5];
+      for (let k = 0; k < digital_series.length; k++) digital_series.pop();
+
       for (let i = 0; i < 4; i++) {
-        if (digitalSignalNames[i] === "") continue;
+        // if (digitalSignalNames[i] === "") continue;
 
         let label = digitalSignalNames[i];
         let values = arrayColumn(digital_values, i + 1);
+
+        // console.log(label, ": ", values.length);
+
         let d: LineSeriesType = {
           type: "line",
           yAxisId: "status",
@@ -291,12 +267,12 @@ const SingleAxis = ({
     const xAxisCommon = {
       id: "time-axis",
       scaleType: "point",
-      zoom: true,
+      zoom: { filterMode: "discard" },
       tickInterval: (value: number) => value % 0.5 === 0,
     } as const;
 
     return (
-      <Card sx={{ mt: 10, ml: 2, mb: 8, height: `calc(100vh - 150px)` }}>
+      <Card sx={{ mt: 10, ml: 2, mb: 0.5, height: `calc(100vh - 220px)` }}>
         <CardHeader
           avatar={
             <Avatar
@@ -312,12 +288,12 @@ const SingleAxis = ({
           subheader="Single Axis View"
           sx={{ paddingBottom: 0.5, height: 80, borderBottom: 0.5 }}
         />
-        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 280px)` }}>
+        <CardContent sx={{ height: `calc(100vh - 350px)` }}>
           <Grid container>
             <Grid
               item
               xs={12}
-              sx={{ mb: 0, height: `calc((100vh - 290px)*0.35)`, bgcolor: "" }}
+              sx={{ mb: 0, height: `calc((100vh - 350px)*0.35)`, bgcolor: "" }}
             >
               <ResponsiveChartContainerPro
                 key="current-signals"
@@ -405,7 +381,7 @@ const SingleAxis = ({
             <Grid
               item
               xs={12}
-              sx={{ mb: 0, height: `calc((100vh - 290px)*0.35)`, bgcolor: "" }}
+              sx={{ mb: 0, height: `calc((100vh - 350px)*0.35)`, bgcolor: "" }}
             >
               <ResponsiveChartContainerPro
                 key="voltage-signals"
@@ -495,7 +471,7 @@ const SingleAxis = ({
               xs={12}
               sx={{
                 mb: 0,
-                height: `calc((100vh - 290px)*0.3)`,
+                height: `calc((100vh - 350px)*0.33)`,
               }}
             >
               {!digLoading ? (
@@ -513,7 +489,7 @@ const SingleAxis = ({
                     left: 0,
                     right: 0,
                     top: 30,
-                    bottom: 60,
+                    bottom: 50,
                   }}
                   sx={{
                     "& .MuiLineElement-root": {
@@ -521,6 +497,7 @@ const SingleAxis = ({
                     },
                     borderLeft: 0.5,
                     borderRight: 0.5,
+                    borderBottom: 0.5,
                   }}
                 >
                   <ChartsGrid vertical />
@@ -596,21 +573,6 @@ const SingleAxis = ({
             </Grid>
           </Grid>
         </CardContent>
-        <CardActions
-          sx={{
-            justifyContent: "flex-end",
-            bgcolor: "Highlight",
-            height: "60px",
-            alignContent: "center",
-          }}
-        >
-          <ChartFooter
-            onToolTipStatusChange={handleTooltipStatusChange}
-            zoomBoundary={zoomLimits}
-            onZoomOutClick={handleZoomoutClick}
-            onZoomInClick={handleZoominClick}
-          />
-        </CardActions>
       </Card>
     );
   }
