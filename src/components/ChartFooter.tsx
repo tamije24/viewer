@@ -1,9 +1,7 @@
 import Button from "@mui/material/Button";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ZoomInIcon from "@mui/icons-material/ZoomInSharp";
-import Switch from "@mui/material/Switch";
 import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
 import TextsmsIcon from "@mui/icons-material/Textsms";
 
@@ -13,7 +11,6 @@ import {
   Checkbox,
   FormControl,
   FormHelperText,
-  Grid,
   Input,
 } from "@mui/material";
 import { useState } from "react";
@@ -44,8 +41,6 @@ const ChartFooter = ({
     if (fromValue >= toValue) return;
     onZoomInClick(fromValue, toValue);
   };
-
-  const label = { inputProps: { "aria-label": "Tooltip" } };
 
   return (
     <Card

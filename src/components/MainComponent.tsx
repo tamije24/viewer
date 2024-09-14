@@ -276,20 +276,20 @@ const MainComponent = () => {
     }
   };
 
-  const calculateRMS = (values: number[]) => {
-    let N = values.length;
+  // const calculateRMS = (values: number[]) => {
+  //   let N = values.length;
 
-    // squaring values
-    let rmsValue = 0;
-    for (let i = 0; i < N; i++) {
-      rmsValue = (rmsValue + values[i]) ^ 2;
-    }
+  //   // squaring values
+  //   let rmsValue = 0;
+  //   for (let i = 0; i < N; i++) {
+  //     rmsValue = (rmsValue + values[i]) ^ 2;
+  //   }
 
-    // root and mean
-    rmsValue = Math.sqrt(rmsValue / N);
+  //   // root and mean
+  //   rmsValue = Math.sqrt(rmsValue / N);
 
-    return rmsValue;
-  };
+  //   return rmsValue;
+  // };
 
   const getSignalsFromBackend = (project: Project) => {
     console.log("getting signals from backend");
