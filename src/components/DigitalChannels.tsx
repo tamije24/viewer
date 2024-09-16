@@ -14,11 +14,16 @@ import digitalChannelService, {
 import Avatar from "@mui/material/Avatar";
 
 interface Props {
+  station_name: string;
   file_id: number;
   onDigitalChannelListChange: () => void;
 }
 
-const DigitalChannels = ({ file_id, onDigitalChannelListChange }: Props) => {
+const DigitalChannels = ({
+  station_name,
+  file_id,
+  onDigitalChannelListChange,
+}: Props) => {
   const [digitalChannels, setDigitalChannels] = useState<DigitalChannel[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -152,8 +157,8 @@ const DigitalChannels = ({ file_id, onDigitalChannelListChange }: Props) => {
             <LineStyleSharpIcon />
           </Avatar>
         }
-        title="List of Signals"
-        subheader="Digital Channels"
+        title="Selected Digital Channels"
+        subheader={station_name}
         sx={{ paddingBottom: 0.5, height: 80 }}
       />
       <CardContent

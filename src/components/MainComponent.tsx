@@ -652,6 +652,7 @@ const MainComponent = () => {
           )}
           {selectedPage === "AnalogChannels" && (
             <AnalogChannels
+              station_name={selectedProject.files[selectedIndex].station_name}
               file_id={selectedFile ? selectedFile : 0}
               onAnalogChannelListChange={() => {
                 if (selectedProject) {
@@ -663,6 +664,7 @@ const MainComponent = () => {
           )}
           {selectedPage === "DigitalChannels" && (
             <DigitalChannels
+              station_name={selectedProject.files[selectedIndex].station_name}
               file_id={selectedFile ? selectedFile : 0}
               onDigitalChannelListChange={() => {
                 selectedProject && getDigitalSignals(selectedProject);

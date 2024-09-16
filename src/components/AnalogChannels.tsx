@@ -13,11 +13,16 @@ import analogChannelService, {
 import Avatar from "@mui/material/Avatar";
 
 interface Props {
+  station_name: string;
   file_id: number;
   onAnalogChannelListChange: () => void;
 }
 
-const AnalogChannels = ({ file_id, onAnalogChannelListChange }: Props) => {
+const AnalogChannels = ({
+  station_name,
+  file_id,
+  onAnalogChannelListChange,
+}: Props) => {
   const [analogChannels, setAnalogChannels] = useState<AnalogChannel[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -172,8 +177,8 @@ const AnalogChannels = ({ file_id, onAnalogChannelListChange }: Props) => {
             <WavesIcon />
           </Avatar>
         }
-        title="List of Signals"
-        subheader="Analog Channels"
+        title="Selected Analog Channels"
+        subheader={station_name}
         sx={{ paddingBottom: 0.5, height: 80 }}
       />
       <CardContent
