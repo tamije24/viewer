@@ -36,6 +36,7 @@ interface Props {
   tableValues: {
     id: string;
     channel: string;
+    unit: string;
     inst: number;
     phasor_mag: number;
     phasor_ang: number;
@@ -50,6 +51,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   let tempTable: {
     id: string;
     channel: string;
+    unit: string;
     inst: string;
     phasor_mag: string;
     phasor_ang: string;
@@ -62,6 +64,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
     tempTable.push({
       id: tableValues[i].id,
       channel: tableValues[i].channel,
+      unit: tableValues[i].unit,
       inst: `${(Math.round(tableValues[i].inst * 100) / 100).toFixed(2)}`,
       phasor_mag: `${(
         Math.round(tableValues[i].phasor_mag * 100) / 100
@@ -102,6 +105,17 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
       headerClassName: "MuiDataGridPro-columnHeader--alignRight",
       headerAlign: "left",
       width: 90,
+    },
+
+    {
+      field: "unit",
+      headerName: "Units",
+      description: "Units",
+      sortable: false,
+      headerClassName: "MuiDataGridPro-columnHeader--alignRight",
+      headerAlign: "center",
+      align: "center",
+      width: 60,
     },
 
     {

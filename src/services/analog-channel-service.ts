@@ -16,13 +16,9 @@ export interface AnalogChannel {
 class AnalogChannelService {
 
     getAllAnalogChannels(file_id: number) {
-        const controller = new AbortController();
-        const endpoint = `/comtrade_reader/files/${file_id}/achannels/`;
-        const request = apiClient.get<AnalogChannel[]>(endpoint, {
-        signal: controller.signal,
-      })    
-      return {request, cancel: ()=> controller.abort()}
-    }
+      const endpoint = `/comtrade_reader/files/${file_id}/achannels/`;
+      return apiClient.get<AnalogChannel[]>(endpoint)    
+  }
 
     deleteAnalogChannel(file_id: number, id: string) {
       const endpoint = `/comtrade_reader/files/${file_id}/achannels/${id}/`;

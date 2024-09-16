@@ -1,84 +1,84 @@
-import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import { DataGridPro, GridEventListener } from "@mui/x-data-grid-pro";
+import { DataGridPro } from "@mui/x-data-grid-pro";
 import { GridColDef } from "@mui/x-data-grid/models/colDef";
 import WavesIcon from "@mui/icons-material/Waves";
-import analogChannelService, {
-  AnalogChannel,
-} from "../services/analog-channel-service";
+import { AnalogChannel } from "../services/analog-channel-service";
 import Avatar from "@mui/material/Avatar";
 
 interface Props {
   station_name: string;
-  file_id: number;
-  onAnalogChannelListChange: () => void;
+  analogChannels: AnalogChannel[];
 }
 
-const AnalogChannels = ({
-  station_name,
-  file_id,
-  onAnalogChannelListChange,
-}: Props) => {
-  const [analogChannels, setAnalogChannels] = useState<AnalogChannel[]>([]);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+const AnalogChannels = ({ station_name, analogChannels }: Props) => {
+  if (analogChannels === undefined)
+    return (
+      <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
+        <Typography
+          variant="overline"
+          component="div"
+          color="firebrick"
+          sx={{ flexGrow: 1 }}
+        >
+          "Reading data .. "
+        </Typography>
+      </Box>
+    );
 
-  const [loading, setLoading] = useState(true);
+  // useEffect(() => {
+  //   setIsLoading(true);
+  //   const { request, cancel } =
+  //     analogChannelService.getAllAnalogChannels(file_id);
 
-  useEffect(() => {
-    setIsLoading(true);
-    const { request, cancel } =
-      analogChannelService.getAllAnalogChannels(file_id);
+  //   request
+  //     .then((res) => {
+  //       setAnalogChannels(res.data);
+  //       setIsLoading(false);
+  //     })
+  //     .catch((err) => {
+  //       if (err instanceof TypeError) return;
+  //       setError(err.message);
+  //       setIsLoading(false);
+  //     });
+  //   return () => cancel();
+  // }, [file_id]);
 
-    request
-      .then((res) => {
-        setAnalogChannels(res.data);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        if (err instanceof TypeError) return;
-        setError(err.message);
-        setIsLoading(false);
-      });
-    return () => cancel();
-  }, [file_id]);
+  // const handleUpdateAnalogChannel = (id: string, selected: boolean) => {
+  //   const originalChannels = [...analogChannels];
+  //   const ac = analogChannels.filter((ac) => ac.channel_id === id)[0];
+  //   const updatedAnalogChannel = { ...ac, selected: selected };
 
-  const handleUpdateAnalogChannel = (id: string, selected: boolean) => {
-    const originalChannels = [...analogChannels];
-    const ac = analogChannels.filter((ac) => ac.channel_id === id)[0];
-    const updatedAnalogChannel = { ...ac, selected: selected };
+  //   analogChannelService
+  //     .updateAnalogChannel(file_id, updatedAnalogChannel)
+  //     .then(() => {
+  //       setAnalogChannels(
+  //         analogChannels.map((ac) =>
+  //           ac.channel_id === updatedAnalogChannel.channel_id
+  //             ? updatedAnalogChannel
+  //             : ac
+  //         )
+  //       );
+  //       onAnalogChannelListChange();
+  //     })
+  //     .catch((err) => {
+  //       setError(err.message);
+  //       setAnalogChannels(originalChannels);
+  //     });
+  // };
 
-    analogChannelService
-      .updateAnalogChannel(file_id, updatedAnalogChannel)
-      .then(() => {
-        setAnalogChannels(
-          analogChannels.map((ac) =>
-            ac.channel_id === updatedAnalogChannel.channel_id
-              ? updatedAnalogChannel
-              : ac
-          )
-        );
-        onAnalogChannelListChange();
-      })
-      .catch((err) => {
-        setError(err.message);
-        setAnalogChannels(originalChannels);
-      });
-  };
-
-  const handleEvent: GridEventListener<"cellEditStop"> = (
-    params // GridCellEditStopParams
-    //   event, // MuiEvent<MuiBaseEvent>
-    //   details // GridCallbackDetails
-  ) => {
-    let id = params.row.channel_id;
-    let updatedStatus = !params.row.selected;
-    handleUpdateAnalogChannel(id, updatedStatus);
-  };
+  // const handleEvent: GridEventListener<"cellEditStop"> = (
+  //   params // GridCellEditStopParams
+  //   //   event, // MuiEvent<MuiBaseEvent>
+  //   //   details // GridCallbackDetails
+  // ) => {
+  //   let id = params.row.channel_id;
+  //   let updatedStatus = !params.row.selected;
+  //   handleUpdateAnalogChannel(id, updatedStatus);
+  // };
 
   const rows = analogChannels;
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -139,23 +139,6 @@ const AnalogChannels = ({
     // },
   ];
 
-  if (error) {
-    return (
-      <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
-        <Typography
-          variant="overline"
-          component="div"
-          color="firebrick"
-          sx={{ flexGrow: 1 }}
-        >
-          {error}
-        </Typography>
-      </Box>
-    );
-  } else if (!isLoading) {
-    if (loading) setLoading(false);
-  }
-
   return (
     <Card
       sx={{
@@ -204,18 +187,13 @@ const AnalogChannels = ({
           checkboxSelection={false}
           disableRowSelectionOnClick
           density={"compact"}
-          onCellEditStop={handleEvent}
-          loading={loading}
+          // onCellEditStop={handleEvent}
           slotProps={{
             loadingOverlay: {
               variant: "skeleton",
               noRowsVariant: "skeleton",
             },
           }}
-          // pinnedRows={{
-          //   top: [],
-          //   bottom: [],
-          // }}
         />
       </CardContent>
     </Card>

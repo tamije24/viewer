@@ -3,7 +3,7 @@ import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import { DataGridPro, GridEventListener } from "@mui/x-data-grid-pro";
+import { DataGridPro } from "@mui/x-data-grid-pro";
 import { GridColDef } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
 import LineStyleSharpIcon from "@mui/icons-material/LineStyleSharp";
@@ -16,14 +16,9 @@ import Avatar from "@mui/material/Avatar";
 interface Props {
   station_name: string;
   file_id: number;
-  onDigitalChannelListChange: () => void;
 }
 
-const DigitalChannels = ({
-  station_name,
-  file_id,
-  onDigitalChannelListChange,
-}: Props) => {
+const DigitalChannels = ({ station_name, file_id }: Props) => {
   const [digitalChannels, setDigitalChannels] = useState<DigitalChannel[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -47,38 +42,38 @@ const DigitalChannels = ({
     return () => cancel();
   }, [file_id]);
 
-  const handleUpdateDigitalChannel = (id: string, selected: boolean) => {
-    const originalChannels = [...digitalChannels];
-    const dc = digitalChannels.filter((dc) => dc.channel_id === id)[0];
-    const updatedDigitalChannel = { ...dc, selected: selected };
+  // const handleUpdateDigitalChannel = (id: string, selected: boolean) => {
+  //   const originalChannels = [...digitalChannels];
+  //   const dc = digitalChannels.filter((dc) => dc.channel_id === id)[0];
+  //   const updatedDigitalChannel = { ...dc, selected: selected };
 
-    digitalChannelService
-      .updateDigitalChannel(file_id, updatedDigitalChannel)
-      .then(() => {
-        setDigitalChannels(
-          digitalChannels.map((dc) =>
-            dc.channel_id === updatedDigitalChannel.channel_id
-              ? updatedDigitalChannel
-              : dc
-          )
-        );
-        onDigitalChannelListChange();
-      })
-      .catch((err) => {
-        setError(err.message);
-        setDigitalChannels(originalChannels);
-      });
-  };
+  //   digitalChannelService
+  //     .updateDigitalChannel(file_id, updatedDigitalChannel)
+  //     .then(() => {
+  //       setDigitalChannels(
+  //         digitalChannels.map((dc) =>
+  //           dc.channel_id === updatedDigitalChannel.channel_id
+  //             ? updatedDigitalChannel
+  //             : dc
+  //         )
+  //       );
+  //       onDigitalChannelListChange();
+  //     })
+  //     .catch((err) => {
+  //       setError(err.message);
+  //       setDigitalChannels(originalChannels);
+  //     });
+  // };
 
-  const handleEvent: GridEventListener<"cellEditStop"> = (
-    params // GridCellEditStopParams
-    // event, // MuiEvent<MuiBaseEvent>
-    // details // GridCallbackDetails
-  ) => {
-    let id = params.row.channel_id;
-    let updatedStatus = !params.row.selected;
-    handleUpdateDigitalChannel(id, updatedStatus);
-  };
+  // const handleEvent: GridEventListener<"cellEditStop"> = (
+  //   params // GridCellEditStopParams
+  //   // event, // MuiEvent<MuiBaseEvent>
+  //   // details // GridCallbackDetails
+  // ) => {
+  //   let id = params.row.channel_id;
+  //   let updatedStatus = !params.row.selected;
+  //   handleUpdateDigitalChannel(id, updatedStatus);
+  // };
 
   const rows = digitalChannels;
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -179,11 +174,11 @@ const DigitalChannels = ({
               },
             },
           }}
-          // pageSizeOptions={[10]}
+          pageSizeOptions={[10]}
           checkboxSelection={false}
           disableRowSelectionOnClick
           density={"compact"}
-          onCellEditStop={handleEvent}
+          //      onCellEditStop={handleEvent}
           loading={loading}
           pagination={true}
           slotProps={{
@@ -191,10 +186,6 @@ const DigitalChannels = ({
               variant: "skeleton",
               noRowsVariant: "skeleton",
             },
-          }}
-          pinnedRows={{
-            top: [],
-            bottom: [],
           }}
         />
       </CardContent>

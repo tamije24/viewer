@@ -24,10 +24,15 @@ import projectService, { Project } from "../services/project-service";
 import { ComtradeFile } from "../services/comtrade-file-service";
 import Stack from "@mui/material/Stack";
 import ChartFooter from "./ChartFooter";
+import analogChannelService, {
+  AnalogChannel,
+} from "../services/analog-channel-service";
 
 let analogSignals: AnalogSignal[][] = [];
 let digitalSignals: DigitalSignal[][] = [];
 let dftPhasors: Phasor[][] = [];
+
+let analogChannelInfo: AnalogChannel[][] = [];
 
 let analogSignalNames: string[][] = [];
 let digitalSignalNames: string[][] = [];
@@ -35,6 +40,7 @@ let digitalSignalNames: string[][] = [];
 let tableValues: {
   id: string;
   channel: string;
+  unit: string;
   inst: number;
   phasor_mag: number;
   phasor_ang: number;
@@ -220,6 +226,17 @@ const MainComponent = () => {
       return;
     }
 
+    let units: string[] = [];
+    if (analogChannelInfo[selectedIndex] !== undefined && names.length > 0) {
+      names.forEach((channel) => {
+        analogChannelInfo[selectedIndex].forEach((ac) => {
+          ac.channel_name === channel ? units.push(ac.unit) : "";
+        });
+      });
+    } else {
+      return;
+    }
+
     let sample_values =
       analogSignals[selectedIndex] !== undefined
         ? Object.values(analogSignals[selectedIndex][dataIndex])
@@ -257,6 +274,7 @@ const MainComponent = () => {
     let id = ["IA", "IB", "IC", "VA", "VB", "VC"];
     for (let i = 0; i < names.length; i++) {
       let label = names[i];
+      let unit = units[i];
       let positivePeak =
         a_sig.length > 0 ? Math.max(...arrayColumn(a_sig, i + 1)) : 0;
       let negativePeak =
@@ -265,6 +283,7 @@ const MainComponent = () => {
       let rowValue = {
         id: id[i],
         channel: label,
+        unit: unit,
         inst: sample_values[i + 1],
         phasor_mag: phasor_values[2 * i],
         phasor_ang: phasor_values[2 * i + 1],
@@ -294,16 +313,19 @@ const MainComponent = () => {
   const getSignalsFromBackend = (project: Project) => {
     console.log("getting signals from backend");
 
-    // get analog channels
+    // get analog signals
     getAnalogSignals(project);
 
-    // get digital channels
+    // get digital signals
     getDigitalSignals(project);
 
     // get phasors
     getPhasors(project);
 
     // get harmonics
+
+    // get analog channel information
+    getAnalogChannels(project);
   };
 
   const getAnalogSignals = (project: Project) => {
@@ -330,19 +352,8 @@ const MainComponent = () => {
               project.files[i].vb_channel,
               project.files[i].vc_channel,
             ];
-            // if (analogSignals.length >= i + 1) {
-            //   analogSignals[i] = res.data;
-            //   analogSignalNames[i] = [...sig_names];
-            // } else {
             analogSignals.push(res.data);
             analogSignalNames.push([...sig_names]);
-            // }
-
-            // console.log(analogSignals);
-
-            // console.log(i);
-            // console.log(analogSignals[i]?.length);
-            // console.log(analogSignalNames[i]);
 
             a = [...asigLoading];
             a[i] = false;
@@ -386,13 +397,8 @@ const MainComponent = () => {
               project.files[i].d4_channel,
             ];
 
-            // if (digitalSignals.length >= i + 1) {
-            //   digitalSignals[i] = res.data;
-            //   digitalSignalNames[i] = [...sig_names];
-            // } else {
             digitalSignals.push(res.data);
             digitalSignalNames.push([...sig_names]);
-            // }
 
             a = [...dsigLoading];
             a[i] = false;
@@ -446,6 +452,27 @@ const MainComponent = () => {
             a[i] = false;
             setPhasorLoading(a);
             console.log("Error .. i .. ", phasorError);
+          });
+      }
+    }
+  };
+
+  const getAnalogChannels = (project: Project) => {
+    // reset all data
+    analogChannelInfo = [];
+
+    // get analog channel information from backend
+    if (project !== null && project.files.length !== 0) {
+      for (let i = 0; i < project.files.length; i++) {
+        let file_id = project.files[i].file_id;
+
+        analogChannelService
+          .getAllAnalogChannels(file_id)
+          .then((res) => {
+            analogChannelInfo.push(res.data);
+          })
+          .catch((err) => {
+            console.log(err.message);
           });
       }
     }
@@ -651,22 +678,13 @@ const MainComponent = () => {
           {selectedPage === "AnalogChannels" && (
             <AnalogChannels
               station_name={selectedProject.files[selectedIndex].station_name}
-              file_id={selectedFile ? selectedFile : 0}
-              onAnalogChannelListChange={() => {
-                if (selectedProject) {
-                  getAnalogSignals(selectedProject);
-                  getPhasors(selectedProject);
-                }
-              }}
+              analogChannels={analogChannelInfo[selectedIndex]}
             />
           )}
           {selectedPage === "DigitalChannels" && (
             <DigitalChannels
               station_name={selectedProject.files[selectedIndex].station_name}
               file_id={selectedFile ? selectedFile : 0}
-              onDigitalChannelListChange={() => {
-                selectedProject && getDigitalSignals(selectedProject);
-              }}
             />
           )}
         </Grid>
