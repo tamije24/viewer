@@ -268,7 +268,7 @@ const MainComponent = () => {
         inst: sample_values[i + 1],
         phasor_mag: phasor_values[2 * i],
         phasor_ang: phasor_values[2 * i + 1],
-        true_rms: 0, //calculateRMS([...arrayColumn(a_sig_rms, i + 1)]),
+        true_rms: calculateRMS([...arrayColumn(a_sig_rms, i + 1)]),
         pos_peak: positivePeak,
         neg_peak: negativePeak,
       };
@@ -276,20 +276,20 @@ const MainComponent = () => {
     }
   };
 
-  // const calculateRMS = (values: number[]) => {
-  //   let N = values.length;
+  const calculateRMS = (values: number[]) => {
+    let N = values.length;
 
-  //   // squaring values
-  //   let rmsValue = 0;
-  //   for (let i = 0; i < N; i++) {
-  //     rmsValue = (rmsValue + values[i]) ^ 2;
-  //   }
+    // squaring values
+    let rmsValue = 0;
+    for (let i = 0; i < N; i++) {
+      rmsValue = rmsValue + values[i] * values[i];
+    }
 
-  //   // root and mean
-  //   rmsValue = Math.sqrt(rmsValue / N);
+    // root and mean
+    rmsValue = Math.sqrt(rmsValue / N);
 
-  //   return rmsValue;
-  // };
+    return rmsValue;
+  };
 
   const getSignalsFromBackend = (project: Project) => {
     console.log("getting signals from backend");

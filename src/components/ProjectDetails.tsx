@@ -925,33 +925,44 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
           {project.files.length !== 0 ? (
             project.files.map((file: ComtradeFile) => (
               <Box key={file.file_id}>
-                <Stack
+                <Grid
+                  container
                   display="flex"
-                  alignItems="center"
+                  alignItems="baseline"
+                  alignContent="center"
                   direction="row"
-                  spacing={2}
-                  sx={{ ml: 2 }}
+                  sx={{ ml: 0 }}
                 >
-                  {/* <AttachFileSharpIcon /> */}
-                  <IconButton
-                    aria-label="delete"
-                    size="large"
-                    onClick={() => handleFileDelete(file.file_id)}
-                  >
-                    <DeleteForeverIcon fontSize="medium" color="error" />
-                  </IconButton>
-                  <Typography gutterBottom width="80px" variant="subtitle1">
-                    {file.station_name}
-                  </Typography>
-                  <Typography gutterBottom width="200px" variant="overline">
-                    {String(file.start_time_stamp)}
-                  </Typography>
-                  <Typography gutterBottom variant="overline">
-                    Ia: {file.ia_channel}, Ib: {file.ib_channel}, Ic:{" "}
-                    {file.ic_channel}, Va: {file.va_channel}, Vb:
-                    {file.vb_channel}, Vc: {file.vc_channel}
-                  </Typography>
-                </Stack>
+                  <Grid item xs={0.5}>
+                    <IconButton
+                      aria-label="delete"
+                      size="large"
+                      onClick={() => handleFileDelete(file.file_id)}
+                    >
+                      <DeleteForeverIcon fontSize="medium" color="error" />
+                    </IconButton>
+                  </Grid>
+
+                  <Grid item xs={1.5}>
+                    <Typography gutterBottom width="80px" variant="overline">
+                      {file.station_name}
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={2.5}>
+                    <Typography gutterBottom width="200px" variant="overline">
+                      {String(file.start_time_stamp)}
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={7}>
+                    <Typography gutterBottom variant="overline">
+                      Ia: {file.ia_channel}, Ib: {file.ib_channel}, Ic:{" "}
+                      {file.ic_channel}, Va: {file.va_channel}, Vb:
+                      {file.vb_channel}, Vc: {file.vc_channel}
+                    </Typography>
+                  </Grid>
+                </Grid>
                 <Divider variant="inset" />
               </Box>
             ))

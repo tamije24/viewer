@@ -116,7 +116,7 @@ const ProjectToolbar = ({
       {navigationPages[0] !== "" && (
         <Box>
           {navigationPages.map((page, index) => (
-            <Box key={page}>
+            <Box key={`${page}-${index}`}>
               <ListItemButton
                 sx={{ ml: 2 }}
                 onClick={() => {
@@ -147,11 +147,6 @@ const ProjectToolbar = ({
                     sx={{
                       ml: 2,
                       mb: 0,
-                      // display: "flex",
-                      // justifyContent: "flex-start",
-                      // justifyItems: "left",
-                      // //alignContent: "",
-                      // alignItems: "flex-start",
                     }}
                   >
                     <ListItemButton

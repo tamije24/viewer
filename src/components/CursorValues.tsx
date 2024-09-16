@@ -189,29 +189,34 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
       >
         <CardContent sx={{ mb: 0.5, height: `calc(100vh - 340px)` }}>
           {selectedTab === "table" && (
-            <DataGridPro
-              rows={rows}
-              columns={columns}
-              pinnedColumns={pinnedColumns}
-              hideFooterRowCount
-              checkboxSelection={false}
-              disableRowSelectionOnClick
-              showCellVerticalBorder={true}
-              showColumnVerticalBorder={true}
-              disableColumnMenu={true}
-              //  rowHeight={100}
-              density={"compact"}
-              slots={{ toolbar: CustomToolbar }}
-              sx={{
-                width: "100%",
-                mt: 1,
-                height: `calc(100vh - 340px)`,
-                border: 0.2,
-                borderColor: "primary",
-                fontSize: "0.8rem",
-              }}
-              hideFooter={true}
-            />
+            <>
+              <DataGridPro
+                rows={rows}
+                columns={columns}
+                pinnedColumns={pinnedColumns}
+                hideFooterRowCount
+                checkboxSelection={false}
+                disableRowSelectionOnClick
+                showCellVerticalBorder={true}
+                showColumnVerticalBorder={true}
+                disableColumnMenu={true}
+                //  rowHeight={100}
+                density={"compact"}
+                slots={{ toolbar: CustomToolbar }}
+                sx={{
+                  width: "100%",
+                  mt: 1,
+                  height: `calc(100vh - 390px)`,
+                  border: 0.2,
+                  borderColor: "primary",
+                  fontSize: "0.8rem",
+                }}
+                hideFooter={true}
+              />
+              <Typography variant="caption" sx={{ mt: 1 }}>
+                * all values are in primary
+              </Typography>
+            </>
           )}
           {selectedTab === "phasors" && <Typography>Phasors</Typography>}
           {selectedTab === "harmonics" && <Typography>Harmonics</Typography>}
