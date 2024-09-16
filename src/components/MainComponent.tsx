@@ -25,12 +25,12 @@ import { ComtradeFile } from "../services/comtrade-file-service";
 import Stack from "@mui/material/Stack";
 import ChartFooter from "./ChartFooter";
 
-const analogSignals: AnalogSignal[][] = [];
-const digitalSignals: DigitalSignal[][] = [];
-const dftPhasors: Phasor[][] = [];
+let analogSignals: AnalogSignal[][] = [];
+let digitalSignals: DigitalSignal[][] = [];
+let dftPhasors: Phasor[][] = [];
 
-const analogSignalNames: string[][] = [];
-const digitalSignalNames: string[][] = [];
+let analogSignalNames: string[][] = [];
+let digitalSignalNames: string[][] = [];
 
 let tableValues: {
   id: string;
@@ -249,7 +249,7 @@ const MainComponent = () => {
     let end_rms = dataIndex;
     let start_rms = dataIndex > N ? dataIndex - N + 1 : 0;
     const a_sig_rms = [];
-    for (let i = start_rms; i < end_rms; i++) {
+    for (let i = start_rms; i < end_rms + 1; i++) {
       let value = Object.values(analogSignals[selectedIndex][i]);
       a_sig_rms.push(value);
     }
@@ -308,8 +308,8 @@ const MainComponent = () => {
 
   const getAnalogSignals = (project: Project) => {
     // reset all data
-    for (let i = 0; i < analogSignals.length; i++) analogSignals.pop();
-    for (let i = 0; i < analogSignalNames.length; i++) analogSignalNames.pop();
+    analogSignals = [];
+    analogSignalNames = [];
 
     // get analog signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -365,9 +365,8 @@ const MainComponent = () => {
 
   const getDigitalSignals = (project: Project) => {
     // reset all data
-    for (let i = 0; i < digitalSignals.length; i++) digitalSignals.pop();
-    for (let i = 0; i < digitalSignalNames.length; i++)
-      digitalSignalNames.pop();
+    digitalSignals = [];
+    digitalSignalNames = [];
 
     // get digital signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -416,8 +415,7 @@ const MainComponent = () => {
 
   const getPhasors = (project: Project) => {
     // reset all data
-    for (let i = 0; i < dftPhasors.length; i++) dftPhasors.pop();
-
+    dftPhasors = [];
     // get phasors from backend
     if (project !== null && project.files.length !== 0) {
       for (let i = 0; i < project.files.length; i++) {
