@@ -95,6 +95,8 @@ const SingleAxis = ({
     },
   ]);
 
+  // const [tickInterval, setTickInterval] = useState<number[]>([0, 0.5]);
+
   let timeValues: number[] = [];
   let current_series: LineSeriesType[] = [];
   let voltage_series: LineSeriesType[] = [];
@@ -125,9 +127,9 @@ const SingleAxis = ({
   };
 
   if (
-    zoom[0].start !== zoomBoundary.startPercent &&
+    zoom[0].start !== zoomBoundary.startPercent ||
     zoom[0].end !== zoomBoundary.endPercent
-  )
+  ) {
     setZoom([
       {
         axisId: "time-axis",
@@ -136,6 +138,18 @@ const SingleAxis = ({
       },
     ]);
 
+    // let maxValue = timeValues.length;
+    // let startTime = (zoomBoundary.startPercent / 100) * maxValue;
+    // let endTime = (zoomBoundary.endPercent / 100) * maxValue;
+    // let timeDiff = endTime - startTime;
+
+    // let tickIntervalArray: number[] = [];
+
+    // if (timeDiff > 3) {
+    // }
+
+    // setTickInterval(tickIntervalArray);
+  }
   if (error) {
     return (
       <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
@@ -159,9 +173,9 @@ const SingleAxis = ({
         analog_values.push(value);
       }
 
-      for (let k = 0; k < timeValues.length; k++) timeValues.pop();
-      for (let k = 0; k < current_series.length; k++) current_series.pop();
-      for (let k = 0; k < voltage_series.length; k++) voltage_series.pop();
+      timeValues = [];
+      current_series = [];
+      voltage_series = [];
 
       timeValues = arrayColumn(analog_values, 0);
 
@@ -265,6 +279,7 @@ const SingleAxis = ({
       id: "time-axis",
       scaleType: "point",
       zoom: { filterMode: "discard" },
+      //  tickInterval: [...tickInterval],
       tickInterval: (value: number) => value % 0.5 === 0,
     } as const;
 

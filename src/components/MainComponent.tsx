@@ -262,7 +262,8 @@ const MainComponent = () => {
     }
 
     // indexes for rms
-    let N = 100; //TODO: to be updated to actual no of samples / cycle
+    let fs = selectedProject.files[selectedIndex].sampling_frequency;
+    let N = Math.round(fs / 50);
     let end_rms = dataIndex;
     let start_rms = dataIndex > N ? dataIndex - N + 1 : 0;
     const a_sig_rms = [];
