@@ -1,9 +1,6 @@
 import Box from "@mui/material/Box";
-import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import InboxIcon from "@mui/icons-material/Inbox";
-import DownloadIcon from "@mui/icons-material/Download";
-import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -47,7 +44,7 @@ const GeneralInfo = ({ file_id, project_id }: Props) => {
         setIsLoading(false);
       });
     return () => cancel();
-  }, []);
+  }, [file_id]);
 
   if (error) {
     return (
@@ -199,28 +196,6 @@ const GeneralInfo = ({ file_id, project_id }: Props) => {
               >
                 {comtradeFile.trigger_time_stamp.toLocaleString()}
               </Typography>
-            </Grid>
-          </Grid>
-          <Divider />
-          <Grid container sx={{ p: 2 }}>
-            <Grid item xs={3}>
-              <Button
-                variant="contained"
-                href={comtradeFile.cfg_file}
-                endIcon={<DownloadIcon />}
-              >
-                CFG File
-              </Button>
-            </Grid>
-            <Grid item xs={3}>
-              <Button
-                variant="contained"
-                color="secondary"
-                href={comtradeFile.dat_file}
-                endIcon={<DownloadIcon />}
-              >
-                DAT File
-              </Button>
             </Grid>
           </Grid>
         </CardContent>

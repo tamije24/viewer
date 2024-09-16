@@ -40,7 +40,7 @@ const DigitalChannels = ({ file_id, onDigitalChannelListChange }: Props) => {
         setIsLoading(false);
       });
     return () => cancel();
-  }, []);
+  }, [file_id]);
 
   const handleUpdateDigitalChannel = (id: string, selected: boolean) => {
     const originalChannels = [...digitalChannels];

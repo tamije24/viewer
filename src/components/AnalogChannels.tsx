@@ -40,7 +40,7 @@ const AnalogChannels = ({ file_id, onAnalogChannelListChange }: Props) => {
         setIsLoading(false);
       });
     return () => cancel();
-  }, []);
+  }, [file_id]);
 
   const handleUpdateAnalogChannel = (id: string, selected: boolean) => {
     const originalChannels = [...analogChannels];

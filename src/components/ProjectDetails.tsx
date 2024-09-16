@@ -37,8 +37,9 @@ import comtradeFileService, {
 
 let cfgfile_element: HTMLInputElement;
 let datfile_element: HTMLInputElement;
-const signal_list = [""];
-const digital_signal_list = [""];
+
+let signal_list: string[] = [];
+let digital_signal_list: string[] = [];
 
 interface Props {
   project: Project;
@@ -89,10 +90,6 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const [d4Signal, setD4Signal] = useState("");
 
   const ReadCfgFIle = () => {
-    for (let i = 0; i < signal_list.length; i++) signal_list.pop();
-    for (let i = 0; i < digital_signal_list.length; i++)
-      digital_signal_list.pop();
-
     if (cfgfile_element.files === null) return;
 
     let fileName =
@@ -102,6 +99,9 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
     // Initialise file reader
     const cfgReader = new FileReader();
     cfgReader.onload = function (e) {
+      signal_list = [];
+      digital_signal_list = [];
+
       let cfgFileText = String(e.target?.result);
       let cfgContent =
         cfgFileText !== undefined && cfgFileText !== null
@@ -135,6 +135,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
         digital_signal_list.push(temArray[1]);
       }
       setCfgSelected(true);
+      setFileAddMessage("Select channels before adding station to list");
     };
     setCfgSelected(false);
     cfgReader.readAsText(cfgfile_element.files[0]);
@@ -221,6 +222,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
         .catch((err) => {
           setFileAdding(false);
           setFileAddMessage(err.message);
+          resetAddFields();
         });
     }
   };
@@ -332,6 +334,9 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const FileAddForm = () => {
     return (
       <form onSubmit={handleNewFileAdd} noValidate>
+        <Typography sx={{ ml: 4, mt: 1, mb: 1 }} variant="overline">
+          Add Station
+        </Typography>
         <Stack
           display="flex"
           alignItems="center"
@@ -998,6 +1003,3 @@ const FileListSkeleton = () => {
     </Stack>
   );
 };
-
-// TODO 2:
-// Remove selected from analog signal channel table and digital signal channel table
