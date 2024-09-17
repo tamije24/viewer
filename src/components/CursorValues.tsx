@@ -186,8 +186,6 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
     setSelectedTab(newValue);
   };
 
-  // inst: `${(Math.round(sample_values[i] * 100) / 100).toFixed(2)}`,
-
   return (
     <>
       <Card

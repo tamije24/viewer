@@ -68,7 +68,7 @@ const SingleAxis = ({
   analogSignalNames,
   digitalSignals,
   digitalSignalNames,
-  // start_time_stamp,
+  //start_time_stamp,
   // trigger_time_stamp,
   error,
   isLoading,
@@ -95,9 +95,10 @@ const SingleAxis = ({
     },
   ]);
 
-  // const [tickInterval, setTickInterval] = useState<number[]>([0, 0.5]);
+  const [tickInterval, setTickInterval] = useState<number[]>([]);
 
   let timeValues: number[] = [];
+  // let timeStamps: string[] = [];
   let current_series: LineSeriesType[] = [];
   let voltage_series: LineSeriesType[] = [];
   let digital_series: LineSeriesType[] = [];
@@ -126,30 +127,33 @@ const SingleAxis = ({
     }
   };
 
-  if (
-    zoom[0].start !== zoomBoundary.startPercent ||
-    zoom[0].end !== zoomBoundary.endPercent
-  ) {
-    setZoom([
-      {
-        axisId: "time-axis",
-        start: zoomBoundary.startPercent,
-        end: zoomBoundary.endPercent,
-      },
-    ]);
+  const calculateTickInterval = () => {
+    if (timeValues === undefined) return;
 
-    // let maxValue = timeValues.length;
-    // let startTime = (zoomBoundary.startPercent / 100) * maxValue;
-    // let endTime = (zoomBoundary.endPercent / 100) * maxValue;
-    // let timeDiff = endTime - startTime;
+    let maxValue = timeValues[timeValues.length - 1];
+    let startTime = (zoomBoundary.startPercent / 100) * maxValue;
+    let endTime = (zoomBoundary.endPercent / 100) * maxValue;
+    let timeDiff = endTime - startTime;
 
-    // let tickIntervalArray: number[] = [];
+    let firstTick = Math.round(startTime * 100) / 100;
+    let lastTick = Math.round(endTime * 100) / 100;
+    let tickSize: number = 0;
 
-    // if (timeDiff > 3) {
-    // }
+    if (timeDiff > 3) tickSize = 0.5;
+    else if (timeDiff > 2) tickSize = 0.2;
+    else if (timeDiff > 1) tickSize = 0.1;
+    else if (timeDiff > 0.5) tickSize = 0.05;
+    else if (timeDiff > 0.3) tickSize = 0.02;
+    else if (timeDiff > 0.1) tickSize = 0.01;
+    else tickSize = 0.001;
 
-    // setTickInterval(tickIntervalArray);
-  }
+    let tickIntervalArray: number[] = [];
+    for (let i = firstTick; i <= lastTick; i = i + tickSize) {
+      tickIntervalArray.push(Math.round(i * 100) / 100);
+    }
+    setTickInterval(tickIntervalArray);
+  };
+
   if (error) {
     return (
       <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
@@ -165,6 +169,8 @@ const SingleAxis = ({
     );
   } else {
     const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
+    // const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
+
     const analog_values = [];
     if (!isLoading && analogSignals !== undefined && analogSignals.length > 0) {
       let L = analogSignals.length;
@@ -174,10 +180,13 @@ const SingleAxis = ({
       }
 
       timeValues = [];
+      // timeStamps = [];
       current_series = [];
       voltage_series = [];
 
       timeValues = arrayColumn(analog_values, 0);
+      // timeStamps = strArrayColumn(analog_values, 7);
+      if (tickInterval.length === 0) calculateTickInterval();
 
       let color_light = [
         "crimson",
@@ -228,59 +237,74 @@ const SingleAxis = ({
       }
 
       if (anLoading) setAnLoading(false);
-    }
 
-    if (
-      !isLoading &&
-      digitalSignals !== undefined &&
-      digitalSignals.length > 0
-    ) {
-      const digital_values = [];
+      if (
+        !isLoading &&
+        digitalSignals !== undefined &&
+        digitalSignals.length > 0
+      ) {
+        const digital_values = [];
 
-      let L = digitalSignals.length;
-      for (let i = 0; i < L; i++) {
-        let value = Object.values(digitalSignals[i]);
-        value[2] += 1.5;
-        value[3] += 3;
-        value[4] += 4.5;
-        digital_values.push(value);
+        let L = digitalSignals.length;
+        for (let i = 0; i < L; i++) {
+          let value = Object.values(digitalSignals[i]);
+          value[2] += 1.5;
+          value[3] += 3;
+          value[4] += 4.5;
+          digital_values.push(value);
+        }
+
+        let baseline = [0, 1.5, 3, 4.5];
+        for (let k = 0; k < digital_series.length; k++) digital_series.pop();
+
+        for (let i = 0; i < 4; i++) {
+          // if (digitalSignalNames[i] === "") continue;
+
+          let label = digitalSignalNames[i];
+          let values = arrayColumn(digital_values, i + 1);
+
+          // console.log(label, ": ", values.length);
+
+          let d: LineSeriesType = {
+            type: "line",
+            yAxisId: "status",
+            label: label,
+            data: values,
+            showMark: false,
+            area: true,
+            baseline: baseline[i],
+            highlightScope: {
+              highlighted: "series",
+              faded: "global",
+            } as HighlightScope,
+          };
+          digital_series.push(d);
+        }
+        if (digLoading && timeValues.length > 0) setDigLoading(false);
       }
 
-      let baseline = [0, 1.5, 3, 4.5];
-      for (let k = 0; k < digital_series.length; k++) digital_series.pop();
+      if (
+        zoom[0].start !== zoomBoundary.startPercent ||
+        zoom[0].end !== zoomBoundary.endPercent
+      ) {
+        setZoom([
+          {
+            axisId: "time-axis",
+            start: zoomBoundary.startPercent,
+            end: zoomBoundary.endPercent,
+          },
+        ]);
 
-      for (let i = 0; i < 4; i++) {
-        // if (digitalSignalNames[i] === "") continue;
-
-        let label = digitalSignalNames[i];
-        let values = arrayColumn(digital_values, i + 1);
-
-        // console.log(label, ": ", values.length);
-
-        let d: LineSeriesType = {
-          type: "line",
-          yAxisId: "status",
-          label: label,
-          data: values,
-          showMark: false,
-          area: true,
-          baseline: baseline[i],
-          highlightScope: {
-            highlighted: "series",
-            faded: "global",
-          } as HighlightScope,
-        };
-        digital_series.push(d);
+        calculateTickInterval();
       }
-      if (digLoading && timeValues.length > 0) setDigLoading(false);
     }
 
     const xAxisCommon = {
       id: "time-axis",
       scaleType: "point",
       zoom: { filterMode: "discard" },
-      //  tickInterval: [...tickInterval],
-      tickInterval: (value: number) => value % 0.5 === 0,
+      // tickInterval: (value: number) => (value * 100) % 10 === 0,
+      data: timeValues,
     } as const;
 
     return (
@@ -312,7 +336,8 @@ const SingleAxis = ({
                 xAxis={[
                   {
                     ...xAxisCommon,
-                    data: timeValues,
+                    // valueFormatter: (timevalue, context) =>
+                    //   context.location === "tick" ? timevalue : timeValues.find((d,i) => d === timevalue)?.i timeStamps[i],
                   },
                 ]}
                 yAxis={[{ id: "currentAxis" }]}
@@ -344,7 +369,7 @@ const SingleAxis = ({
                     );
                   }}
                 />
-                <ChartsGrid horizontal vertical />
+                <ChartsGrid horizontal />
                 <ChartsLegend
                   axisDirection="x"
                   position={{ vertical: "top", horizontal: "right" }}
@@ -397,12 +422,7 @@ const SingleAxis = ({
             >
               <ResponsiveChartContainerPro
                 key="voltage-signals"
-                xAxis={[
-                  {
-                    ...xAxisCommon,
-                    data: timeValues,
-                  },
-                ]}
+                xAxis={[{ ...xAxisCommon }]}
                 yAxis={[{ id: "voltageAxis" }]}
                 series={voltage_series}
                 zoom={zoom}
@@ -432,7 +452,7 @@ const SingleAxis = ({
                     );
                   }}
                 />
-                <ChartsGrid horizontal vertical />
+                <ChartsGrid horizontal />
                 <ChartsLegend
                   axisDirection="x"
                   position={{ vertical: "top", horizontal: "right" }}
@@ -489,7 +509,7 @@ const SingleAxis = ({
               {!digLoading ? (
                 <ResponsiveChartContainerPro
                   key="digital-signals"
-                  xAxis={[{ ...xAxisCommon, data: timeValues }]}
+                  xAxis={[{ ...xAxisCommon }]}
                   yAxis={[
                     { id: "status" },
                     //  { zoom: true }
@@ -512,7 +532,7 @@ const SingleAxis = ({
                     borderBottom: 0.5,
                   }}
                 >
-                  <ChartsGrid vertical />
+                  {/* <ChartsGrid vertical /> */}
                   <AreaPlot />
                   <LinePlot />
                   <ChartsTooltip trigger={"none"} />
@@ -546,6 +566,7 @@ const SingleAxis = ({
                     label="Time (seconds)"
                     position="bottom"
                     axisId="time-axis"
+                    tickInterval={tickInterval}
                   />
                   {/* <ChartsYAxis
                     axisId="status"

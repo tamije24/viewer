@@ -116,6 +116,8 @@ const MainComponent = () => {
   const [phasorLoading, setPhasorLoading] = useState([false]);
   const [phasorError, setPhasorError] = useState([""]);
 
+  const [analogChannelLoading, setAnalogChannelLoading] = useState([false]);
+
   const handleSelectNavItem = (pageName: string, file_index?: number) => {
     setSelectedPage(pageName);
     setSelectedIndex(file_index ? file_index : 0);
@@ -466,14 +468,23 @@ const MainComponent = () => {
     if (project !== null && project.files.length !== 0) {
       for (let i = 0; i < project.files.length; i++) {
         let file_id = project.files[i].file_id;
+        let a = [...analogChannelLoading];
+        a.length >= i + 1 ? (a[i] = true) : a.push(true);
+        setAnalogChannelLoading(a);
 
         analogChannelService
           .getAllAnalogChannels(file_id)
           .then((res) => {
             analogChannelInfo.push(res.data);
+            a = [...analogChannelLoading];
+            a[i] = false;
+            setAnalogChannelLoading(a);
           })
           .catch((err) => {
             console.log(err.message);
+            a = [...analogChannelLoading];
+            a[i] = false;
+            setAnalogChannelLoading(a);
           });
       }
     }

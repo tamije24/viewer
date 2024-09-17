@@ -82,6 +82,8 @@ const MultipleAxis = ({
     },
   ]);
 
+  const [tickInterval, setTickInterval] = useState<number[]>([]);
+
   let timeValues: number[] = [];
   let series: LineSeriesType[] = [];
 
@@ -109,17 +111,32 @@ const MultipleAxis = ({
     }
   };
 
-  if (
-    zoom[0].start !== zoomBoundary.startPercent &&
-    zoom[0].end !== zoomBoundary.endPercent
-  )
-    setZoom([
-      {
-        axisId: "time-axis",
-        start: zoomBoundary.startPercent,
-        end: zoomBoundary.endPercent,
-      },
-    ]);
+  const calculateTickInterval = () => {
+    if (timeValues === undefined) return;
+
+    let maxValue = timeValues[timeValues.length - 1];
+    let startTime = (zoomBoundary.startPercent / 100) * maxValue;
+    let endTime = (zoomBoundary.endPercent / 100) * maxValue;
+    let timeDiff = endTime - startTime;
+
+    let firstTick = Math.round(startTime * 100) / 100;
+    let lastTick = Math.round(endTime * 100) / 100;
+    let tickSize: number = 0;
+
+    if (timeDiff > 3) tickSize = 0.5;
+    else if (timeDiff > 2) tickSize = 0.2;
+    else if (timeDiff > 1) tickSize = 0.1;
+    else if (timeDiff > 0.5) tickSize = 0.05;
+    else if (timeDiff > 0.3) tickSize = 0.02;
+    else if (timeDiff > 0.1) tickSize = 0.01;
+    else tickSize = 0.001;
+
+    let tickIntervalArray: number[] = [];
+    for (let i = firstTick; i <= lastTick; i = i + tickSize) {
+      tickIntervalArray.push(Math.round(i * 100) / 100);
+    }
+    setTickInterval(tickIntervalArray);
+  };
 
   if (error) {
     return (
@@ -145,6 +162,8 @@ const MultipleAxis = ({
         analog_values.push(value);
       }
       timeValues = arrayColumn(analog_values, 0);
+      if (tickInterval.length === 0) calculateTickInterval();
+
       let color_light = [
         "crimson",
         "goldenrod",
@@ -170,11 +189,26 @@ const MultipleAxis = ({
       if (loading) setLoading(false);
     }
 
+    if (
+      zoom[0].start !== zoomBoundary.startPercent &&
+      zoom[0].end !== zoomBoundary.endPercent
+    ) {
+      setZoom([
+        {
+          axisId: "time-axis",
+          start: zoomBoundary.startPercent,
+          end: zoomBoundary.endPercent,
+        },
+      ]);
+
+      calculateTickInterval();
+    }
+
     const xAxisCommon = {
       id: "time-axis",
       scaleType: "point",
       zoom: { filterMode: "discard" },
-      tickInterval: (value: number) => value % 0.5 === 0,
+      //   tickInterval: (value: number) => value % 0.5 === 0,
     } as const;
 
     return (
@@ -242,13 +276,14 @@ const MultipleAxis = ({
                         );
                       }}
                     />
-                    <ChartsGrid vertical horizontal />
+                    <ChartsGrid horizontal />
                     <LinePlot />
                     {index === 5 && (
                       <ChartsXAxis
                         axisId="time-axis"
                         position="bottom"
                         label="Time (seconds)"
+                        tickInterval={tickInterval}
                       />
                     )}
                     {/* <ChartsYAxis axisId="y-axis" position="left" label="" /> */}
