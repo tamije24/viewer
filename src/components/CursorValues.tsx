@@ -30,8 +30,10 @@ interface Props {
   axisClick: {
     dataIndex: number;
     axisValue: number;
+    timestamp: string;
     secondaryIndex: number;
     secondaryValue: number;
+    secondaryTimestamp: string;
   };
   tableValues: {
     id: string;
@@ -115,7 +117,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
       headerClassName: "MuiDataGridPro-columnHeader--alignRight",
       headerAlign: "center",
       align: "center",
-      width: 60,
+      width: 55,
     },
 
     {
@@ -291,7 +293,14 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               alignItems: "space-between",
             }}
           >
-            <Grid item sx={{ justifyContent: "space-between" }}>
+            <Grid
+              item
+              sx={{
+                justifyContent: "space-between",
+                borderRight: 0.5,
+                paddingRight: 0.2,
+              }}
+            >
               <Typography variant="overline" component="p">
                 Primary Cursor
               </Typography>
@@ -313,6 +322,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
                     size="small"
                     color="error"
                     label={axisClick.dataIndex}
+                    sx={{ minWidth: "40px" }}
                   />
                 </Stack>
               </Stack>
@@ -339,13 +349,14 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
                     size="small"
                     color="success"
                     label={axisClick.secondaryIndex}
+                    sx={{ minWidth: "40px" }}
                   />
                 </Stack>
               </Stack>
             </Grid>
           </Grid>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            2022-03-22 18:17:13.449583
+          <Typography variant="caption" sx={{ color: "crimson" }}>
+            {axisClick.timestamp}
           </Typography>
         </CardContent>
       </Card>

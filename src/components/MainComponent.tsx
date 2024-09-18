@@ -86,7 +86,14 @@ const emptyProject: Project = {
 
 const MainComponent = () => {
   const [axisClick, setAxisClick] = useState([
-    { dataIndex: 0, axisValue: 0, secondaryIndex: 0, secondaryValue: 0 },
+    {
+      dataIndex: 0,
+      axisValue: 0,
+      timestamp: "",
+      secondaryIndex: 0,
+      secondaryValue: 0,
+      secondaryTimestamp: "",
+    },
   ]);
 
   const [zoomBoundary, setZoomBoundary] = useState([
@@ -154,15 +161,19 @@ const MainComponent = () => {
   const handleAxisClick = (
     dataIndex: number,
     axisValue: number,
+    timestamp: string,
     secondaryIndex: number,
-    secondaryValue: number
+    secondaryValue: number,
+    secondaryTimestamp: string
   ) => {
     let aValue = [...axisClick];
     let newValues = {
       dataIndex: dataIndex,
       axisValue: axisValue,
+      timestamp: timestamp,
       secondaryIndex: secondaryIndex,
       secondaryValue: secondaryValue,
+      secondaryTimestamp: secondaryTimestamp,
     };
     selectedIndex > aValue.length - 1
       ? aValue.push(newValues)
@@ -173,31 +184,37 @@ const MainComponent = () => {
   };
 
   const handleZoomOutClick = () => {
+    let minTime = 0;
     let maxTime = 0;
     if (analogSignals[selectedIndex] !== undefined) {
       let L = analogSignals[selectedIndex].length;
+      minTime = Object.values(analogSignals[selectedIndex][0])[0];
       maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
     }
     let newZb = [...zoomBoundary];
     newZb[selectedIndex] = {
       startPercent: 0,
       endPercent: 100,
-      startTime: 0,
+      startTime: minTime,
       endTime: maxTime,
     };
     setZoomBoundary(newZb);
   };
 
   const handleZoomInClick = (fromValue: number, toValue: number) => {
-    let maxTime = 1;
+    let duration = 0;
+    let minTime = 0;
     if (analogSignals[selectedIndex] !== undefined) {
       let L = analogSignals[selectedIndex].length;
-      maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
+      let maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
+      minTime = Object.values(analogSignals[selectedIndex][0])[0];
+      duration = maxTime - minTime;
     }
     let newZb = [...zoomBoundary];
     newZb[selectedIndex] = {
-      startPercent: (fromValue / maxTime) * 100,
-      endPercent: (toValue / maxTime) * 100,
+      startPercent:
+        duration !== 0 ? ((fromValue - minTime) / duration) * 100 : 0,
+      endPercent: duration !== 0 ? ((toValue - minTime) / duration) * 100 : 0,
       startTime: fromValue,
       endTime: toValue,
     };
@@ -541,12 +558,12 @@ const MainComponent = () => {
                     analogSignalNames={analogSignalNames[selectedIndex]}
                     digitalSignals={digitalSignals[selectedIndex]}
                     digitalSignalNames={digitalSignalNames[selectedIndex]}
-                    start_time_stamp={
-                      selectedProject.files[selectedIndex].start_time_stamp
-                    }
-                    trigger_time_stamp={
-                      selectedProject.files[selectedIndex].trigger_time_stamp
-                    }
+                    // start_time_stamp={
+                    //   selectedProject.files[selectedIndex].start_time_stamp
+                    // }
+                    // trigger_time_stamp={
+                    //   selectedProject.files[selectedIndex].trigger_time_stamp
+                    // }
                     error={asigError[selectedIndex]}
                     isLoading={asigLoading[selectedIndex]}
                     cursorValues={
@@ -554,15 +571,21 @@ const MainComponent = () => {
                         ? {
                             primary: axisClick[selectedIndex].dataIndex,
                             primaryTime: axisClick[selectedIndex].axisValue,
+                            primaryTimestamp:
+                              axisClick[selectedIndex].timestamp,
                             secondary: axisClick[selectedIndex].secondaryIndex,
                             secondaryTime:
                               axisClick[selectedIndex].secondaryValue,
+                            secondaryTimestamp:
+                              axisClick[selectedIndex].secondaryTimestamp,
                           }
                         : {
                             primary: 0,
                             primaryTime: 0,
+                            primaryTimestamp: "",
                             secondary: 0,
                             secondaryTime: 0,
+                            secondaryTimestamp: "",
                           }
                     }
                     onAxisClick={handleAxisClick}
@@ -596,15 +619,21 @@ const MainComponent = () => {
                         ? {
                             primary: axisClick[selectedIndex].dataIndex,
                             primaryTime: axisClick[selectedIndex].axisValue,
+                            primaryTimestamp:
+                              axisClick[selectedIndex].timestamp,
                             secondary: axisClick[selectedIndex].secondaryIndex,
                             secondaryTime:
                               axisClick[selectedIndex].secondaryValue,
+                            secondaryTimestamp:
+                              axisClick[selectedIndex].secondaryTimestamp,
                           }
                         : {
                             primary: 0,
                             primaryTime: 0,
+                            primaryTimestamp: "",
                             secondary: 0,
                             secondaryTime: 0,
+                            secondaryTimestamp: "",
                           }
                     }
                     onAxisClick={handleAxisClick}
@@ -650,8 +679,10 @@ const MainComponent = () => {
                     : {
                         dataIndex: 0,
                         axisValue: 0,
+                        timestamp: "",
                         secondaryIndex: 0,
                         secondaryValue: 0,
+                        secondaryTimestamp: "",
                       }
                 }
                 tableValues={tableValues}

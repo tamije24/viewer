@@ -37,14 +37,18 @@ interface Props {
   cursorValues: {
     primary: number;
     primaryTime: number;
+    primaryTimestamp: string;
     secondary: number;
     secondaryTime: number;
+    secondaryTimestamp: string;
   };
   onAxisClick: (
     dataIndex: number,
     axisValue: number,
+    timestamp: string,
     secondaryIndex: number,
-    secondaryValue: number
+    secondaryValue: number,
+    secondaryTimestamp: string
   ) => void;
   zoomBoundary: {
     startPercent: number;
@@ -67,10 +71,12 @@ const MultipleAxis = ({
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
     time: cursorValues.primaryTime,
+    timestamp: cursorValues.primaryTimestamp,
   });
   const [secondaryCursor, setSecondaryCursor] = useState({
     cursor: cursorValues.secondary,
     time: cursorValues.secondaryTime,
+    timestamp: cursorValues.secondaryTimestamp,
   });
 
   const [loading, setLoading] = useState(true);
@@ -85,6 +91,7 @@ const MultipleAxis = ({
   const [tickInterval, setTickInterval] = useState<number[]>([]);
 
   let timeValues: number[] = [];
+  let timeStamps: string[] = [];
   let series: LineSeriesType[] = [];
 
   const handleAxisClick = (
@@ -93,20 +100,32 @@ const MultipleAxis = ({
     axisValue: number
   ) => {
     if (event.shiftKey) {
-      setSecondaryCursor({ cursor: dataIndex, time: axisValue });
+      setSecondaryCursor({
+        cursor: dataIndex,
+        time: axisValue,
+        timestamp: timeStamps[dataIndex],
+      });
       onAxisClick(
         primaryCursor.cursor,
         primaryCursor.time,
+        primaryCursor.timestamp,
         dataIndex,
-        axisValue
+        axisValue,
+        timeStamps[dataIndex]
       );
     } else {
-      setPrimaryCursor({ cursor: dataIndex, time: axisValue });
+      setPrimaryCursor({
+        cursor: dataIndex,
+        time: axisValue,
+        timestamp: timeStamps[dataIndex],
+      });
       onAxisClick(
         dataIndex,
         axisValue,
+        timeStamps[dataIndex],
         secondaryCursor.cursor,
-        secondaryCursor.time
+        secondaryCursor.time,
+        secondaryCursor.timestamp
       );
     }
   };
@@ -114,10 +133,12 @@ const MultipleAxis = ({
   const calculateTickInterval = () => {
     if (timeValues === undefined) return;
 
+    let minValue = timeValues[0];
     let maxValue = timeValues[timeValues.length - 1];
-    let startTime = (zoomBoundary.startPercent / 100) * maxValue;
-    let endTime = (zoomBoundary.endPercent / 100) * maxValue;
-    let timeDiff = endTime - startTime;
+    let duration = maxValue - minValue;
+    let startTime = (zoomBoundary.startPercent / 100) * duration + minValue;
+    let endTime = (zoomBoundary.endPercent / 100) * duration + minValue;
+    let timeDiff = Math.abs(endTime - startTime);
 
     let firstTick = Math.round(startTime * 100) / 100;
     let lastTick = Math.round(endTime * 100) / 100;
@@ -127,7 +148,7 @@ const MultipleAxis = ({
     else if (timeDiff > 2) tickSize = 0.2;
     else if (timeDiff > 1) tickSize = 0.1;
     else if (timeDiff > 0.5) tickSize = 0.05;
-    else if (timeDiff > 0.3) tickSize = 0.02;
+    else if (timeDiff > 0.2) tickSize = 0.02;
     else if (timeDiff > 0.1) tickSize = 0.01;
     else tickSize = 0.001;
 
@@ -153,15 +174,22 @@ const MultipleAxis = ({
     );
   } else {
     const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
-    const analog_values = [];
+    const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
 
+    const analog_values = [];
     if (!isLoading && analogSignals !== undefined && analogSignals.length > 0) {
       let L = analogSignals.length;
       for (let i = 0; i < L; i++) {
         let value = Object.values(analogSignals[i]);
         analog_values.push(value);
       }
+
+      timeValues = [];
+      timeStamps = [];
+      series = [];
+
       timeValues = arrayColumn(analog_values, 0);
+      timeStamps = strArrayColumn(analog_values, 7);
       if (tickInterval.length === 0) calculateTickInterval();
 
       let color_light = [
@@ -228,15 +256,15 @@ const MultipleAxis = ({
           subheader="Multiple Axis View"
           sx={{ paddingBottom: 0, height: 80, borderBottom: 0.5 }}
         />
-        <CardContent sx={{ height: `calc(100vh - 290px)` }}>
-          <Grid container height="100%" sx={{ bgcolor: "" }}>
-            {!loading ? (
-              series.map((series, index) => (
+        {!loading ? (
+          <CardContent sx={{ height: `calc(100vh - 225px)` }}>
+            <Grid container height={`calc(100% - 50px)`} sx={{ bgcolor: "" }}>
+              {series.map((series, index) => (
                 <Grid
                   key={"multiple" + index}
                   item
                   xs={12}
-                  height={index < 5 ? `calc((90%)/6)` : `calc((100%)/6+150px)`}
+                  height={`calc((90%)/6)`}
                   sx={{ bgcolor: "" }}
                 >
                   <ResponsiveChartContainerPro
@@ -252,13 +280,13 @@ const MultipleAxis = ({
                       left: 0,
                       right: 0,
                       top: 0,
-                      bottom: index < 5 ? 0 : 50,
+                      bottom: 0,
                     }}
                     sx={{
                       borderLeft: 0.5,
                       borderRight: 0.5,
                       borderTop: 0.5,
-                      borderBottom: index < 5 ? 0 : 0.5,
+                      borderBottom: 0,
                       "& .MuiLineElement-root": {
                         strokeWidth: 1.5,
                       },
@@ -278,15 +306,17 @@ const MultipleAxis = ({
                     />
                     <ChartsGrid horizontal />
                     <LinePlot />
-                    {index === 5 && (
-                      <ChartsXAxis
-                        axisId="time-axis"
-                        position="bottom"
-                        label="Time (seconds)"
-                        tickInterval={tickInterval}
+                    {timeValues !== undefined && timeValues.length > 0 && (
+                      <ChartsReferenceLine
+                        axisId={"time-axis"}
+                        x={0}
+                        lineStyle={{
+                          strokeDasharray: "5 1",
+                          strokeWidth: 1.0,
+                          stroke: "black",
+                        }}
                       />
                     )}
-                    {/* <ChartsYAxis axisId="y-axis" position="left" label="" /> */}
                     {timeValues !== undefined && timeValues.length > 0 && (
                       <ChartsReferenceLine
                         axisId={"time-axis"}
@@ -311,14 +341,55 @@ const MultipleAxis = ({
                     )}
                   </ResponsiveChartContainerPro>
                 </Grid>
-              ))
-            ) : (
+              ))}
+              <Grid
+                key={"multiple-timeaxis"}
+                item
+                xs={12}
+                height="50px"
+                sx={{ bgcolor: "" }}
+              >
+                <ResponsiveChartContainerPro
+                  xAxis={[{ ...xAxisCommon, data: timeValues }]}
+                  yAxis={[
+                    { id: "y-axis" },
+                    //  { zoom: true }
+                  ]}
+                  series={loading ? [] : [series[0]]}
+                  zoom={zoom}
+                  onZoomChange={setZoom}
+                  margin={{
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 50,
+                  }}
+                  sx={{
+                    borderLeft: 0,
+                    borderRight: 0,
+                    borderTop: 0,
+                    borderBottom: 0,
+                  }}
+                >
+                  <ChartsXAxis
+                    axisId="time-axis"
+                    position="bottom"
+                    label="Time (seconds)"
+                    tickInterval={tickInterval}
+                  />
+                </ResponsiveChartContainerPro>
+              </Grid>
+            </Grid>
+          </CardContent>
+        ) : (
+          <CardContent sx={{ height: `calc(100vh - 290px)` }}>
+            <Grid container height="100%" sx={{ bgcolor: "" }}>
               <Grid item xs={12}>
                 Loading ...
               </Grid>
-            )}
-          </Grid>
-        </CardContent>
+            </Grid>
+          </CardContent>
+        )}
       </Card>
     );
   }

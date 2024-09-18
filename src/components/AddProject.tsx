@@ -19,8 +19,8 @@ interface Props {
 
 const AddProject = ({ onAddProject }: Props) => {
   const [error, setError] = useState(false);
-  const [afacaseidError, setAfacaseidError] = useState(false);
-  const [afacaseidErrorMessage, setAfacaseidErrorMessage] = useState("");
+  // const [afacaseidError, setAfacaseidError] = useState(false);
+  // const [afacaseidErrorMessage, setAfacaseidErrorMessage] = useState("");
   const [linenameError, setLinenameError] = useState(false);
   const [linenameErrorMessage, setLinenameErrorMessage] = useState("");
   const [terminalsError, setTerminalsError] = useState(false);
@@ -31,13 +31,14 @@ const AddProject = ({ onAddProject }: Props) => {
     const data = new FormData(event.currentTarget);
 
     const project: ProjectMin = {
-      afa_case_id: String(data.get("afacaseid")),
+      afa_case_id: "Direct",
       line_name: String(data.get("linename")),
       no_of_terminals: Number(data.get("terminals")),
       notes: String(data.get("notes")),
     };
 
-    if (afacaseidError || linenameError || terminalsError) return;
+    // if (afacaseidError || linenameError || terminalsError) return;
+    if (linenameError || terminalsError) return;
 
     projectService
       .createProject(project)
@@ -48,20 +49,20 @@ const AddProject = ({ onAddProject }: Props) => {
   };
 
   const validateInputs = () => {
-    const afacaseid = document.getElementById("afacaseid") as HTMLInputElement;
+    // const afacaseid = document.getElementById("afacaseid") as HTMLInputElement;
     const linename = document.getElementById("linename") as HTMLInputElement;
     const terminals = document.getElementById("terminals") as HTMLInputElement;
 
     let isValid = true;
 
-    if (!afacaseid.value) {
-      setAfacaseidError(true);
-      setAfacaseidErrorMessage("AFA id required");
-      isValid = false;
-    } else {
-      setAfacaseidError(false);
-      setAfacaseidErrorMessage("");
-    }
+    // if (!afacaseid.value) {
+    //   setAfacaseidError(true);
+    //   setAfacaseidErrorMessage("AFA id required");
+    //   isValid = false;
+    // } else {
+    //   setAfacaseidError(false);
+    //   setAfacaseidErrorMessage("");
+    // }
 
     if (!linename.value) {
       setLinenameError(true);
@@ -110,7 +111,7 @@ const AddProject = ({ onAddProject }: Props) => {
           spacing={2}
           sx={{ mt: 1 }}
         >
-          <Grid item xs={3}>
+          {/* <Grid item xs={3}>
             <TextField
               error={afacaseidError}
               helperText={afacaseidErrorMessage}
@@ -126,8 +127,8 @@ const AddProject = ({ onAddProject }: Props) => {
               color={afacaseidError ? "error" : "primary"}
               sx={{ ariaLabel: "afacaseid" }}
             />
-          </Grid>
-          <Grid item xs={6}>
+          </Grid> */}
+          <Grid item xs={9}>
             <TextField
               error={linenameError}
               helperText={linenameErrorMessage}

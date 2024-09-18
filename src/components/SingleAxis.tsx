@@ -32,6 +32,7 @@ import {
 } from "@mui/x-charts-pro";
 
 import { ChartsLoadingOverlay } from "@mui/x-charts/ChartsOverlay";
+import { AxisValueFormatterContext } from "@mui/x-charts/internals";
 
 interface Props {
   stationName: string;
@@ -39,21 +40,23 @@ interface Props {
   analogSignalNames: string[];
   digitalSignals: DigitalSignal[];
   digitalSignalNames: string[];
-  start_time_stamp: Date;
-  trigger_time_stamp: Date;
   error: string;
   isLoading: boolean;
   cursorValues: {
     primary: number;
     primaryTime: number;
+    primaryTimestamp: string;
     secondary: number;
     secondaryTime: number;
+    secondaryTimestamp: string;
   };
   onAxisClick: (
     dataIndex: number,
     axisValue: number,
+    timestamp: string,
     secondaryIndex: number,
-    secondaryValue: number
+    secondaryValue: number,
+    secondaryTimestamp: string
   ) => void;
   zoomBoundary: {
     startPercent: number;
@@ -68,8 +71,6 @@ const SingleAxis = ({
   analogSignalNames,
   digitalSignals,
   digitalSignalNames,
-  //start_time_stamp,
-  // trigger_time_stamp,
   error,
   isLoading,
   cursorValues,
@@ -80,10 +81,12 @@ const SingleAxis = ({
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
     time: cursorValues.primaryTime,
+    timestamp: cursorValues.primaryTimestamp,
   });
   const [secondaryCursor, setSecondaryCursor] = useState({
     cursor: cursorValues.secondary,
     time: cursorValues.secondaryTime,
+    timestamp: cursorValues.secondaryTimestamp,
   });
   const [anLoading, setAnLoading] = useState(true);
   const [digLoading, setDigLoading] = useState(true);
@@ -96,9 +99,10 @@ const SingleAxis = ({
   ]);
 
   const [tickInterval, setTickInterval] = useState<number[]>([]);
+  const [textTickInterval, setTextTickInterval] = useState<number[]>([0, 0, 0]);
 
   let timeValues: number[] = [];
-  // let timeStamps: string[] = [];
+  let timeStamps: string[] = [];
   let current_series: LineSeriesType[] = [];
   let voltage_series: LineSeriesType[] = [];
   let digital_series: LineSeriesType[] = [];
@@ -108,32 +112,51 @@ const SingleAxis = ({
     dataIndex: number,
     axisValue: number
   ) => {
+    let tempTicks = [...textTickInterval];
+
     if (event.shiftKey) {
-      setSecondaryCursor({ cursor: dataIndex, time: axisValue });
+      setSecondaryCursor({
+        cursor: dataIndex,
+        time: axisValue,
+        timestamp: timeStamps[dataIndex],
+      });
       onAxisClick(
         primaryCursor.cursor,
         primaryCursor.time,
+        primaryCursor.timestamp,
         dataIndex,
-        axisValue
+        axisValue,
+        timeStamps[dataIndex]
       );
+      tempTicks[2] = axisValue;
     } else {
-      setPrimaryCursor({ cursor: dataIndex, time: axisValue });
+      setPrimaryCursor({
+        cursor: dataIndex,
+        time: axisValue,
+        timestamp: timeStamps[dataIndex],
+      });
       onAxisClick(
         dataIndex,
         axisValue,
+        timeStamps[dataIndex],
         secondaryCursor.cursor,
-        secondaryCursor.time
+        secondaryCursor.time,
+        secondaryCursor.timestamp
       );
+      tempTicks[1] = axisValue;
     }
+    setTextTickInterval(tempTicks);
   };
 
   const calculateTickInterval = () => {
     if (timeValues === undefined) return;
 
+    let minValue = timeValues[0];
     let maxValue = timeValues[timeValues.length - 1];
-    let startTime = (zoomBoundary.startPercent / 100) * maxValue;
-    let endTime = (zoomBoundary.endPercent / 100) * maxValue;
-    let timeDiff = endTime - startTime;
+    let duration = maxValue - minValue;
+    let startTime = (zoomBoundary.startPercent / 100) * duration + minValue;
+    let endTime = (zoomBoundary.endPercent / 100) * duration + minValue;
+    let timeDiff = Math.abs(endTime - startTime);
 
     let firstTick = Math.round(startTime * 100) / 100;
     let lastTick = Math.round(endTime * 100) / 100;
@@ -143,7 +166,7 @@ const SingleAxis = ({
     else if (timeDiff > 2) tickSize = 0.2;
     else if (timeDiff > 1) tickSize = 0.1;
     else if (timeDiff > 0.5) tickSize = 0.05;
-    else if (timeDiff > 0.3) tickSize = 0.02;
+    else if (timeDiff > 0.2) tickSize = 0.02;
     else if (timeDiff > 0.1) tickSize = 0.01;
     else tickSize = 0.001;
 
@@ -169,7 +192,7 @@ const SingleAxis = ({
     );
   } else {
     const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
-    // const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
+    const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
 
     const analog_values = [];
     if (!isLoading && analogSignals !== undefined && analogSignals.length > 0) {
@@ -180,12 +203,12 @@ const SingleAxis = ({
       }
 
       timeValues = [];
-      // timeStamps = [];
+      timeStamps = [];
       current_series = [];
       voltage_series = [];
 
       timeValues = arrayColumn(analog_values, 0);
-      // timeStamps = strArrayColumn(analog_values, 7);
+      timeStamps = strArrayColumn(analog_values, 7);
       if (tickInterval.length === 0) calculateTickInterval();
 
       let color_light = [
@@ -299,12 +322,25 @@ const SingleAxis = ({
       }
     }
 
+    const timeFormatter = (
+      timevalue: number,
+      context: AxisValueFormatterContext
+    ) => {
+      let timeInd = timeValues.findIndex((element) => element === timevalue);
+      return context.location === "tick" ? `${timevalue}` : timeStamps[timeInd];
+    };
+
+    const timeStampFormatter = (timevalue: number) => {
+      let timeInd = timeValues.findIndex((element) => element === timevalue);
+      return `${timeStamps[timeInd]}`;
+    };
+
     const xAxisCommon = {
       id: "time-axis",
       scaleType: "point",
       zoom: { filterMode: "discard" },
-      // tickInterval: (value: number) => (value * 100) % 10 === 0,
       data: timeValues,
+      valueFormatter: timeFormatter,
     } as const;
 
     return (
@@ -329,15 +365,16 @@ const SingleAxis = ({
             <Grid
               item
               xs={12}
-              sx={{ mb: 0, height: `calc((100vh - 350px)*0.35)`, bgcolor: "" }}
+              sx={{
+                height: `calc((100vh - 350px)*0.35)`,
+                bgcolor: "",
+              }}
             >
               <ResponsiveChartContainerPro
                 key="current-signals"
                 xAxis={[
                   {
                     ...xAxisCommon,
-                    // valueFormatter: (timevalue, context) =>
-                    //   context.location === "tick" ? timevalue : timeValues.find((d,i) => d === timevalue)?.i timeStamps[i],
                   },
                 ]}
                 yAxis={[{ id: "currentAxis" }]}
@@ -347,7 +384,7 @@ const SingleAxis = ({
                 margin={{
                   left: 0,
                   right: 0,
-                  top: 40,
+                  top: 30,
                   bottom: 0,
                 }}
                 sx={{
@@ -370,7 +407,7 @@ const SingleAxis = ({
                   }}
                 />
                 <ChartsGrid horizontal />
-                <ChartsLegend
+                {/* <ChartsLegend
                   axisDirection="x"
                   position={{ vertical: "top", horizontal: "right" }}
                   direction="row"
@@ -383,13 +420,33 @@ const SingleAxis = ({
                       },
                     },
                   }}
-                />
-                <LinePlot />
-                {/* <ChartsYAxis
-                  axisId="currentAxis"
-                  position="left"
-                  label="Current"
                 /> */}
+                <LinePlot />
+                <ChartsXAxis
+                  disableTicks
+                  disableLine
+                  position="top"
+                  axisId="time-axis"
+                  tickInterval={textTickInterval}
+                  valueFormatter={timeStampFormatter}
+                  tickLabelStyle={{ fontSize: "10" }}
+                />
+
+                {timeValues !== undefined && timeValues.length > 0 && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={0}
+                    lineStyle={{
+                      strokeDasharray: "5 1",
+                      strokeWidth: 1.0,
+                      stroke: "black",
+                    }}
+                    // labelStyle={{ fontSize: "8" }}
+                    // label={triggerTime()}
+                    // labelAlign="start"
+                  />
+                )}
+
                 {timeValues !== undefined && timeValues.length > 0 && (
                   <ChartsReferenceLine
                     axisId={"time-axis"}
@@ -401,6 +458,7 @@ const SingleAxis = ({
                     }}
                   />
                 )}
+
                 {timeValues !== undefined && timeValues.length > 0 && (
                   <ChartsReferenceLine
                     axisId={"time-axis"}
@@ -418,7 +476,7 @@ const SingleAxis = ({
             <Grid
               item
               xs={12}
-              sx={{ mb: 0, height: `calc((100vh - 350px)*0.35)`, bgcolor: "" }}
+              sx={{ height: `calc((100vh - 350px)*0.35)`, bgcolor: "" }}
             >
               <ResponsiveChartContainerPro
                 key="voltage-signals"
@@ -430,7 +488,7 @@ const SingleAxis = ({
                 margin={{
                   left: 0,
                   right: 0,
-                  top: 40,
+                  top: 0,
                   bottom: 0,
                 }}
                 sx={{
@@ -453,7 +511,7 @@ const SingleAxis = ({
                   }}
                 />
                 <ChartsGrid horizontal />
-                <ChartsLegend
+                {/* <ChartsLegend
                   axisDirection="x"
                   position={{ vertical: "top", horizontal: "right" }}
                   direction="row"
@@ -466,13 +524,19 @@ const SingleAxis = ({
                       },
                     },
                   }}
-                />
-                <LinePlot />
-                {/* <ChartsYAxis
-                  axisId="voltageAxis"
-                  position="left"
-                  label="Voltage"
                 /> */}
+                <LinePlot />
+                {timeValues !== undefined && timeValues.length > 0 && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={0}
+                    lineStyle={{
+                      strokeDasharray: "5 1",
+                      strokeWidth: 1.0,
+                      stroke: "black",
+                    }}
+                  />
+                )}
                 {timeValues !== undefined && timeValues.length > 0 && (
                   <ChartsReferenceLine
                     axisId={"time-axis"}
@@ -568,13 +632,17 @@ const SingleAxis = ({
                     axisId="time-axis"
                     tickInterval={tickInterval}
                   />
-                  {/* <ChartsYAxis
-                    axisId="status"
-                    position="left"
-                    label=""
-                    disableTicks
-                    tickInterval={[10]}
-                  /> */}
+                  {timeValues !== undefined && timeValues.length > 0 && (
+                    <ChartsReferenceLine
+                      axisId={"time-axis"}
+                      x={0}
+                      lineStyle={{
+                        strokeDasharray: "5 1",
+                        strokeWidth: 1.0,
+                        stroke: "black",
+                      }}
+                    />
+                  )}
                   {timeValues !== undefined && timeValues.length > 0 && (
                     <ChartsReferenceLine
                       axisId={"time-axis"}
@@ -582,7 +650,7 @@ const SingleAxis = ({
                       lineStyle={{
                         strokeDasharray: "10 5",
                         strokeWidth: 2,
-                        stroke: "salmon",
+                        stroke: "crimson",
                       }}
                     />
                   )}
