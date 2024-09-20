@@ -61,7 +61,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const [datFileName, setDatFileName] = useState("Select DAT File");
   const [fileAdding, setFileAdding] = useState(false);
   const [fileAddMessage, setFileAddMessage] = useState(
-    "Select COMTRADE files to add station"
+    "Select COMTRADE files to upload"
   );
 
   const [iaChannelErrorMsg, setIaChannelErrorMsg] = useState("");
@@ -397,7 +397,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
             endIcon={<FileUploadIcon />}
             onClick={validateChannels}
           >
-            <Typography variant="body2">Add Station</Typography>
+            <Typography variant="body2">Upload Files</Typography>
           </Button>
           <Typography
             variant="overline"

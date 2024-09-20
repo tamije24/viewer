@@ -27,6 +27,7 @@ import ChartFooter from "./ChartFooter";
 import analogChannelService, {
   AnalogChannel,
 } from "../services/analog-channel-service";
+import ChartComponent from "./ChartComponent";
 
 let analogSignals: AnalogSignal[][] = [];
 let digitalSignals: DigitalSignal[][] = [];
@@ -85,21 +86,21 @@ const emptyProject: Project = {
 };
 
 const MainComponent = () => {
-  const [axisClick, setAxisClick] = useState([
-    {
-      dataIndex: 0,
-      axisValue: 0,
-      timestamp: "",
-      secondaryIndex: 0,
-      secondaryValue: 0,
-      secondaryTimestamp: "",
-    },
-  ]);
+  // const [axisClick, setAxisClick] = useState([
+  //   {
+  //     dataIndex: 0,
+  //     axisValue: 0,
+  //     timestamp: "",
+  //     secondaryIndex: 0,
+  //     secondaryValue: 0,
+  //     secondaryTimestamp: "",
+  //   },
+  // ]);
 
-  const [zoomBoundary, setZoomBoundary] = useState([
+  const [presentZoomValues, setPresentZoomValues] = useState([
     {
-      startPercent: 15,
-      endPercent: 30,
+      startPercent: 0,
+      endPercent: 100,
       startTime: 0,
       endTime: 0,
     },
@@ -124,6 +125,17 @@ const MainComponent = () => {
   const [phasorError, setPhasorError] = useState([""]);
 
   const [analogChannelLoading, setAnalogChannelLoading] = useState([false]);
+
+  let axisClick = [
+    {
+      dataIndex: 0,
+      axisValue: 0,
+      timestamp: "",
+      secondaryIndex: 0,
+      secondaryValue: 0,
+      secondaryTimestamp: "",
+    },
+  ];
 
   const handleSelectNavItem = (pageName: string, file_index?: number) => {
     setSelectedPage(pageName);
@@ -158,6 +170,8 @@ const MainComponent = () => {
     getSignalsFromBackend(project);
   };
 
+  // const handleDeleteProject = () => {};
+
   const handleAxisClick = (
     dataIndex: number,
     axisValue: number,
@@ -166,7 +180,7 @@ const MainComponent = () => {
     secondaryValue: number,
     secondaryTimestamp: string
   ) => {
-    let aValue = [...axisClick];
+    // let aValue = [...axisClick];
     let newValues = {
       dataIndex: dataIndex,
       axisValue: axisValue,
@@ -175,12 +189,27 @@ const MainComponent = () => {
       secondaryValue: secondaryValue,
       secondaryTimestamp: secondaryTimestamp,
     };
-    selectedIndex > aValue.length - 1
-      ? aValue.push(newValues)
-      : (aValue[selectedIndex] = newValues);
-    setAxisClick(aValue);
+    selectedIndex > axisClick.length - 1
+      ? axisClick.push(newValues)
+      : (axisClick[selectedIndex] = newValues);
 
-    if (selectedIndex <= axisClick.length) fillSideTable();
+    //   if (selectedIndex <= axisClick.length) fillSideTable();
+  };
+
+  const changePresentZoomLimit = (zoomValues: {
+    startPercent: number;
+    endPercent: number;
+    startTime: number;
+    endTime: number;
+  }) => {
+    let newZb = [...presentZoomValues];
+    newZb[selectedIndex] = {
+      startPercent: zoomValues.startPercent,
+      endPercent: zoomValues.endPercent,
+      startTime: zoomValues.startTime,
+      endTime: zoomValues.endTime,
+    };
+    setPresentZoomValues(newZb);
   };
 
   const handleZoomOutClick = () => {
@@ -215,6 +244,17 @@ const MainComponent = () => {
       startPercent:
         duration !== 0 ? ((fromValue - minTime) / duration) * 100 : 0,
       endPercent: duration !== 0 ? ((toValue - minTime) / duration) * 100 : 0,
+      startTime: fromValue,
+      endTime: toValue,
+    };
+    setZoomBoundary(newZb);
+  };
+
+  const handleZoomChange = (fromValue: number, toValue: number) => {
+    let newZb = [...zoomBoundary];
+    newZb[selectedIndex] = {
+      startPercent: fromValue,
+      endPercent: toValue,
       startTime: fromValue,
       endTime: toValue,
     };
@@ -544,7 +584,7 @@ const MainComponent = () => {
           onSelectNavItem={handleSelectNavItem}
         />
       </Grid>
-      {selectedPage === "SingleAxis" || selectedPage === "MultipleAxis" ? (
+      {/* {selectedPage === "SingleAxis" || selectedPage === "MultipleAxis" ? (
         <Grid item xs>
           <Grid container>
             <Grid item xs={9}>
@@ -597,8 +637,8 @@ const MainComponent = () => {
                             endPercent: zoomBoundary[selectedIndex].endPercent,
                           }
                         : {
-                            startPercent: 15,
-                            endPercent: 30,
+                            startPercent: 0,
+                            endPercent: 100,
                           }
                     }
                     toolTipStatus={toolTipStatus}
@@ -653,19 +693,22 @@ const MainComponent = () => {
                   />
                 )}
                 <ChartFooter
+                  timeRange={{ minTime: -0.1, maxTime: 0.8 }}
                   zoomBoundary={
                     zoomBoundary.length >= selectedIndex + 1
                       ? {
-                          startTime: zoomBoundary[selectedIndex].startTime,
-                          endTime: zoomBoundary[selectedIndex].endTime,
+                          startPercent:
+                            zoomBoundary[selectedIndex].startPercent,
+                          endPercent: zoomBoundary[selectedIndex].endPercent,
                         }
                       : {
-                          startTime: 0,
-                          endTime: 0,
+                          startPercent: 0,
+                          endPercent: 0,
                         }
                   }
                   onZoomOutClick={handleZoomOutClick}
                   onZoomInClick={handleZoomInClick}
+                  onZoomChange={handleZoomChange}
                   onToolTipStatusChange={handleTooltipChange}
                 />
               </Stack>
@@ -690,48 +733,103 @@ const MainComponent = () => {
             </Grid>
           </Grid>
         </Grid>
-      ) : (
-        <Grid item sx={{ width: `calc(100% - 270px)` }}>
-          {selectedPage === "ProjectList" && (
-            <ProjectList
-              onSelectProject={handleSelectProject}
-              onAddProject={() => {
-                setSelectedPage("AddProject");
-              }}
-            />
-          )}
-          {selectedPage === "AddProject" && (
-            <AddProject onAddProject={handleSelectProject} />
-          )}
-          {selectedPage === "ProjectDetails" && (
-            <ProjectDetails
-              project={selectedProject}
-              onAddFiles={handleAddFiles}
-            />
-          )}
-          {selectedPage === "ProjectSettings" && (
-            <ProjectSettings project={selectedProject} />
-          )}
-          {selectedPage === "GeneralInfo" && (
-            <GeneralInfo
-              file_id={selectedFile}
-              project_id={selectedProject ? selectedProject.project_id : 0}
-            />
-          )}
-          {selectedPage === "AnalogChannels" && (
-            <AnalogChannels
-              station_name={selectedProject.files[selectedIndex].station_name}
-              analogChannels={analogChannelInfo[selectedIndex]}
-            />
-          )}
-          {selectedPage === "DigitalChannels" && (
-            <DigitalChannels
-              station_name={selectedProject.files[selectedIndex].station_name}
-              file_id={selectedFile ? selectedFile : 0}
-            />
-          )}
-        </Grid>
-      )}
+      ) : ( */}
+      <Grid item sx={{ width: `calc(100% - 270px)` }}>
+        {(selectedPage === "SingleAxis" || selectedPage === "MultipleAxis") && (
+          <ChartComponent
+            stationName={selectedProject.files[selectedIndex].station_name}
+            plotName={selectedPage}
+            analogSignals={analogSignals[selectedIndex]}
+            analogSignalNames={analogSignalNames[selectedIndex]}
+            digitalSignals={digitalSignals[selectedIndex]}
+            digitalSignalNames={digitalSignalNames[selectedIndex]}
+            error={asigError[selectedIndex]}
+            isAnLoading={asigLoading[selectedIndex]}
+            isDigLoading={dsigLoading[selectedIndex]}
+            passedZoomValues={
+              presentZoomValues.length >= selectedIndex + 1
+                ? {
+                    startPercent: presentZoomValues[selectedIndex].startPercent,
+                    endPercent: presentZoomValues[selectedIndex].endPercent,
+                    startTime: presentZoomValues[selectedIndex].startTime,
+                    endTime: presentZoomValues[selectedIndex].endTime,
+                  }
+                : {
+                    startPercent: 0,
+                    endPercent: 100,
+                    startTime: 0,
+                    endTime: 0,
+                  }
+            }
+            changePresentZoomLimit={changePresentZoomLimit}
+            cursorValues={
+              axisClick.length >= selectedIndex + 1
+                ? {
+                    primary: axisClick[selectedIndex].dataIndex,
+                    primaryTime: axisClick[selectedIndex].axisValue,
+                    primaryTimestamp: axisClick[selectedIndex].timestamp,
+                    secondary: axisClick[selectedIndex].secondaryIndex,
+                    secondaryTime: axisClick[selectedIndex].secondaryValue,
+                    secondaryTimestamp:
+                      axisClick[selectedIndex].secondaryTimestamp,
+                  }
+                : {
+                    primary: 0,
+                    primaryTime: 0,
+                    primaryTimestamp: "",
+                    secondary: 0,
+                    secondaryTime: 0,
+                    secondaryTimestamp: "",
+                  }
+            }
+            onAxisClick={handleAxisClick}
+            analogChannelInfo={analogChannelInfo[selectedIndex]}
+            dftPhasors={dftPhasors[selectedIndex]}
+            sampling_frequency={
+              selectedProject.files[selectedIndex].sampling_frequency
+            }
+          />
+        )}
+        {selectedPage === "ProjectList" && (
+          <ProjectList
+            onSelectProject={handleSelectProject}
+            onAddProject={() => {
+              setSelectedPage("AddProject");
+            }}
+          />
+        )}
+        {selectedPage === "AddProject" && (
+          <AddProject onAddProject={handleSelectProject} />
+        )}
+        {selectedPage === "ProjectDetails" && (
+          <ProjectDetails
+            project={selectedProject}
+            onAddFiles={handleAddFiles}
+          />
+        )}
+        {selectedPage === "ProjectSettings" && (
+          <ProjectSettings project={selectedProject} />
+        )}
+        {selectedPage === "GeneralInfo" && (
+          <GeneralInfo
+            file_id={selectedFile}
+            project_id={selectedProject ? selectedProject.project_id : 0}
+          />
+        )}
+        {selectedPage === "AnalogChannels" && (
+          <AnalogChannels
+            station_name={selectedProject.files[selectedIndex].station_name}
+            analogChannels={analogChannelInfo[selectedIndex]}
+          />
+        )}
+        {selectedPage === "DigitalChannels" && (
+          <DigitalChannels
+            station_name={selectedProject.files[selectedIndex].station_name}
+            file_id={selectedFile ? selectedFile : 0}
+          />
+        )}
+      </Grid>
+      {/* )} */}
     </Grid>
   );
 };

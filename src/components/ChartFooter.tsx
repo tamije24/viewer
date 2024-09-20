@@ -1,134 +1,189 @@
-import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import ZoomInIcon from "@mui/icons-material/ZoomInSharp";
-import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
-import TextsmsIcon from "@mui/icons-material/Textsms";
-
-import {
-  Card,
-  CardContent,
-  Checkbox,
-  FormControl,
-  FormHelperText,
-  Input,
-} from "@mui/material";
 import { useState } from "react";
 
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Slider, { SliderThumb } from "@mui/material/Slider";
+import { styled } from "@mui/material/styles";
+
 interface Props {
-  zoomBoundary: {
-    startTime: number;
-    endTime: number;
+  timeRange: {
+    minTime: number;
+    maxTime: number;
   };
-  onZoomOutClick: () => void;
-  onZoomInClick: (fromValue: number, toValue: number) => void;
-  onToolTipStatusChange: (toolTipStatus: boolean) => void;
+  presentZoomValues: {
+    startPercent: number;
+    endPercent: number;
+  };
+  onZoomChange: (fromValue: number, toValue: number) => void;
 }
 
-const ChartFooter = ({
-  zoomBoundary,
-  onZoomOutClick,
-  onZoomInClick,
-  onToolTipStatusChange,
-}: Props) => {
-  const [isTooltip, setIsTooltip] = useState(false);
+const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
+  const [prevZoomValues, setPrevZoomValues] = useState([0, 0]);
+  const [value, setValue] = useState<number[]>([
+    presentZoomValues.startPercent,
+    presentZoomValues.endPercent,
+  ]);
+  let minDistance = 1;
 
-  const handleZoomInClick = () => {
-    const fValue = document.getElementById("fromValue") as HTMLInputElement;
-    const tValue = document.getElementById("toValue") as HTMLInputElement;
-    const fromValue = parseFloat(fValue.value);
-    const toValue = parseFloat(tValue.value);
-    if (fromValue >= toValue) return;
-    onZoomInClick(fromValue, toValue);
+  const handleChange = (
+    event: Event,
+    newValue: number | number[],
+    activeThumb: number
+  ) => {
+    console.log(event.target);
+    if (!Array.isArray(newValue)) {
+      return;
+    }
+    if (newValue[1] - newValue[0] < minDistance) {
+      if (activeThumb === 0) {
+        const clamped = Math.min(newValue[0], 100 - minDistance);
+        setValue([clamped, clamped + minDistance]);
+      } else {
+        const clamped = Math.max(newValue[1], minDistance);
+        setValue([clamped - minDistance, clamped]);
+      }
+    } else {
+      setValue(newValue as number[]);
+    }
+    onZoomChange(newValue[0], newValue[1]);
   };
+
+  // STORE NEW ZOOM VALUE TO ENABLE ZOOM STATE CHANGE DETECTION
+  if (
+    prevZoomValues[0] !== presentZoomValues.startPercent ||
+    prevZoomValues[1] !== presentZoomValues.endPercent
+  ) {
+    setPrevZoomValues([
+      presentZoomValues.startPercent,
+      presentZoomValues.endPercent,
+    ]);
+    setValue([presentZoomValues.startPercent, presentZoomValues.endPercent]);
+  }
 
   return (
     <Card
+      variant="outlined"
       sx={{
         mt: 0,
         mb: 0.5,
         mr: 0,
-        ml: 2,
+        ml: 0,
       }}
     >
       <CardContent
         sx={{
-          bgcolor: "highlight",
+          bgcolor: "secondary",
           height: "70px",
-          alignContent: "center",
+          paddingTop: 0,
+          paddingLeft: 0,
         }}
       >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="start"
+        <Box
+          sx={{
+            height: "70px",
+            width: "100%",
+            pt: 1,
+            pl: 2,
+            pr: 0,
+            bgcolor: "",
+          }}
         >
-          <Stack
-            direction="row"
-            alignItems="start"
-            spacing={2}
-            //     sx={{ bgcolor: "red" }}
-          >
-            <FormControl variant="standard" sx={{ width: "55px" }}>
-              <Input
-                id="fromValue"
-                type="number"
-                defaultValue={zoomBoundary.startTime}
-                aria-describedby="x-from-text"
-                inputProps={{
-                  "aria-label": "from-x",
-                }}
-              />
-              <FormHelperText id="x-from-text">from</FormHelperText>
-            </FormControl>
-
-            <FormControl
-              variant="standard"
-              sx={{ height: "30px", width: "55px" }}
-            >
-              <Input
-                id="toValue"
-                type="number"
-                defaultValue={zoomBoundary.endTime}
-                aria-describedby="x-to-text"
-                inputProps={{
-                  "aria-label": "to-x",
-                }}
-              />
-              <FormHelperText id="x-to-text">to</FormHelperText>
-            </FormControl>
-
-            <Button
-              variant="contained"
-              onClick={handleZoomInClick}
-              sx={{ fontSize: "1 rem", pt: 0.5 }}
-              startIcon={<ZoomInIcon fontSize="small" />}
-            >
-              Zoom
-            </Button>
-
-            <Button
-              variant="contained"
-              onClick={onZoomOutClick}
-              sx={{ fontSize: "1 rem", pt: 0.5 }}
-              startIcon={<ZoomOutIcon fontSize="small" />}
-            >
-              Reset
-            </Button>
-          </Stack>
-          <Checkbox
-            checked={isTooltip}
-            icon={<TextsmsOutlinedIcon />}
-            checkedIcon={<TextsmsIcon />}
-            onChange={(event) => {
-              setIsTooltip(event.target.checked);
-              onToolTipStatusChange(event.target.checked);
+          <Box
+            sx={{
+              width: "100%",
+              bgcolor: "",
+              borderLeft: 0.5,
+              borderRight: 0.5,
             }}
-          />
-        </Stack>
+          >
+            <AirbnbSlider
+              slots={{ thumb: AirbnbThumbComponent }}
+              value={value}
+              onChange={handleChange}
+              valueLabelDisplay="off"
+              min={0}
+              max={100}
+              sx={{ mt: 0.5, mb: 0.5 }}
+            />
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                minWidth: "40px",
+                ml: 0,
+                bgcolor: "primary",
+                fontSize: "0.8rem",
+              }}
+            >
+              {timeRange.minTime}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                minWidth: "40px",
+                mr: -2,
+                bgcolor: "primary",
+                fontSize: "0.8rem",
+              }}
+            >
+              {timeRange.maxTime}
+            </Typography>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );
 };
 
 export default ChartFooter;
+
+const AirbnbSlider = styled(Slider)(({ theme }) => ({
+  color: theme.palette.mode === "light" ? "#444444" : "#999999",
+  height: 3,
+  padding: "13px 0",
+  "& .MuiSlider-thumb": {
+    height: 27,
+    width: 27,
+    backgroundColor: "#fff",
+    border: "1px solid currentColor",
+    "&:hover": {
+      boxShadow: "0 0 0 8px rgba(58, 133, 137, 0.16)",
+    },
+    "& .airbnb-bar": {
+      height: 9,
+      width: 1,
+      backgroundColor: "currentColor",
+      marginLeft: 1,
+      marginRight: 1,
+    },
+  },
+  "& .MuiSlider-track": {
+    height: 3,
+  },
+  "& .MuiSlider-rail": {
+    color: "#d8d8d8",
+    opacity: 1,
+    height: 3,
+    ...theme.applyStyles("dark", {
+      color: "#bfbfbf",
+      opacity: undefined,
+    }),
+  },
+}));
+
+interface AirbnbThumbComponentProps extends React.HTMLAttributes<unknown> {}
+
+function AirbnbThumbComponent(props: AirbnbThumbComponentProps) {
+  const { children, ...other } = props;
+  return (
+    <SliderThumb {...other}>
+      {children}
+      <span className="airbnb-bar" />
+      <span className="airbnb-bar" />
+      <span className="airbnb-bar" />
+    </SliderThumb>
+  );
+}

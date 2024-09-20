@@ -47,6 +47,23 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
     );
   };
 
+  const handleDeleteProject = (project_id: number) => {
+    const originalProjects = [...projects];
+    projectService
+      .deleteProject(project_id)
+      .then((_res) => {
+        setProjects(
+          projects.filter(
+            (project: Project) => project.project_id !== project_id
+          )
+        );
+      })
+      .catch((err) => {
+        setError(err.message);
+        setProjects(originalProjects);
+      });
+  };
+
   if (error) {
     return (
       <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
@@ -103,6 +120,7 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
               <ProjectCard
                 project={project}
                 onSelectProject={handleSelectProject}
+                onDeleteProject={handleDeleteProject}
               />
             </Grid>
           ))

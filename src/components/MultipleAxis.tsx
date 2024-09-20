@@ -13,6 +13,7 @@ import Grid from "@mui/material/Grid";
 import Dns from "@mui/icons-material/Dns";
 import { AnalogSignal } from "../services/analog-signal-service";
 import { ChartsLoadingOverlay } from "@mui/x-charts/ChartsOverlay/ChartsLoadingOverlay";
+import { AxisValueFormatterContext } from "@mui/x-charts/internals";
 
 import {
   ChartsAxisHighlight,
@@ -70,11 +71,13 @@ const MultipleAxis = ({
 }: Props) => {
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
+    cursorReduced: cursorValues.primary,
     time: cursorValues.primaryTime,
     timestamp: cursorValues.primaryTimestamp,
   });
   const [secondaryCursor, setSecondaryCursor] = useState({
     cursor: cursorValues.secondary,
+    cursorReduced: cursorValues.secondary,
     time: cursorValues.secondaryTime,
     timestamp: cursorValues.secondaryTimestamp,
   });
@@ -89,10 +92,20 @@ const MultipleAxis = ({
   ]);
 
   const [tickInterval, setTickInterval] = useState<number[]>([]);
+  const [triggerPoint, setTriggerPoint] = useState(0);
 
-  let timeValues: number[] = [];
-  let timeStamps: string[] = [];
+  const [originalIndexes, setOriginalIndexes] = useState<number[]>([]);
+  const [timeValues, setTimeValues] = useState<number[]>([]);
+  const [timeStamps, setTimeStamps] = useState<string[]>([]);
+
+  const [analogValues_filtered, setAnalogValues_filtered] = useState<
+    number[][]
+  >([[], [], [], [], [], []]);
+
   let series: LineSeriesType[] = [];
+  let analogValues: number[][] = [];
+  let timeValues_original: number[] = [];
+  let timeStamps_original: string[] = [];
 
   const handleAxisClick = (
     event: MouseEvent,
@@ -101,7 +114,8 @@ const MultipleAxis = ({
   ) => {
     if (event.shiftKey) {
       setSecondaryCursor({
-        cursor: dataIndex,
+        cursor: originalIndexes[dataIndex],
+        cursorReduced: dataIndex,
         time: axisValue,
         timestamp: timeStamps[dataIndex],
       });
@@ -109,18 +123,19 @@ const MultipleAxis = ({
         primaryCursor.cursor,
         primaryCursor.time,
         primaryCursor.timestamp,
-        dataIndex,
+        originalIndexes[dataIndex],
         axisValue,
         timeStamps[dataIndex]
       );
     } else {
       setPrimaryCursor({
-        cursor: dataIndex,
+        cursor: originalIndexes[dataIndex],
+        cursorReduced: dataIndex,
         time: axisValue,
         timestamp: timeStamps[dataIndex],
       });
       onAxisClick(
-        dataIndex,
+        originalIndexes[dataIndex],
         axisValue,
         timeStamps[dataIndex],
         secondaryCursor.cursor,
@@ -159,6 +174,100 @@ const MultipleAxis = ({
     setTickInterval(tickIntervalArray);
   };
 
+  const reduceAllArrays = () => {
+    let skipCount = 10;
+
+    // TODO: fix logic for calculating skip count
+
+    let maxSampleDisplayed = 500;
+    let diff_sample_count =
+      (timeValues_original.length *
+        (zoomBoundary.endPercent - zoomBoundary.startPercent)) /
+      100;
+
+    skipCount = Math.round(diff_sample_count / maxSampleDisplayed);
+    if (skipCount === 0) skipCount = 1;
+
+    // origial indexes
+    let tempIndexes = [];
+    for (let i = 0; i < timeValues_original.length; i++) {
+      if (i % skipCount === 0) {
+        tempIndexes.push(i);
+      }
+    }
+    setOriginalIndexes(tempIndexes);
+
+    // time values and time stamps
+    setTimeValues(reduceValues(timeValues_original, skipCount));
+    setTimeStamps(reduceValues(timeStamps_original, skipCount));
+
+    // analog signals
+    let temp: number[][] = [];
+    for (let i = 0; i < 6; i++)
+      temp.push(reduceValues(analogValues[i], skipCount));
+    setAnalogValues_filtered(temp);
+
+    let tempVal = reduceValues(timeValues_original, skipCount);
+    let timeInd = 0;
+
+    // Update the trigger point
+    timeInd = tempVal.findIndex((element) => element === 0);
+    if (timeInd !== -1) setTriggerPoint(0);
+    else {
+      timeInd = tempVal.findIndex((element) => element > 0);
+      setTriggerPoint(tempVal[timeInd]);
+    }
+
+    // Update primary cursor
+    timeInd = tempVal.findIndex(
+      (element) => element === timeValues[primaryCursor.cursorReduced]
+    );
+    if (timeInd === -1)
+      timeInd = tempVal.findIndex(
+        (element) => element > timeValues[primaryCursor.cursorReduced]
+      );
+
+    let pc = primaryCursor;
+    if (timeInd !== -1)
+      setPrimaryCursor({
+        cursor: pc.cursor,
+        cursorReduced: timeInd,
+        time: pc.time,
+        timestamp: pc.timestamp,
+      });
+
+    // Update secondary cursor
+    timeInd = tempVal.findIndex(
+      (element) => element === timeValues[secondaryCursor.cursorReduced]
+    );
+    if (timeInd === -1)
+      timeInd = tempVal.findIndex(
+        (element) => element > timeValues[secondaryCursor.cursorReduced]
+      );
+
+    let sc = secondaryCursor;
+    if (timeInd !== -1)
+      setSecondaryCursor({
+        cursor: sc.cursor,
+        cursorReduced: timeInd,
+        time: sc.time,
+        timestamp: sc.timestamp,
+      });
+  };
+
+  const reduceValues = (values: any[], skipCount: number) => {
+    let returnValues: any[] = [];
+
+    let j = 0;
+    for (let i = 0; i < values.length; i++) {
+      if (i % skipCount === 0) {
+        returnValues[j] = values[i];
+        j++;
+      }
+    }
+    return returnValues;
+  };
+
   if (error) {
     return (
       <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
@@ -184,13 +293,8 @@ const MultipleAxis = ({
         analog_values.push(value);
       }
 
-      timeValues = [];
-      timeStamps = [];
-      series = [];
-
-      timeValues = arrayColumn(analog_values, 0);
-      timeStamps = strArrayColumn(analog_values, 7);
-      if (tickInterval.length === 0) calculateTickInterval();
+      timeValues_original = arrayColumn(analog_values, 0);
+      timeStamps_original = strArrayColumn(analog_values, 7);
 
       let color_light = [
         "crimson",
@@ -200,14 +304,19 @@ const MultipleAxis = ({
         "goldenrod",
         "deepskyblue",
       ];
+
+      analogValues = [];
+      for (let i = 0; i < 6; i++)
+        analogValues.push(arrayColumn(analog_values, i + 1));
+
+      series = [];
       for (let i = 0; i < 6; i++) {
         let label = analogSignalNames[i];
-        let values = arrayColumn(analog_values, i + 1);
         let a: LineSeriesType = {
           type: "line",
           label: label,
           yAxisId: "y-axis",
-          data: values,
+          data: analogValues_filtered[i],
           color: color_light[i],
           showMark: false,
         };
@@ -215,32 +324,46 @@ const MultipleAxis = ({
       }
 
       if (loading) setLoading(false);
+
+      if (tickInterval.length === 0) {
+        reduceAllArrays();
+        calculateTickInterval();
+      }
+
+      if (
+        zoom[0].start !== zoomBoundary.startPercent ||
+        zoom[0].end !== zoomBoundary.endPercent
+      ) {
+        setZoom([
+          {
+            axisId: "time-axis",
+            start: zoomBoundary.startPercent,
+            end: zoomBoundary.endPercent,
+          },
+        ]);
+
+        reduceAllArrays();
+        calculateTickInterval();
+      }
     }
 
-    if (
-      zoom[0].start !== zoomBoundary.startPercent &&
-      zoom[0].end !== zoomBoundary.endPercent
-    ) {
-      setZoom([
-        {
-          axisId: "time-axis",
-          start: zoomBoundary.startPercent,
-          end: zoomBoundary.endPercent,
-        },
-      ]);
-
-      calculateTickInterval();
-    }
+    const timeFormatter = (
+      timevalue: number,
+      context: AxisValueFormatterContext
+    ) => {
+      let timeInd = timeValues.findIndex((element) => element === timevalue);
+      return context.location === "tick" ? `${timevalue}` : timeStamps[timeInd];
+    };
 
     const xAxisCommon = {
       id: "time-axis",
       scaleType: "point",
       zoom: { filterMode: "discard" },
-      //   tickInterval: (value: number) => value % 0.5 === 0,
+      valueFormatter: timeFormatter,
     } as const;
 
     return (
-      <Card sx={{ mt: 10, ml: 2, mb: 0.5, height: `calc(100vh - 220px)` }}>
+      <Card sx={{ mt: 10, ml: 2, mb: 0.0, height: `calc(100vh - 220px)` }}>
         <CardHeader
           avatar={
             <Avatar
@@ -309,7 +432,7 @@ const MultipleAxis = ({
                     {timeValues !== undefined && timeValues.length > 0 && (
                       <ChartsReferenceLine
                         axisId={"time-axis"}
-                        x={0}
+                        x={triggerPoint}
                         lineStyle={{
                           strokeDasharray: "5 1",
                           strokeWidth: 1.0,
@@ -320,7 +443,7 @@ const MultipleAxis = ({
                     {timeValues !== undefined && timeValues.length > 0 && (
                       <ChartsReferenceLine
                         axisId={"time-axis"}
-                        x={timeValues[primaryCursor.cursor]}
+                        x={timeValues[primaryCursor.cursorReduced]}
                         lineStyle={{
                           strokeDasharray: "10 5",
                           strokeWidth: 2,
@@ -331,7 +454,7 @@ const MultipleAxis = ({
                     {timeValues !== undefined && timeValues.length > 0 && (
                       <ChartsReferenceLine
                         axisId={"time-axis"}
-                        x={timeValues[secondaryCursor.cursor]}
+                        x={timeValues[secondaryCursor.cursorReduced]}
                         lineStyle={{
                           strokeDasharray: "3 3",
                           strokeWidth: 2,
@@ -347,7 +470,7 @@ const MultipleAxis = ({
                 item
                 xs={12}
                 height="50px"
-                sx={{ bgcolor: "" }}
+                sx={{ bgcolor: "", borderLeft: 0, borderRight: 0 }}
               >
                 <ResponsiveChartContainerPro
                   xAxis={[{ ...xAxisCommon, data: timeValues }]}
@@ -362,7 +485,7 @@ const MultipleAxis = ({
                     left: 0,
                     right: 0,
                     top: 0,
-                    bottom: 50,
+                    bottom: 46,
                   }}
                   sx={{
                     borderLeft: 0,

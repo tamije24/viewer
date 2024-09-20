@@ -1,5 +1,15 @@
+import { useState } from "react";
+
+// MUI Components
+import BottomNavigation from "@mui/material/BottomNavigation";
+import BottomNavigationAction from "@mui/material/BottomNavigationAction";
 import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 import {
   DataGridPro,
@@ -10,21 +20,12 @@ import {
 } from "@mui/x-data-grid-pro";
 import { GridColDef } from "@mui/x-data-grid/models/colDef";
 
-import Typography from "@mui/material/Typography";
-
+// MUI Icons
 import DeviceHubSharpIcon from "@mui/icons-material/DeviceHubSharp";
 import TableChartSharpIcon from "@mui/icons-material/TableChartSharp";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
-
-import BottomNavigation from "@mui/material/BottomNavigation";
-import BottomNavigationAction from "@mui/material/BottomNavigationAction";
-
-import { useState } from "react";
-import CardActions from "@mui/material/CardActions";
-import Stack from "@mui/material/Stack";
-import Chip from "@mui/material/Chip";
-import Grid from "@mui/material/Grid";
+import { StayPrimaryLandscape } from "@mui/icons-material";
+//import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
 
 interface Props {
   axisClick: {
@@ -182,6 +183,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
     },
   ];
   const pinnedColumns: GridPinnedColumnFields = { left: ["id"] };
+
   const [selectedTab, setSelectedTab] = useState("table");
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     console.log(event.currentTarget);
@@ -193,15 +195,14 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
       <Card
         variant="outlined"
         sx={{
-          mt: 10,
           ml: 0.5,
           mr: 1,
           mb: 0.5,
           bgcolor: "",
-          height: `calc(100vh - 260px)`,
+          height: `calc(100vh - 290px)`,
         }}
       >
-        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 340px)` }}>
+        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 380px)` }}>
           {selectedTab === "table" && (
             <>
               <DataGridPro
@@ -220,7 +221,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
                 sx={{
                   width: "100%",
                   mt: 1,
-                  height: `calc(100vh - 390px)`,
+                  height: `calc(100vh - 450px)`,
                   border: 0.2,
                   borderColor: "primary",
                   fontSize: "0.8rem",
@@ -234,7 +235,6 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
           )}
           {selectedTab === "phasors" && <Typography>Phasors</Typography>}
           {selectedTab === "harmonics" && <Typography>Harmonics</Typography>}
-          {selectedTab === "sequence" && <Typography>Sequence</Typography>}
         </CardContent>
         <CardActions
           sx={{
@@ -266,11 +266,11 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               value="harmonics"
               icon={<BarChartIcon />}
             />
-            <BottomNavigationAction
+            {/* <BottomNavigationAction
               label="Sequence"
               value="sequence"
               icon={<CategoryTwoToneIcon />}
-            />
+            /> */}
           </BottomNavigation>
         </CardActions>
       </Card>
@@ -280,7 +280,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
         sx={{
           ml: 0.5,
           mr: 1,
-          height: "110px",
+          height: "140px",
         }}
       >
         <CardContent sx={{ mt: 0 }}>
@@ -297,8 +297,8 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               item
               sx={{
                 justifyContent: "space-between",
-                borderRight: 0.5,
-                paddingRight: 0.2,
+                borderLeft: 0.5,
+                paddingLeft: 0.5,
               }}
             >
               <Typography variant="overline" component="p">
@@ -327,7 +327,14 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
                 </Stack>
               </Stack>
             </Grid>
-            <Grid item sx={{ justifyContent: "space-between" }}>
+            <Grid
+              item
+              sx={{
+                justifyContent: "space-between",
+                borderLeft: 0.5,
+                paddingLeft: 0.5,
+              }}
+            >
               <Typography variant="overline" component="p">
                 Secondary Cursor
               </Typography>
@@ -355,9 +362,32 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               </Stack>
             </Grid>
           </Grid>
-          <Typography variant="caption" sx={{ color: "crimson" }}>
-            {axisClick.timestamp}
-          </Typography>
+          <Stack>
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0,
+                color: "error.main",
+                // borderLeft: 0.5,
+                // borderColor: "primary.main",
+                paddingTop: 0.5,
+                //paddingLeft: 0.5,
+              }}
+            >
+              {axisClick.timestamp}
+            </Typography>
+
+            <Typography
+              variant="subtitle2"
+              sx={{ mt: 0.5, color: "primary.main" }}
+            >
+              Delta T:{" "}
+              {Math.round(
+                (axisClick.axisValue - axisClick.secondaryValue) * 1000000
+              ) / 1000000}{" "}
+              s
+            </Typography>
+          </Stack>
         </CardContent>
       </Card>
     </>

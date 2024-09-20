@@ -2,7 +2,6 @@ import { useState } from "react";
 import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -15,13 +14,18 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Box from "@mui/material/Box";
 import { Project } from "../services/project-service";
 import { ComtradeFile } from "../services/comtrade-file-service";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import Grid from "@mui/material/Grid";
+import CardHeader from "@mui/material/CardHeader";
+import Button from "@mui/material/Button";
 
 interface Props {
   project: Project;
   onSelectProject: (project_id: number) => void;
+  onDeleteProject: (project_id: number) => void;
 }
 
-const ProjectCard = ({ project, onSelectProject }: Props) => {
+const ProjectCard = ({ project, onSelectProject, onDeleteProject }: Props) => {
   const [expanded, setExpanded] = useState(false);
 
   const handleExpandClick = () => {
@@ -49,10 +53,10 @@ const ProjectCard = ({ project, onSelectProject }: Props) => {
           }
           title={project.line_name}
           subheader={project.project_name}
-          sx={{ paddingBottom: 0 }}
+          sx={{ paddingBottom: 0.5 }}
         />
       </CardActionArea>
-      <CardActions disableSpacing sx={{ ml: 0.5, padding: 0, height: "20px" }}>
+      <CardActions disableSpacing sx={{ height: "20px", bgcolor: "" }}>
         <ExpandMore
           expand={expanded}
           onClick={handleExpandClick}
@@ -69,15 +73,43 @@ const ProjectCard = ({ project, onSelectProject }: Props) => {
               theme.palette.mode === "light" ? "#EEEEEE" : "#323232",
           }}
         >
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: "bold", marginBottom: 0.5 }}
-          >
-            NOTES:
-          </Typography>
-          <Typography variant="body2" sx={{ marginBottom: 2 }}>
-            {project.notes}
-          </Typography>
+          <Grid container>
+            <Grid
+              item
+              xs={9}
+              display="flex"
+              justifyContent="left"
+              alignItems="flex-end"
+              sx={{ height: "40px", bgcolor: "" }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.3 }}>
+                NOTES:
+              </Typography>
+            </Grid>
+
+            <Grid item xs={3} display="flex" justifyContent="right">
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                endIcon={<DeleteForeverIcon />}
+                onClick={() => {
+                  // TODO confirm delete before doing actual delete
+                  onDeleteProject(project.project_id);
+                }}
+                sx={{ height: "27px" }}
+              >
+                Delete Project
+              </Button>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="body2" sx={{ marginBottom: 2 }}>
+                {project.notes}
+              </Typography>
+            </Grid>
+          </Grid>
+
           <Typography
             variant="body2"
             sx={{ fontWeight: "bold", marginBottom: 0.5 }}
@@ -94,7 +126,7 @@ const ProjectCard = ({ project, onSelectProject }: Props) => {
                   spacing={2}
                   sx={{ marginBottom: 0.5 }}
                 >
-                  <Typography gutterBottom width="100px" variant="body2">
+                  <Typography gutterBottom width="150px" variant="body2">
                     {file.station_name}
                   </Typography>
                   <Typography gutterBottom variant="body2">
