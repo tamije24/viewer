@@ -14,7 +14,7 @@ import SignIn from "./components/SignIn";
 import TopBar from "./components/TopBar";
 import Paper from "@mui/material/Paper";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
-import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
+import { Autocomplete, Grid, TextField } from "@mui/material";
 
 export interface AccessCodes {
   access: string;
@@ -168,7 +168,7 @@ function App() {
                 size="small"
                 value={pointCount}
                 defaultValue={displayPoints[0]}
-                onChange={(event: any, newValue: string | null) => {
+                onChange={(_event: any, newValue: string | null) => {
                   setPointCount(newValue);
                 }}
                 options={displayPoints}
