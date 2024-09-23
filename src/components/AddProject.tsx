@@ -98,8 +98,8 @@ const AddProject = ({ onAddProject }: Props) => {
             <AddHomeIcon />
           </Avatar>
         }
-        title="Add New Project"
-        subheader="Fill in the details and click on the Add Project button"
+        title="Add New Analysis"
+        subheader="Fill in the details and click on the Add Analysis button"
         sx={{ paddingBottom: 0.5, height: 80, borderBottom: 0.5 }}
       />
       <CardContent>
@@ -192,7 +192,7 @@ const AddProject = ({ onAddProject }: Props) => {
               sx={{ ml: 0 }}
               onClick={validateInputs}
             >
-              Add Project
+              Add Analysis
             </Button>
           </Grid>
         </Grid>

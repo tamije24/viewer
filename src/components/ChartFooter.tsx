@@ -28,11 +28,10 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
   let minDistance = 1;
 
   const handleChange = (
-    event: Event,
+    _event: Event,
     newValue: number | number[],
     activeThumb: number
   ) => {
-    console.log(event.target);
     if (!Array.isArray(newValue)) {
       return;
     }
@@ -115,10 +114,10 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
                 minWidth: "40px",
                 ml: 0,
                 bgcolor: "primary",
-                fontSize: "0.8rem",
+                fontSize: 10,
               }}
             >
-              {timeRange.minTime}
+              {Math.round(timeRange.minTime * 1000) / 1000} s
             </Typography>
             <Typography
               variant="body2"
@@ -126,10 +125,10 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
                 minWidth: "40px",
                 mr: -2,
                 bgcolor: "primary",
-                fontSize: "0.8rem",
+                fontSize: 10,
               }}
             >
-              {timeRange.maxTime}
+              {Math.round(timeRange.maxTime * 1000) / 1000} s
             </Typography>
           </Box>
         </Box>

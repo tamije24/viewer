@@ -19,7 +19,7 @@ import { AnalogChannel } from "../services/analog-channel-service";
 import { Phasor } from "../services/phasor-service";
 
 interface Props {
-  stationName: string;
+  passedStationName: string;
   plotName: string;
   analogSignals: AnalogSignal[];
   analogSignalNames: string[];
@@ -40,29 +40,35 @@ interface Props {
     startTime: number;
     endTime: number;
   }) => void;
+
   cursorValues: {
     primary: number;
+    primaryReduced: number;
     primaryTime: number;
     primaryTimestamp: string;
     secondary: number;
+    secondaryReduced: number;
     secondaryTime: number;
     secondaryTimestamp: string;
   };
   onAxisClick: (
     dataIndex: number,
+    dataIndexReduced: number,
     axisValue: number,
     timestamp: string,
     secondaryIndex: number,
+    secondaryIndexReduced: number,
     secondaryValue: number,
     secondaryTimestamp: string
   ) => void;
   analogChannelInfo: AnalogChannel[];
   dftPhasors: Phasor[];
   sampling_frequency: number;
+  pointCount: number;
 }
 
 const ChartComponent = ({
-  stationName,
+  passedStationName,
   plotName,
   analogSignals,
   analogSignalNames,
@@ -78,16 +84,21 @@ const ChartComponent = ({
   analogChannelInfo,
   dftPhasors,
   sampling_frequency,
+  pointCount,
 }: Props) => {
   // STATE VARIABLES
+  const [stationName, setStationName] = useState(passedStationName);
   const [toolTipStatus, setToolTipStatus] = useState(false);
+
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
+    cursorReduced: cursorValues.primaryReduced,
     time: cursorValues.primaryTime,
     timestamp: cursorValues.primaryTimestamp,
   });
   const [secondaryCursor, setSecondaryCursor] = useState({
     cursor: cursorValues.secondary,
+    cursorReduced: cursorValues.secondaryReduced,
     time: cursorValues.secondaryTime,
     timestamp: cursorValues.secondaryTimestamp,
   });
@@ -97,6 +108,29 @@ const ChartComponent = ({
     startTime: passedZoomValues.startTime,
     endTime: passedZoomValues.endTime,
   });
+  const [presentMaxisYZoomValues, setPresentMaxisYZoomValues] = useState<
+    {
+      start: number;
+      end: number;
+    }[]
+  >([
+    { start: 0, end: 100 },
+    { start: 0, end: 100 },
+    { start: 0, end: 100 },
+    { start: 0, end: 100 },
+    { start: 0, end: 100 },
+    { start: 0, end: 100 },
+  ]);
+
+  const [presentSaxisYZoomValues, setPresentSaxisYZoomValues] = useState<
+    {
+      start: number;
+      end: number;
+    }[]
+  >([
+    { start: 0, end: 100 },
+    { start: 0, end: 100 },
+  ]);
 
   const [tableValues, setTableValues] = useState<
     {
@@ -121,6 +155,8 @@ const ChartComponent = ({
   let timeValues_original: number[] = [];
   let timeStamps_original: string[] = [];
 
+  const ZOOM_STEP = 5;
+
   // If error in getting data from backend, display error message
   if (error)
     return (
@@ -134,7 +170,7 @@ const ChartComponent = ({
   // If no error proceed with reading data ....
 
   // EVENT HANDLERS
-  // ZOOM IN button in the Chart header
+  // RESET button in the Chart header
   const handleZoomOutClick = () => {
     let minTime = 0;
     let maxTime = 0;
@@ -159,7 +195,7 @@ const ChartComponent = ({
     });
   };
 
-  // ZOOM OUT button in the Chart header
+  // ZOOM IN button in the Chart header
   const handleZoomInClick = (fromValue: number, toValue: number) => {
     let duration = 0;
     let minTime = 0;
@@ -221,41 +257,125 @@ const ChartComponent = ({
   // AXIS click handler
   const handleAxisClick = (
     dataIndex: number,
+    dataIndexReduced: number,
     axisValue: number,
     timestamp: string,
     secondaryIndex: number,
+    secondaryIndexReduced: number,
     secondaryValue: number,
     secondaryTimestamp: string
   ) => {
-    // primaryCursor.cursor = dataIndex;
-    // primaryCursor.time = axisValue;
-    // primaryCursor.timestamp = timestamp;
-    // secondaryCursor.cursor = secondaryIndex;
-    // secondaryCursor.time = secondaryValue;
-    // secondaryCursor.timestamp = secondaryTimestamp;
-
     setPrimaryCursor({
       cursor: dataIndex,
+      cursorReduced: dataIndexReduced,
       time: axisValue,
       timestamp: timestamp,
     });
 
     setSecondaryCursor({
       cursor: secondaryIndex,
+      cursorReduced: secondaryIndexReduced,
       time: secondaryValue,
       timestamp: secondaryTimestamp,
     });
 
     onAxisClick(
       dataIndex,
+      dataIndexReduced,
       axisValue,
       timestamp,
       secondaryIndex,
+      secondaryIndexReduced,
       secondaryValue,
       secondaryTimestamp
     );
 
     fillSideTable();
+  };
+
+  // Y-Axis Zoom handler
+  const handleYZoomClick = (signal: string, zoomType: number) => {
+    plotName === "SingleAxis"
+      ? handleSAxisYZoomClick(signal, zoomType)
+      : handleMAxisYZoomClick(signal, zoomType);
+  };
+
+  const handleSAxisYZoomClick = (signal: string, zoomType: number) => {
+    // Check which signal is selected
+    let index = 0;
+    if (signal === "Currents") index = 0;
+    else if (signal === "Voltages") index = 1;
+
+    let present_zoom_start = presentSaxisYZoomValues[index].start;
+    let present_zoom_end = presentSaxisYZoomValues[index].end;
+
+    if (zoomType === 3) {
+      // reset button clicked
+      present_zoom_start = 0;
+      present_zoom_end = 100;
+    } else if (zoomType === 1) {
+      // zoom-in button clicked
+      if (present_zoom_start !== 45 && present_zoom_end !== 55) {
+        present_zoom_start = present_zoom_start + ZOOM_STEP;
+        present_zoom_end = present_zoom_end - ZOOM_STEP;
+      }
+    } else if (zoomType === 2) {
+      // zoom-out button clicked
+      if (present_zoom_start !== 0 && present_zoom_end !== 100) {
+        present_zoom_start = present_zoom_start - ZOOM_STEP;
+        present_zoom_end = present_zoom_end + ZOOM_STEP;
+      }
+    }
+
+    let tempZoom = [...presentSaxisYZoomValues];
+
+    tempZoom[index] = {
+      start: present_zoom_start,
+      end: present_zoom_end,
+    };
+
+    // update prev Y zoom values and type
+    setPresentSaxisYZoomValues(tempZoom);
+  };
+
+  const handleMAxisYZoomClick = (signal: string, zoomType: number) => {
+    // Check which signal is selected
+    let index = 0;
+    if (signal === "Ia") index = 0;
+    else if (signal === "Ib") index = 1;
+    else if (signal === "Ic") index = 2;
+    else if (signal === "Va") index = 3;
+    else if (signal === "Vb") index = 4;
+    else if (signal === "Vc") index = 5;
+
+    let present_zoom_start = presentMaxisYZoomValues[index].start;
+    let present_zoom_end = presentMaxisYZoomValues[index].end;
+
+    if (zoomType === 3) {
+      // reset button clicked
+      present_zoom_start = 0;
+      present_zoom_end = 100;
+    } else if (zoomType === 1) {
+      // zoom-in button clicked
+      if (present_zoom_start !== 45 && present_zoom_end !== 55) {
+        present_zoom_start = present_zoom_start + ZOOM_STEP;
+        present_zoom_end = present_zoom_end - ZOOM_STEP;
+      }
+    } else if (zoomType === 2) {
+      // zoom-out button clicked
+      if (present_zoom_start !== 0 && present_zoom_end !== 100) {
+        present_zoom_start = present_zoom_start - ZOOM_STEP;
+        present_zoom_end = present_zoom_end + ZOOM_STEP;
+      }
+    }
+
+    let tempZoom = [...presentMaxisYZoomValues];
+    tempZoom[index] = {
+      start: present_zoom_start,
+      end: present_zoom_end,
+    };
+    // update prev Y zoom values and type
+    setPresentMaxisYZoomValues(tempZoom);
   };
 
   // HELPER FUNCTIONS
@@ -370,8 +490,21 @@ const ChartComponent = ({
     return rmsValue;
   };
 
-  const analogSignals_split = [];
+  if (passedStationName !== stationName) setStationName(passedStationName);
 
+  if (
+    presentZoomValues.startPercent !== passedZoomValues.startPercent ||
+    presentZoomValues.endPercent !== presentZoomValues.endPercent
+  ) {
+    setPresentZoomValues({
+      startPercent: passedZoomValues.startPercent,
+      endPercent: passedZoomValues.endPercent,
+      startTime: passedZoomValues.startTime,
+      endTime: passedZoomValues.endTime,
+    });
+  }
+
+  const analogSignals_split = [];
   if (!isAnLoading && analogSignals !== undefined && analogSignals.length > 0) {
     let L = analogSignals.length;
     for (let i = 0; i < L; i++) {
@@ -412,32 +545,46 @@ const ChartComponent = ({
     digitalSignals.length > 0
   ) {
     let L = digitalSignals.length;
+    let factor = 0.3;
     for (let i = 0; i < L; i++) {
       let value = Object.values(digitalSignals[i]);
-      value[2] += 1.5;
-      value[3] += 3;
-      value[4] += 4.5;
+      value[1] = factor * value[1] + 0.5;
+      value[2] = factor * value[2] + 1.5;
+      value[3] = factor * value[3] + 2.5;
+      value[4] = factor * value[4] + 3.5;
       digitalSignals_split.push(value);
     }
+
     digital_Values_original = [];
     for (let i = 0; i < 4; i++)
       digital_Values_original.push(arrayColumn(digitalSignals_split, i + 1));
   }
 
+  //  console.log("chart comp - before return: ", presentMaxisYZoomValues);
+  // console.log("chart comp: ", presentZoomValues);
+  // console.log("chart comp: ", cursorValues);
   return (
-    <Grid container sx={{ mt: 10, ml: 2, mb: 0.5 }}>
+    <Grid container sx={{ mt: 9, ml: 2, mb: 0.5 }}>
       <Grid item xs={9}>
         <Stack>
           <ChartHeader
             stationName={stationName}
             plotSubtitle={plotSubtitle}
-            presentZoomValues={{
-              startTime: presentZoomValues.startTime,
-              endTime: presentZoomValues.endTime,
-            }}
-            onZoomOutClick={handleZoomOutClick}
+            presentZoomValues={presentZoomValues}
+            onZoomResetClick={handleZoomOutClick}
             onZoomInClick={handleZoomInClick}
             onToolTipStatusChange={handleTooltipChange}
+            onYZoomClick={handleYZoomClick}
+            timeRange={{
+              minTime:
+                analogSignals !== undefined
+                  ? Object.values(analogSignals[0])[0]
+                  : 0,
+              maxTime:
+                analogSignals !== undefined
+                  ? Object.values(analogSignals[analogSignals.length - 1])[0]
+                  : 0,
+            }}
           />
           <ChartBody
             plotName={plotName}
@@ -451,6 +598,9 @@ const ChartComponent = ({
             toolTipStatus={toolTipStatus}
             cursorValues={cursorValues}
             onAxisClick={handleAxisClick}
+            pointCount={pointCount}
+            presentMaxisYZoomValues={presentMaxisYZoomValues}
+            presentSaxisYZoomValues={presentSaxisYZoomValues}
           />
           <ChartFooter
             timeRange={{

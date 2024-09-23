@@ -14,6 +14,7 @@ import SignIn from "./components/SignIn";
 import TopBar from "./components/TopBar";
 import Paper from "@mui/material/Paper";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
+import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
 
 export interface AccessCodes {
   access: string;
@@ -41,7 +42,19 @@ function App() {
     [mode]
   );
 
+  const displayPoints = [
+    "500",
+    "1000",
+    "1500",
+    "2000",
+    "2500",
+    "3000",
+    "3500",
+    "4000",
+  ];
   const [currentUser, setCurrentUser] = useState({ id: 0, name: "" });
+  const [pointCount, setPointCount] = useState<string | null>(displayPoints[0]);
+
   useEffect(() => {
     if (localStorage.getItem("token")) getUserData();
   }, []);
@@ -91,7 +104,9 @@ function App() {
           }}
         >
           {currentUser.id !== 0 ? (
-            <MainComponent />
+            <MainComponent
+              pointCount={pointCount === null ? 0 : parseInt(pointCount)}
+            />
           ) : (
             <SignIn onAccessCodeReceive={handleAccessCodeReceive} />
           )}
@@ -105,36 +120,65 @@ function App() {
             right: 0,
             // zIndex: (theme) => theme.zIndex.drawer + 1,
             zIndex: 100,
+            borderRadius: 1,
           }}
           elevation={3}
         >
-          <BottomNavigation
-            showLabels
-            sx={{
-              display: "flex",
-              width: "100%",
-              alignItems: "center",
-              justifyContent: "left",
-              bgcolor: "background.default",
-              color: "text.primary",
-              borderRadius: 1,
-              paddingLeft: "10px",
-            }}
-          >
-            <BottomNavigationAction
-              sx={{ ml: 1 }}
-              label={`${theme.palette.mode} mode`}
-              value="recents"
-              icon={
-                theme.palette.mode === "dark" ? (
-                  <Brightness7Icon />
-                ) : (
-                  <Brightness4Icon />
-                )
-              }
-              onClick={colorMode.toggleColorMode}
-            />
-          </BottomNavigation>
+          <Grid container direction="row">
+            <Grid item xs={1.5}>
+              <BottomNavigation
+                showLabels
+                sx={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "left",
+                  // bgcolor: "background.default",
+                  //  bgcolor: "red",
+                  color: "text.primary",
+                  //    borderRadius: 1,
+                  paddingLeft: "10px",
+                }}
+              >
+                <BottomNavigationAction
+                  sx={{ ml: 1 }}
+                  label={`${theme.palette.mode} mode`}
+                  value="recents"
+                  icon={
+                    theme.palette.mode === "dark" ? (
+                      <Brightness7Icon />
+                    ) : (
+                      <Brightness4Icon />
+                    )
+                  }
+                  onClick={colorMode.toggleColorMode}
+                />
+              </BottomNavigation>
+            </Grid>
+            <Grid
+              item
+              display="flex"
+              justifyContent="flex-start"
+              sx={{
+                mt: 1.5,
+              }}
+            >
+              <Autocomplete
+                disablePortal
+                size="small"
+                value={pointCount}
+                defaultValue={displayPoints[0]}
+                onChange={(event: any, newValue: string | null) => {
+                  setPointCount(newValue);
+                }}
+                options={displayPoints}
+                sx={{ width: 150 }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Display points" />
+                )}
+              />
+            </Grid>
+          </Grid>
         </Paper>
       </Box>
     </ThemeProvider>

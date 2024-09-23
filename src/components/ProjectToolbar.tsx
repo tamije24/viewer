@@ -78,16 +78,15 @@ const ProjectToolbar = ({
       aria-labelledby="navigation-bar"
     >
       <ListItemButton
-        sx={{
-          height: 45,
-        }}
+        sx={{ height: 45 }}
         onClick={() => onSelectNavItem("ProjectList")}
+        alignItems="center"
       >
-        <ListItemIcon>
+        <ListItemIcon sx={{ mr: 0, pr: 0 }}>
           <Home color="primary" />
         </ListItemIcon>
         <ListItemText
-          primary="PROJECT LIST"
+          primary="ANALYSIS LIST"
           primaryTypographyProps={{
             color: "primary",
             fontWeight: "medium",

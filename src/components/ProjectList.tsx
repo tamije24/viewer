@@ -95,7 +95,7 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
       >
         <Grid item>
           <Typography variant="h5" sx={{ flexGrow: 1 }}>
-            List of Projects
+            List of Analysis
           </Typography>
         </Grid>
         <Grid item>
@@ -103,7 +103,7 @@ const ProjectList = ({ onSelectProject, onAddProject }: Props) => {
             startIcon={<AddHomeIcon color="primary" />}
             onClick={onAddProject}
           >
-            Add Project
+            Add New Analysis
           </Button>
         </Grid>
       </Grid>

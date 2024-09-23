@@ -24,7 +24,6 @@ import { GridColDef } from "@mui/x-data-grid/models/colDef";
 import DeviceHubSharpIcon from "@mui/icons-material/DeviceHubSharp";
 import TableChartSharpIcon from "@mui/icons-material/TableChartSharp";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import { StayPrimaryLandscape } from "@mui/icons-material";
 //import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
 
 interface Props {
@@ -68,21 +67,21 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
       id: tableValues[i].id,
       channel: tableValues[i].channel,
       unit: tableValues[i].unit,
-      inst: `${(Math.round(tableValues[i].inst * 100) / 100).toFixed(2)}`,
+      inst: `${(Math.round(tableValues[i].inst * 1000) / 1000).toFixed(3)}`,
       phasor_mag: `${(
-        Math.round(tableValues[i].phasor_mag * 100) / 100
-      ).toFixed(2)}`,
+        Math.round(tableValues[i].phasor_mag * 1000) / 1000
+      ).toFixed(3)}`,
       phasor_ang: `${(
         Math.round(((tableValues[i].phasor_ang * 180) / Math.PI) * 100) / 100
       ).toFixed(2)}`,
-      true_rms: `${(Math.round(tableValues[i].true_rms * 100) / 100).toFixed(
-        2
+      true_rms: `${(Math.round(tableValues[i].true_rms * 1000) / 1000).toFixed(
+        3
       )}`,
-      pos_peak: `${(Math.round(tableValues[i].pos_peak * 100) / 100).toFixed(
-        2
+      pos_peak: `${(Math.round(tableValues[i].pos_peak * 1000) / 1000).toFixed(
+        3
       )}`,
-      neg_peak: `${(Math.round(tableValues[i].neg_peak * 100) / 100).toFixed(
-        2
+      neg_peak: `${(Math.round(tableValues[i].neg_peak * 1000) / 1000).toFixed(
+        3
       )}`,
     });
   }
@@ -185,8 +184,8 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   const pinnedColumns: GridPinnedColumnFields = { left: ["id"] };
 
   const [selectedTab, setSelectedTab] = useState("table");
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
-    console.log(event.currentTarget);
+  const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
+    //   console.log(event.currentTarget);
     setSelectedTab(newValue);
   };
 
@@ -199,10 +198,10 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
           mr: 1,
           mb: 0.5,
           bgcolor: "",
-          height: `calc(100vh - 290px)`,
+          height: `calc(100vh - 275px)`,
         }}
       >
-        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 380px)` }}>
+        <CardContent sx={{ mb: 0.5, height: `calc(100vh - 360px)` }}>
           {selectedTab === "table" && (
             <>
               <DataGridPro
@@ -221,7 +220,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
                 sx={{
                   width: "100%",
                   mt: 1,
-                  height: `calc(100vh - 450px)`,
+                  height: `calc(100vh - 400px)`,
                   border: 0.2,
                   borderColor: "primary",
                   fontSize: "0.8rem",
@@ -244,6 +243,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
           }}
         >
           <BottomNavigation
+            showLabels
             value={selectedTab}
             onChange={handleChange}
             sx={{

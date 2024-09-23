@@ -1,18 +1,19 @@
 import { useState } from "react";
+
 import Grid from "@mui/material/Grid";
 
-import ProjectToolbar from "./ProjectToolbar";
-import ProjectList from "./ProjectList";
-import ProjectDetails from "./ProjectDetails";
-import ProjectSettings from "./ProjectSettings";
-import GeneralInfo from "./GeneralInfo";
-import AnalogChannels from "./AnalogChannels";
-import DigitalChannels from "./DigitalChannels";
-import SingleAxis from "./SingleAxis";
-import MultipleAxis from "./MultipleAxis";
+// Our Components
 import AddProject from "./AddProject";
-import CursorValues from "./CursorValues";
+import AnalogChannels from "./AnalogChannels";
+import ChartComponent from "./ChartComponent";
+import DigitalChannels from "./DigitalChannels";
+import GeneralInfo from "./GeneralInfo";
+import ProjectDetails from "./ProjectDetails";
+import ProjectList from "./ProjectList";
+import ProjectSettings from "./ProjectSettings";
+import ProjectToolbar from "./ProjectToolbar";
 
+// Our Services
 import analogSignalService, {
   AnalogSignal,
 } from "../services/analog-signal-service";
@@ -22,19 +23,14 @@ import digitalSignalService, {
 import phasorService, { Phasor } from "../services/phasor-service";
 import projectService, { Project } from "../services/project-service";
 import { ComtradeFile } from "../services/comtrade-file-service";
-import Stack from "@mui/material/Stack";
-import ChartFooter from "./ChartFooter";
 import analogChannelService, {
   AnalogChannel,
 } from "../services/analog-channel-service";
-import ChartComponent from "./ChartComponent";
 
 let analogSignals: AnalogSignal[][] = [];
 let digitalSignals: DigitalSignal[][] = [];
 let dftPhasors: Phasor[][] = [];
-
 let analogChannelInfo: AnalogChannel[][] = [];
-
 let analogSignalNames: string[][] = [];
 let digitalSignalNames: string[][] = [];
 
@@ -85,18 +81,11 @@ const emptyProject: Project = {
   files: [emptyFile],
 };
 
-const MainComponent = () => {
-  // const [axisClick, setAxisClick] = useState([
-  //   {
-  //     dataIndex: 0,
-  //     axisValue: 0,
-  //     timestamp: "",
-  //     secondaryIndex: 0,
-  //     secondaryValue: 0,
-  //     secondaryTimestamp: "",
-  //   },
-  // ]);
+interface Props {
+  pointCount: number;
+}
 
+const MainComponent = ({ pointCount }: Props) => {
   const [presentZoomValues, setPresentZoomValues] = useState([
     {
       startPercent: 0,
@@ -105,7 +94,19 @@ const MainComponent = () => {
       endTime: 0,
     },
   ]);
-  const [toolTipStatus, setToolTipStatus] = useState(false);
+
+  const [axisClick, setAxisClick] = useState([
+    {
+      dataIndex: 0,
+      dataIndexReduced: 0,
+      axisValue: 0,
+      timestamp: "",
+      secondaryIndex: 0,
+      secondaryIndexReduced: 0,
+      secondaryValue: 0,
+      secondaryTimestamp: "",
+    },
+  ]);
 
   const [selectedProject, setSelectedProject] = useState<Project>(emptyProject);
   const [selectedFile, setSelectedFile] = useState<number | null>(null);
@@ -125,17 +126,6 @@ const MainComponent = () => {
   const [phasorError, setPhasorError] = useState([""]);
 
   const [analogChannelLoading, setAnalogChannelLoading] = useState([false]);
-
-  let axisClick = [
-    {
-      dataIndex: 0,
-      axisValue: 0,
-      timestamp: "",
-      secondaryIndex: 0,
-      secondaryValue: 0,
-      secondaryTimestamp: "",
-    },
-  ];
 
   const handleSelectNavItem = (pageName: string, file_index?: number) => {
     setSelectedPage(pageName);
@@ -174,26 +164,32 @@ const MainComponent = () => {
 
   const handleAxisClick = (
     dataIndex: number,
+    dataIndexReduced: number,
     axisValue: number,
     timestamp: string,
     secondaryIndex: number,
+    secondaryIndexReduced: number,
     secondaryValue: number,
     secondaryTimestamp: string
   ) => {
-    // let aValue = [...axisClick];
-    let newValues = {
+    let aValue = [...axisClick];
+    aValue[selectedIndex] = {
       dataIndex: dataIndex,
+      dataIndexReduced: dataIndexReduced,
       axisValue: axisValue,
       timestamp: timestamp,
       secondaryIndex: secondaryIndex,
+      secondaryIndexReduced: secondaryIndexReduced,
       secondaryValue: secondaryValue,
       secondaryTimestamp: secondaryTimestamp,
     };
-    selectedIndex > axisClick.length - 1
-      ? axisClick.push(newValues)
-      : (axisClick[selectedIndex] = newValues);
 
-    //   if (selectedIndex <= axisClick.length) fillSideTable();
+    console.log(axisClick);
+    console.log(aValue);
+    console.log(selectedIndex);
+    console.log("main component: ", dataIndex);
+
+    setAxisClick(aValue);
   };
 
   const changePresentZoomLimit = (zoomValues: {
@@ -210,59 +206,6 @@ const MainComponent = () => {
       endTime: zoomValues.endTime,
     };
     setPresentZoomValues(newZb);
-  };
-
-  const handleZoomOutClick = () => {
-    let minTime = 0;
-    let maxTime = 0;
-    if (analogSignals[selectedIndex] !== undefined) {
-      let L = analogSignals[selectedIndex].length;
-      minTime = Object.values(analogSignals[selectedIndex][0])[0];
-      maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
-    }
-    let newZb = [...zoomBoundary];
-    newZb[selectedIndex] = {
-      startPercent: 0,
-      endPercent: 100,
-      startTime: minTime,
-      endTime: maxTime,
-    };
-    setZoomBoundary(newZb);
-  };
-
-  const handleZoomInClick = (fromValue: number, toValue: number) => {
-    let duration = 0;
-    let minTime = 0;
-    if (analogSignals[selectedIndex] !== undefined) {
-      let L = analogSignals[selectedIndex].length;
-      let maxTime = Object.values(analogSignals[selectedIndex][L - 1])[0];
-      minTime = Object.values(analogSignals[selectedIndex][0])[0];
-      duration = maxTime - minTime;
-    }
-    let newZb = [...zoomBoundary];
-    newZb[selectedIndex] = {
-      startPercent:
-        duration !== 0 ? ((fromValue - minTime) / duration) * 100 : 0,
-      endPercent: duration !== 0 ? ((toValue - minTime) / duration) * 100 : 0,
-      startTime: fromValue,
-      endTime: toValue,
-    };
-    setZoomBoundary(newZb);
-  };
-
-  const handleZoomChange = (fromValue: number, toValue: number) => {
-    let newZb = [...zoomBoundary];
-    newZb[selectedIndex] = {
-      startPercent: fromValue,
-      endPercent: toValue,
-      startTime: fromValue,
-      endTime: toValue,
-    };
-    setZoomBoundary(newZb);
-  };
-
-  const handleTooltipChange = (toolTipStatus: boolean) => {
-    setToolTipStatus(toolTipStatus);
   };
 
   const fillSideTable = () => {
@@ -560,6 +503,11 @@ const MainComponent = () => {
 
   if (selectedIndex <= axisClick.length) fillSideTable();
 
+  //  console.log("just before - ", axisClick);
+  // console.log(selectedIndex);
+  // if (presentZoomValues.length >= selectedIndex + 1)
+  //   console.log("main: ", presentZoomValues[selectedIndex]);
+
   return (
     <Grid
       container
@@ -584,160 +532,12 @@ const MainComponent = () => {
           onSelectNavItem={handleSelectNavItem}
         />
       </Grid>
-      {/* {selectedPage === "SingleAxis" || selectedPage === "MultipleAxis" ? (
-        <Grid item xs>
-          <Grid container>
-            <Grid item xs={9}>
-              <Stack>
-                {selectedPage === "SingleAxis" && (
-                  <SingleAxis
-                    stationName={
-                      selectedProject.files[selectedIndex].station_name
-                    }
-                    analogSignals={analogSignals[selectedIndex]}
-                    analogSignalNames={analogSignalNames[selectedIndex]}
-                    digitalSignals={digitalSignals[selectedIndex]}
-                    digitalSignalNames={digitalSignalNames[selectedIndex]}
-                    // start_time_stamp={
-                    //   selectedProject.files[selectedIndex].start_time_stamp
-                    // }
-                    // trigger_time_stamp={
-                    //   selectedProject.files[selectedIndex].trigger_time_stamp
-                    // }
-                    error={asigError[selectedIndex]}
-                    isLoading={asigLoading[selectedIndex]}
-                    cursorValues={
-                      axisClick.length >= selectedIndex + 1
-                        ? {
-                            primary: axisClick[selectedIndex].dataIndex,
-                            primaryTime: axisClick[selectedIndex].axisValue,
-                            primaryTimestamp:
-                              axisClick[selectedIndex].timestamp,
-                            secondary: axisClick[selectedIndex].secondaryIndex,
-                            secondaryTime:
-                              axisClick[selectedIndex].secondaryValue,
-                            secondaryTimestamp:
-                              axisClick[selectedIndex].secondaryTimestamp,
-                          }
-                        : {
-                            primary: 0,
-                            primaryTime: 0,
-                            primaryTimestamp: "",
-                            secondary: 0,
-                            secondaryTime: 0,
-                            secondaryTimestamp: "",
-                          }
-                    }
-                    onAxisClick={handleAxisClick}
-                    zoomBoundary={
-                      zoomBoundary.length >= selectedIndex + 1
-                        ? {
-                            startPercent:
-                              zoomBoundary[selectedIndex].startPercent,
-                            endPercent: zoomBoundary[selectedIndex].endPercent,
-                          }
-                        : {
-                            startPercent: 0,
-                            endPercent: 100,
-                          }
-                    }
-                    toolTipStatus={toolTipStatus}
-                  />
-                )}
-
-                {selectedPage === "MultipleAxis" && (
-                  <MultipleAxis
-                    stationName={
-                      selectedProject.files[selectedIndex].station_name
-                    }
-                    analogSignals={analogSignals[selectedIndex]}
-                    analogSignalNames={analogSignalNames[selectedIndex]}
-                    error={asigError[selectedIndex]}
-                    isLoading={asigLoading[selectedIndex]}
-                    cursorValues={
-                      axisClick.length >= selectedIndex + 1
-                        ? {
-                            primary: axisClick[selectedIndex].dataIndex,
-                            primaryTime: axisClick[selectedIndex].axisValue,
-                            primaryTimestamp:
-                              axisClick[selectedIndex].timestamp,
-                            secondary: axisClick[selectedIndex].secondaryIndex,
-                            secondaryTime:
-                              axisClick[selectedIndex].secondaryValue,
-                            secondaryTimestamp:
-                              axisClick[selectedIndex].secondaryTimestamp,
-                          }
-                        : {
-                            primary: 0,
-                            primaryTime: 0,
-                            primaryTimestamp: "",
-                            secondary: 0,
-                            secondaryTime: 0,
-                            secondaryTimestamp: "",
-                          }
-                    }
-                    onAxisClick={handleAxisClick}
-                    zoomBoundary={
-                      zoomBoundary.length >= selectedIndex + 1
-                        ? {
-                            startPercent:
-                              zoomBoundary[selectedIndex].startPercent,
-                            endPercent: zoomBoundary[selectedIndex].endPercent,
-                          }
-                        : {
-                            startPercent: 15,
-                            endPercent: 30,
-                          }
-                    }
-                    toolTipStatus={toolTipStatus}
-                  />
-                )}
-                <ChartFooter
-                  timeRange={{ minTime: -0.1, maxTime: 0.8 }}
-                  zoomBoundary={
-                    zoomBoundary.length >= selectedIndex + 1
-                      ? {
-                          startPercent:
-                            zoomBoundary[selectedIndex].startPercent,
-                          endPercent: zoomBoundary[selectedIndex].endPercent,
-                        }
-                      : {
-                          startPercent: 0,
-                          endPercent: 0,
-                        }
-                  }
-                  onZoomOutClick={handleZoomOutClick}
-                  onZoomInClick={handleZoomInClick}
-                  onZoomChange={handleZoomChange}
-                  onToolTipStatusChange={handleTooltipChange}
-                />
-              </Stack>
-            </Grid>
-
-            <Grid item xs={3}>
-              <CursorValues
-                axisClick={
-                  selectedIndex <= axisClick.length - 1
-                    ? axisClick[selectedIndex]
-                    : {
-                        dataIndex: 0,
-                        axisValue: 0,
-                        timestamp: "",
-                        secondaryIndex: 0,
-                        secondaryValue: 0,
-                        secondaryTimestamp: "",
-                      }
-                }
-                tableValues={tableValues}
-              />
-            </Grid>
-          </Grid>
-        </Grid>
-      ) : ( */}
       <Grid item sx={{ width: `calc(100% - 270px)` }}>
         {(selectedPage === "SingleAxis" || selectedPage === "MultipleAxis") && (
           <ChartComponent
-            stationName={selectedProject.files[selectedIndex].station_name}
+            passedStationName={
+              selectedProject.files[selectedIndex].station_name
+            }
             plotName={selectedPage}
             analogSignals={analogSignals[selectedIndex]}
             analogSignalNames={analogSignalNames[selectedIndex]}
@@ -766,18 +566,23 @@ const MainComponent = () => {
               axisClick.length >= selectedIndex + 1
                 ? {
                     primary: axisClick[selectedIndex].dataIndex,
+                    primaryReduced: axisClick[selectedIndex].dataIndexReduced,
                     primaryTime: axisClick[selectedIndex].axisValue,
                     primaryTimestamp: axisClick[selectedIndex].timestamp,
                     secondary: axisClick[selectedIndex].secondaryIndex,
+                    secondaryReduced:
+                      axisClick[selectedIndex].secondaryIndexReduced,
                     secondaryTime: axisClick[selectedIndex].secondaryValue,
                     secondaryTimestamp:
                       axisClick[selectedIndex].secondaryTimestamp,
                   }
                 : {
                     primary: 0,
+                    primaryReduced: 0,
                     primaryTime: 0,
                     primaryTimestamp: "",
                     secondary: 0,
+                    secondaryReduced: 0,
                     secondaryTime: 0,
                     secondaryTimestamp: "",
                   }
@@ -788,6 +593,7 @@ const MainComponent = () => {
             sampling_frequency={
               selectedProject.files[selectedIndex].sampling_frequency
             }
+            pointCount={pointCount}
           />
         )}
         {selectedPage === "ProjectList" && (
@@ -829,7 +635,6 @@ const MainComponent = () => {
           />
         )}
       </Grid>
-      {/* )} */}
     </Grid>
   );
 };
