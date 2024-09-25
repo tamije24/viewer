@@ -264,14 +264,18 @@ const PolarPlotAndTable = ({
   const CURRENT_MARKER = "square";
   const VOLTAGE_MARKER = "circle";
   const MARKER_SIZE = 5;
-  const LINE_COLOR = [
-    "crimson",
-    "goldenrod",
-    "deepskyblue",
-    "crimson",
-    "goldenrod",
-    "deepskyblue",
-  ];
+
+  const LINE_COLOR =
+    plotType === "phase"
+      ? [
+          "crimson",
+          "goldenrod",
+          "deepskyblue",
+          "crimson",
+          "goldenrod",
+          "deepskyblue",
+        ]
+      : ["blue", "magenta", "green", "blue", "magenta", "green"];
 
   return (
     <Grid container>

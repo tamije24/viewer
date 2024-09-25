@@ -14,7 +14,7 @@ import SignIn from "./components/SignIn";
 import TopBar from "./components/TopBar";
 import Paper from "@mui/material/Paper";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
-import { Autocomplete, Grid, TextField } from "@mui/material";
+import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
 
 // import ChromeReaderModeIcon from "@mui/icons-material/ChromeReaderMode";
 // import MicrowaveIcon from "@mui/icons-material/Microwave";
@@ -133,7 +133,11 @@ function App() {
           }}
           elevation={3}
         >
-          <Grid container direction="row">
+          <Grid
+            container
+            direction="row"
+            sx={{ display: "flex", justifyContent: "space-between" }}
+          >
             <Grid item xs={2.5}>
               <BottomNavigation
                 showLabels
@@ -173,6 +177,7 @@ function App() {
             </Grid>
             <Grid
               item
+              xs={1.5}
               display="flex"
               justifyContent="flex-start"
               sx={{
@@ -194,6 +199,22 @@ function App() {
                   <TextField {...params} label="Display points" />
                 )}
               />
+            </Grid>
+            <Grid
+              item
+              xs={7}
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "flex-end",
+                pr: 2,
+                pb: 1,
+                bgcolor: "",
+              }}
+            >
+              <Typography variant="caption" sx={{ fontSize: "0.6rem" }}>
+                Copyright © 2024 Tenaga Nasional Berhad. All Rights Reserved.
+              </Typography>
             </Grid>
             {/* <Grid item>
               <ChromeReaderModeIcon />
