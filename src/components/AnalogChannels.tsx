@@ -17,7 +17,7 @@ interface Props {
 const AnalogChannels = ({ station_name, analogChannels }: Props) => {
   if (analogChannels === undefined)
     return (
-      <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
+      <Box sx={{ display: "flex-box", mt: 10, ml: 0.5, mb: 2 }}>
         <Typography
           variant="overline"
           component="div"
@@ -143,7 +143,7 @@ const AnalogChannels = ({ station_name, analogChannels }: Props) => {
     <Card
       sx={{
         mt: 10,
-        ml: 2,
+        ml: 0.5,
         mb: 10,
         //height: `calc(100vh - 150px)`
       }}

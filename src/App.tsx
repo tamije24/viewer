@@ -16,6 +16,13 @@ import Paper from "@mui/material/Paper";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
 import { Autocomplete, Grid, TextField } from "@mui/material";
 
+// import ChromeReaderModeIcon from "@mui/icons-material/ChromeReaderMode";
+// import MicrowaveIcon from "@mui/icons-material/Microwave";
+// import ViewArrayIcon from "@mui/icons-material/ViewArray";
+// import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
+import WebIcon from "@mui/icons-material/Web";
+import WebAssetIcon from "@mui/icons-material/WebAsset";
+
 export interface AccessCodes {
   access: string;
   refresh: string;
@@ -23,6 +30,7 @@ export interface AccessCodes {
 
 function App() {
   const [mode, setMode] = useState<"light" | "dark">("light");
+  const [sidebarStatus, setSidebarStatus] = useState(true);
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
@@ -106,6 +114,7 @@ function App() {
           {currentUser.id !== 0 ? (
             <MainComponent
               pointCount={pointCount === null ? 0 : parseInt(pointCount)}
+              sidebarStatus={sidebarStatus}
             />
           ) : (
             <SignIn onAccessCodeReceive={handleAccessCodeReceive} />
@@ -125,7 +134,7 @@ function App() {
           elevation={3}
         >
           <Grid container direction="row">
-            <Grid item xs={1.5}>
+            <Grid item xs={2.5}>
               <BottomNavigation
                 showLabels
                 sx={{
@@ -134,7 +143,7 @@ function App() {
                   alignItems: "center",
                   justifyContent: "left",
                   // bgcolor: "background.default",
-                  //  bgcolor: "red",
+                  //bgcolor: "red",
                   color: "text.primary",
                   //    borderRadius: 1,
                   paddingLeft: "10px",
@@ -153,6 +162,13 @@ function App() {
                   }
                   onClick={colorMode.toggleColorMode}
                 />
+                <BottomNavigationAction
+                  sx={{ ml: 1 }}
+                  label={sidebarStatus ? "Show side bar" : "Hide side bar"}
+                  value="sidebar"
+                  icon={sidebarStatus ? <WebIcon /> : <WebAssetIcon />}
+                  onClick={() => setSidebarStatus(!sidebarStatus)}
+                />
               </BottomNavigation>
             </Grid>
             <Grid
@@ -161,6 +177,7 @@ function App() {
               justifyContent="flex-start"
               sx={{
                 mt: 1.5,
+                ml: 5,
               }}
             >
               <Autocomplete
@@ -178,6 +195,12 @@ function App() {
                 )}
               />
             </Grid>
+            {/* <Grid item>
+              <ChromeReaderModeIcon />
+              <MicrowaveIcon />
+              <ViewArrayIcon />
+              <ViewSidebarIcon />
+            </Grid> */}
           </Grid>
         </Paper>
       </Box>

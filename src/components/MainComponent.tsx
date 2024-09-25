@@ -83,9 +83,10 @@ const emptyProject: Project = {
 
 interface Props {
   pointCount: number;
+  sidebarStatus: boolean;
 }
 
-const MainComponent = ({ pointCount }: Props) => {
+const MainComponent = ({ pointCount, sidebarStatus }: Props) => {
   const [presentZoomValues, setPresentZoomValues] = useState([
     {
       startPercent: 0,
@@ -184,10 +185,10 @@ const MainComponent = ({ pointCount }: Props) => {
       secondaryTimestamp: secondaryTimestamp,
     };
 
-    console.log(axisClick);
-    console.log(aValue);
-    console.log(selectedIndex);
-    console.log("main component: ", dataIndex);
+    // console.log(axisClick);
+    // console.log(aValue);
+    // console.log(selectedIndex);
+    //    console.log("main component: ", dataIndex, dataIndexReduced);
 
     setAxisClick(aValue);
   };
@@ -205,6 +206,13 @@ const MainComponent = ({ pointCount }: Props) => {
       startTime: zoomValues.startTime,
       endTime: zoomValues.endTime,
     };
+
+    // console.log(
+    //   "chart comp - : ",
+    //   zoomValues.startPercent,
+    //   zoomValues.endPercent
+    // );
+
     setPresentZoomValues(newZb);
   };
 
@@ -316,6 +324,9 @@ const MainComponent = ({ pointCount }: Props) => {
   const getSignalsFromBackend = (project: Project) => {
     console.log("getting signals from backend");
 
+    // get analog channel information
+    getAnalogChannels(project);
+
     // get analog signals
     getAnalogSignals(project);
 
@@ -326,9 +337,6 @@ const MainComponent = ({ pointCount }: Props) => {
     getPhasors(project);
 
     // get harmonics
-
-    // get analog channel information
-    getAnalogChannels(project);
   };
 
   const getAnalogSignals = (project: Project) => {
@@ -532,12 +540,10 @@ const MainComponent = ({ pointCount }: Props) => {
           onSelectNavItem={handleSelectNavItem}
         />
       </Grid>
-      <Grid item sx={{ width: `calc(100% - 270px)` }}>
+      <Grid item sx={{ width: `calc(100% - 260px)` }}>
         {(selectedPage === "SingleAxis" || selectedPage === "MultipleAxis") && (
           <ChartComponent
-            passedStationName={
-              selectedProject.files[selectedIndex].station_name
-            }
+            stationName={selectedProject.files[selectedIndex].station_name}
             plotName={selectedPage}
             analogSignals={analogSignals[selectedIndex]}
             analogSignalNames={analogSignalNames[selectedIndex]}
@@ -546,7 +552,7 @@ const MainComponent = ({ pointCount }: Props) => {
             error={asigError[selectedIndex]}
             isAnLoading={asigLoading[selectedIndex]}
             isDigLoading={dsigLoading[selectedIndex]}
-            passedZoomValues={
+            presentZoomValues={
               presentZoomValues.length >= selectedIndex + 1
                 ? {
                     startPercent: presentZoomValues[selectedIndex].startPercent,
@@ -594,6 +600,7 @@ const MainComponent = ({ pointCount }: Props) => {
               selectedProject.files[selectedIndex].sampling_frequency
             }
             pointCount={pointCount}
+            sidebarStatus={sidebarStatus}
           />
         )}
         {selectedPage === "ProjectList" && (

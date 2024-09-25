@@ -23,14 +23,15 @@ import IconButton from "@mui/material/IconButton";
 
 interface Props {
   analogSignalNames: string[];
-  analogValues_filtered: number[][];
+  analogValues_window: number[][];
+  //digitalValues_window: number[][];
   timeValues: number[];
   timeStamps: string[];
   originalIndexes: number[];
-  presentZoomValues: {
-    startPercent: number;
-    endPercent: number;
-  };
+  // presentZoomValues: {
+  //   startPercent: number;
+  //   endPercent: number;
+  // };
   tickInterval: number[];
   toolTipStatus: boolean;
   cursorValues: {
@@ -61,11 +62,10 @@ interface Props {
 
 const MultipleAxisChart = ({
   analogSignalNames,
-  analogValues_filtered,
+  analogValues_window,
   timeValues,
   timeStamps,
   originalIndexes,
-  presentZoomValues,
   tickInterval,
   toolTipStatus,
   cursorValues,
@@ -73,11 +73,15 @@ const MultipleAxisChart = ({
   presentMaxisYZoomValues,
 }: Props) => {
   // STATE VARIABLES
-  const [zoom, setZoom] = useState<ZoomData[]>([
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [errMessage, setErrorMessage] = useState("");
+
+  // OTHER VARIABLES
+  let zoom: ZoomData[] = [
     {
       axisId: "time-axis",
-      start: presentZoomValues.startPercent,
-      end: presentZoomValues.endPercent,
+      start: 0,
+      end: 100,
     },
     {
       axisId: "Ia-axis",
@@ -109,26 +113,22 @@ const MultipleAxisChart = ({
       start: presentMaxisYZoomValues[5].start,
       end: presentMaxisYZoomValues[5].end,
     },
-  ]);
+  ];
 
-  const [primaryCursor, setPrimaryCursor] = useState({
+  let primaryCursor = {
     cursor: cursorValues.primary,
     cursorReduced: cursorValues.primaryReduced,
     time: cursorValues.primaryTime,
     timestamp: cursorValues.primaryTimestamp,
-  });
+  };
 
-  const [secondaryCursor, setSecondaryCursor] = useState({
+  let secondaryCursor = {
     cursor: cursorValues.secondary,
     cursorReduced: cursorValues.secondaryReduced,
     time: cursorValues.secondaryTime,
     timestamp: cursorValues.secondaryTimestamp,
-  });
+  };
 
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [errMessage, setErrorMessage] = useState("");
-
-  // OTHER VARIABLES
   let color_light = [
     "crimson",
     "goldenrod",
@@ -137,6 +137,7 @@ const MultipleAxisChart = ({
     "goldenrod",
     "deepskyblue",
   ];
+
   let series: LineSeriesType[] = [];
   const id = useId();
   const clipPathIds = [
@@ -157,6 +158,21 @@ const MultipleAxisChart = ({
     "Vc-axis",
   ];
 
+  let zeroPresent =
+    timeValues.findIndex((element) => element === 0) === -1 ? false : true;
+  let primaryPresent =
+    timeValues.findIndex(
+      (element) => element === timeValues[primaryCursor.cursorReduced]
+    ) === -1
+      ? false
+      : true;
+  let secondaryPresent =
+    timeValues.findIndex(
+      (element) => element === timeValues[secondaryCursor.cursorReduced]
+    ) === -1
+      ? false
+      : true;
+
   // EVENT HANDLERS
   const handleAxisClick = (
     event: MouseEvent,
@@ -171,12 +187,12 @@ const MultipleAxisChart = ({
         setOpenSnackbar(true);
         return;
       }
-      setSecondaryCursor({
+      secondaryCursor = {
         cursor: originalIndexes[dataIndex],
         cursorReduced: dataIndex,
         time: axisValue,
         timestamp: timeStamps[dataIndex],
-      });
+      };
       onAxisClick(
         primaryCursor.cursor,
         primaryCursor.cursorReduced,
@@ -195,12 +211,12 @@ const MultipleAxisChart = ({
         setOpenSnackbar(true);
         return;
       }
-      setPrimaryCursor({
+      primaryCursor = {
         cursor: originalIndexes[dataIndex],
         cursorReduced: dataIndex,
         time: axisValue,
         timestamp: timeStamps[dataIndex],
-      });
+      };
       onAxisClick(
         originalIndexes[dataIndex],
         dataIndex,
@@ -245,7 +261,7 @@ const MultipleAxisChart = ({
     let a: LineSeriesType = {
       type: "line",
       label: label,
-      data: analogValues_filtered[i],
+      data: analogValues_window[i],
       yAxisId: yAxisNames[i],
       showMark: false,
       color: color_light[i],
@@ -257,85 +273,22 @@ const MultipleAxisChart = ({
     series.push(a);
   }
 
-  // X-axis zoom value changed
-  if (
-    zoom[0].start !== presentZoomValues.startPercent ||
-    zoom[0].end !== presentZoomValues.endPercent
-  ) {
-    let tempZooom = [...zoom];
-    zoom[0] = {
-      axisId: "time-axis",
-      start: presentZoomValues.startPercent,
-      end: presentZoomValues.endPercent,
-    };
-    setZoom(tempZooom);
-
-    setPrimaryCursor({
-      cursor: cursorValues.primary,
-      cursorReduced: cursorValues.primaryReduced,
-      time: cursorValues.primaryTime,
-      timestamp: cursorValues.primaryTimestamp,
-    });
-    setSecondaryCursor({
-      cursor: cursorValues.secondary,
-      cursorReduced: cursorValues.secondaryReduced,
-      time: cursorValues.secondaryTime,
-      timestamp: cursorValues.secondaryTimestamp,
-    });
-  }
-
-  // Y-axis zoom value changed
-  let tempZoom = [...zoom];
-  if (zoom[1].start !== presentMaxisYZoomValues[0].start) {
-    tempZoom[1] = {
-      axisId: "Ia-axis",
-      start: presentMaxisYZoomValues[0].start,
-      end: presentMaxisYZoomValues[0].end,
-    };
-    setZoom(tempZoom);
-  } else if (zoom[2].start !== presentMaxisYZoomValues[1].start) {
-    tempZoom[2] = {
-      axisId: "Ib-axis",
-      start: presentMaxisYZoomValues[1].start,
-      end: presentMaxisYZoomValues[1].end,
-    };
-    setZoom(tempZoom);
-  } else if (zoom[3].start !== presentMaxisYZoomValues[2].start) {
-    tempZoom[3] = {
-      axisId: "Ic-axis",
-      start: presentMaxisYZoomValues[2].start,
-      end: presentMaxisYZoomValues[2].end,
-    };
-    setZoom(tempZoom);
-  } else if (zoom[4].start !== presentMaxisYZoomValues[3].start) {
-    tempZoom[4] = {
-      axisId: "Va-axis",
-      start: presentMaxisYZoomValues[3].start,
-      end: presentMaxisYZoomValues[3].end,
-    };
-    setZoom(tempZoom);
-  } else if (zoom[5].start !== presentMaxisYZoomValues[4].start) {
-    tempZoom[5] = {
-      axisId: "Vb-axis",
-      start: presentMaxisYZoomValues[4].start,
-      end: presentMaxisYZoomValues[4].end,
-    };
-    setZoom(tempZoom);
-  } else if (zoom[6].start !== presentMaxisYZoomValues[5].start) {
-    tempZoom[6] = {
-      axisId: "Vc-axis",
-      start: presentMaxisYZoomValues[5].start,
-      end: presentMaxisYZoomValues[5].end,
-    };
-    setZoom(tempZoom);
-  }
-
   const timeFormatter = (
     timevalue: number,
     context: AxisValueFormatterContext
   ) => {
+    // console.log(timeValues[timeValues.length - 1] - timeValues[0]);
     let timeInd = timeValues.findIndex((element) => element === timevalue);
-    return context.location === "tick" ? `${timevalue}` : timeStamps[timeInd];
+    let tickLabel = "";
+    if (context.location === "tick") {
+      tickLabel =
+        timeValues[timeValues.length - 1] - timeValues[0] >= 0.016
+          ? `${(Math.round(timevalue * 1000) / 1000).toFixed(3)}`
+          : `${(Math.round(timevalue * 1000000) / 1000000).toFixed(6)}`;
+    } else {
+      tickLabel = timeStamps[timeInd];
+    }
+    return tickLabel;
   };
 
   const xAxisCommon = {
@@ -355,7 +308,8 @@ const MultipleAxisChart = ({
   } as const;
 
   const leftMargin = 20;
-  const rightMargin = 20;
+  const rightMargin = 30;
+  const signals = ["IA", "IB", "IC", "VA", "VB", "VC"];
 
   return (
     <>
@@ -380,7 +334,6 @@ const MultipleAxisChart = ({
               ]}
               series={[series]}
               zoom={zoom}
-              onZoomChange={setZoom}
               margin={{
                 left: leftMargin,
                 right: rightMargin,
@@ -390,7 +343,7 @@ const MultipleAxisChart = ({
               sx={{
                 // borderLeft: 0.5,
                 // borderRight: 0.5,
-                // borderTop: 0.5,
+                borderTop: 0.3,
                 // borderBottom: 0,
                 "& .MuiLineElement-root": {
                   strokeWidth: 1.5,
@@ -410,45 +363,67 @@ const MultipleAxisChart = ({
                 }}
               />
               <g clipPath={`url(#${clipPathIds[index]})`}>
+                {zeroPresent && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={0}
+                    lineStyle={{
+                      strokeDasharray: "5 1",
+                      strokeWidth: 1.0,
+                      stroke: "secondary",
+                    }}
+                  />
+                )}
+                {primaryPresent && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={timeValues[primaryCursor.cursorReduced]}
+                    lineStyle={{
+                      strokeDasharray: "10 5",
+                      strokeWidth: 1.5,
+                      stroke: "fuchsia",
+                    }}
+                  />
+                )}
+
+                {secondaryPresent && (
+                  <ChartsReferenceLine
+                    axisId={"time-axis"}
+                    x={timeValues[secondaryCursor.cursorReduced]}
+                    lineStyle={{
+                      strokeDasharray: "3 3",
+                      strokeWidth: 2,
+                      stroke: "forestgreen",
+                    }}
+                  />
+                )}
+                <ChartsReferenceLine
+                  axisId={yAxisNames[index]}
+                  y={0}
+                  lineStyle={{
+                    strokeDasharray: "0",
+                    strokeWidth: 0.5,
+                    stroke: "black",
+                  }}
+                />
                 <LinePlot skipAnimation />
-                <ChartsReferenceLine
-                  axisId={"time-axis"}
-                  x={0}
-                  lineStyle={{
-                    strokeDasharray: "5 1",
-                    strokeWidth: 1.0,
-                    stroke: "secondary",
-                  }}
-                />
-                <ChartsReferenceLine
-                  axisId={"time-axis"}
-                  x={timeValues[primaryCursor.cursorReduced]}
-                  lineStyle={{
-                    strokeDasharray: "10 5",
-                    strokeWidth: 2,
-                    stroke: "crimson",
-                  }}
-                />
-                <ChartsReferenceLine
-                  axisId={"time-axis"}
-                  x={timeValues[secondaryCursor.cursorReduced]}
-                  lineStyle={{
-                    strokeDasharray: "3 3",
-                    strokeWidth: 2,
-                    stroke: "forestgreen",
-                  }}
-                />
               </g>
               <ChartsClipPath id={clipPathIds[index]} />
               <ChartsYAxis
                 disableTicks
                 position="left"
                 axisId={yAxisNames[index]}
-                tickInterval={[]}
+                tickInterval={[0]}
               />
               <ChartsYAxis
                 disableTicks
                 position="right"
+                label={signals[index]}
+                labelStyle={{
+                  fontSize: 10,
+                  angle: -90,
+                  transform: "translateX(-10px)",
+                }}
                 axisId={yAxisNames[index]}
                 tickInterval={[]}
               />
@@ -470,7 +445,6 @@ const MultipleAxisChart = ({
             ]}
             series={[]}
             zoom={zoom}
-            onZoomChange={setZoom}
             margin={{
               left: leftMargin,
               right: rightMargin,

@@ -28,15 +28,15 @@ import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
 interface Props {
   analogSignalNames: string[];
   digitalSignalNames: string[];
-  analogValues_filtered: number[][];
-  digitalValues_filtered: number[][];
+  analogValues_window: number[][];
+  digitalValues_window: number[][];
   timeValues: number[];
   timeStamps: string[];
   originalIndexes: number[];
-  presentZoomValues: {
-    startPercent: number;
-    endPercent: number;
-  };
+  // presentZoomValues: {
+  //   startPercent: number;
+  //   endPercent: number;
+  // };
   tickInterval: number[];
   toolTipStatus: boolean;
   cursorValues: {
@@ -68,12 +68,11 @@ interface Props {
 const SingleAxisChart = ({
   analogSignalNames,
   digitalSignalNames,
-  analogValues_filtered,
-  digitalValues_filtered,
+  analogValues_window,
+  digitalValues_window,
   timeValues,
   timeStamps,
   originalIndexes,
-  presentZoomValues,
   tickInterval,
   toolTipStatus,
   cursorValues,
@@ -81,23 +80,9 @@ const SingleAxisChart = ({
   presentSaxisYZoomValues,
 }: Props) => {
   // STATE VARIABLES
-  const [zoom, setZoom] = useState<ZoomData[]>([
-    {
-      axisId: "time-axis",
-      start: presentZoomValues.startPercent,
-      end: presentZoomValues.endPercent,
-    },
-    {
-      axisId: "currentAxis",
-      start: presentSaxisYZoomValues[0].start,
-      end: presentSaxisYZoomValues[0].end,
-    },
-    {
-      axisId: "voltageAxis",
-      start: presentSaxisYZoomValues[1].start,
-      end: presentSaxisYZoomValues[1].end,
-    },
-  ]);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [errMessage, setErrorMessage] = useState("");
+
   const [primaryCursor, setPrimaryCursor] = useState({
     cursor: cursorValues.primary,
     cursorReduced: cursorValues.primaryReduced,
@@ -110,19 +95,53 @@ const SingleAxisChart = ({
     time: cursorValues.secondaryTime,
     timestamp: cursorValues.secondaryTimestamp,
   });
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [errMessage, setErrorMessage] = useState("");
 
   // OTHER VARIABLES
+
+  let zoom: ZoomData[] = [
+    {
+      axisId: "time-axis",
+      start: 0,
+      end: 100,
+    },
+    {
+      axisId: "currentAxis",
+      start: presentSaxisYZoomValues[0].start,
+      end: presentSaxisYZoomValues[0].end,
+    },
+    {
+      axisId: "voltageAxis",
+      start: presentSaxisYZoomValues[1].start,
+      end: presentSaxisYZoomValues[1].end,
+    },
+  ];
+
   let current_series: LineSeriesType[] = [];
   let voltage_series: LineSeriesType[] = [];
   let digital_series: LineSeriesType[] = [];
 
   let color_light = ["crimson", "goldenrod", "deepskyblue"];
+  let color_digital = ["saddlebrown", "coral", "plum", "blue"];
+
   const id = useId();
   const clipPathId_1 = `${id}-clip-path-1`;
   const clipPathId_2 = `${id}-clip-path-2`;
   const clipPathId_3 = `${id}-clip-path-3`;
+
+  let zeroPresent =
+    timeValues.findIndex((element) => element === 0) === -1 ? false : true;
+  let primaryPresent =
+    timeValues.findIndex(
+      (element) => element === timeValues[primaryCursor.cursorReduced]
+    ) === -1
+      ? false
+      : true;
+  let secondaryPresent =
+    timeValues.findIndex(
+      (element) => element === timeValues[secondaryCursor.cursorReduced]
+    ) === -1
+      ? false
+      : true;
 
   // EVENT HANDLERS
   const handleAxisClick = (
@@ -145,6 +164,7 @@ const SingleAxisChart = ({
         time: axisValue,
         timestamp: timeStamps[dataIndex],
       });
+
       onAxisClick(
         primaryCursor.cursor,
         primaryCursor.cursorReduced,
@@ -171,6 +191,16 @@ const SingleAxisChart = ({
         timestamp: timeStamps[dataIndex],
       });
 
+      primaryPresent =
+        timeValues.findIndex((element) => element === timeValues[dataIndex]) ===
+        -1
+          ? false
+          : true;
+
+      // console.log(originalIndexes[dataIndex]);
+      // console.log(dataIndex);
+      // console.log(primaryPresent);
+
       onAxisClick(
         originalIndexes[dataIndex],
         dataIndex,
@@ -182,6 +212,8 @@ const SingleAxisChart = ({
         secondaryCursor.timestamp
       );
     }
+
+    // console.log("single-axis: ", originalIndexes[dataIndex], dataIndex);
   };
 
   const handleClose = (
@@ -215,7 +247,7 @@ const SingleAxisChart = ({
     let a: LineSeriesType = {
       type: "line",
       label: label,
-      data: analogValues_filtered[i],
+      data: analogValues_window[i],
       yAxisId: "currentAxis",
       showMark: false,
       color: color_light[i],
@@ -233,7 +265,7 @@ const SingleAxisChart = ({
     let a: LineSeriesType = {
       type: "line",
       label: label,
-      data: analogValues_filtered[i],
+      data: analogValues_window[i],
       yAxisId: "voltageAxis",
       showMark: false,
       color: color_light[i - 3],
@@ -254,9 +286,10 @@ const SingleAxisChart = ({
       type: "line",
       yAxisId: "status",
       label: label,
-      data: digitalValues_filtered[i],
+      data: digitalValues_window[i],
       showMark: false,
       area: true,
+      color: color_digital[i],
       baseline: baseline[i],
       highlightScope: {
         highlighted: "series",
@@ -266,76 +299,44 @@ const SingleAxisChart = ({
     digital_series.push(d);
   }
 
-  // X-axis zoom value changed
   if (
-    zoom[0].start !== presentZoomValues.startPercent ||
-    zoom[0].end !== presentZoomValues.endPercent
-  ) {
-    let temp = [...zoom];
-    temp[0] = {
-      axisId: "time-axis",
-      start: presentZoomValues.startPercent,
-      end: presentZoomValues.endPercent,
-    };
-    setZoom(temp);
+    primaryCursor.cursorReduced != cursorValues.primaryReduced ||
+    primaryCursor.cursor != cursorValues.primary
+  )
     setPrimaryCursor({
       cursor: cursorValues.primary,
       cursorReduced: cursorValues.primaryReduced,
       time: cursorValues.primaryTime,
       timestamp: cursorValues.primaryTimestamp,
     });
-    setSecondaryCursor({
-      cursor: cursorValues.secondary,
-      cursorReduced: cursorValues.secondaryReduced,
-      time: cursorValues.secondaryTime,
-      timestamp: cursorValues.secondaryTimestamp,
-    });
-  }
 
-  // Y-axis zoom value changed
-  let tempZoom = [...zoom];
-  if (zoom[1].start !== presentSaxisYZoomValues[0].start) {
-    tempZoom[1] = {
-      axisId: "currentAxis",
-      start: presentSaxisYZoomValues[0].start,
-      end: presentSaxisYZoomValues[0].end,
-    };
-    setZoom(tempZoom);
-  } else if (zoom[2].start !== presentSaxisYZoomValues[1].start) {
-    tempZoom[2] = {
-      axisId: "voltageAxis",
-      start: presentSaxisYZoomValues[1].start,
-      end: presentSaxisYZoomValues[1].end,
-    };
-    setZoom(tempZoom);
-  }
-
-  // cursor value update
   if (
-    primaryCursor.cursor !== cursorValues.primary ||
+    secondaryCursor.cursorReduced != cursorValues.secondaryReduced ||
     secondaryCursor.cursor != cursorValues.secondary
-  ) {
-    setPrimaryCursor({
-      cursor: cursorValues.primary,
-      cursorReduced: cursorValues.primaryReduced,
-      time: cursorValues.primaryTime,
-      timestamp: cursorValues.primaryTimestamp,
-    });
-
+  )
     setSecondaryCursor({
       cursor: cursorValues.secondary,
       cursorReduced: cursorValues.secondaryReduced,
       time: cursorValues.secondaryTime,
       timestamp: cursorValues.secondaryTimestamp,
     });
-  }
 
   const timeFormatter = (
     timevalue: number,
     context: AxisValueFormatterContext
   ) => {
+    // console.log(timeValues[timeValues.length - 1] - timeValues[0]);
     let timeInd = timeValues.findIndex((element) => element === timevalue);
-    return context.location === "tick" ? `${timevalue}` : timeStamps[timeInd];
+    let tickLabel = "";
+    if (context.location === "tick") {
+      tickLabel =
+        timeValues[timeValues.length - 1] - timeValues[0] >= 0.016
+          ? `${(Math.round(timevalue * 1000) / 1000).toFixed(3)}`
+          : `${(Math.round(timevalue * 1000000) / 1000000).toFixed(6)}`;
+    } else {
+      tickLabel = timeStamps[timeInd];
+    }
+    return tickLabel;
   };
 
   const timeStampFormatter = (timevalue: number) => {
@@ -348,7 +349,6 @@ const SingleAxisChart = ({
     scaleType: "point",
     zoom: { filterMode: "discard" },
     valueFormatter: timeFormatter,
-    //  zoom: { panning: true },
     labelStyle: {
       fontSize: 11,
     },
@@ -360,9 +360,14 @@ const SingleAxisChart = ({
   } as const;
 
   const leftMargin = 20;
-  const rightMargin = 20;
+  const rightMargin = 30;
 
-  // console.log("single axis: ", primaryCursor);
+  // console.log(
+  //   "before return: ",
+  //   primaryPresent,
+  //   primaryCursor.cursorReduced,
+  //   timeValues[primaryCursor.cursorReduced]
+  // );
   return (
     <>
       <Grid
@@ -389,7 +394,6 @@ const SingleAxisChart = ({
             yAxis={[{ id: "currentAxis" }]}
             series={current_series}
             zoom={zoom}
-            onZoomChange={setZoom}
             margin={{
               left: leftMargin,
               right: rightMargin,
@@ -400,7 +404,6 @@ const SingleAxisChart = ({
               "& .MuiLineElement-root": {
                 strokeWidth: 1.5,
               },
-              //       border: 0.5,
             }}
           >
             <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
@@ -416,46 +419,73 @@ const SingleAxisChart = ({
               }}
             />
             <g clipPath={`url(#${clipPathId_1})`}>
+              <ChartsReferenceLine
+                axisId={"currentAxis"}
+                y={0}
+                lineStyle={{
+                  strokeDasharray: "0",
+                  strokeWidth: 0.5,
+                  stroke: "black",
+                }}
+              />
               <LinePlot skipAnimation />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={0}
-                lineStyle={{
-                  strokeDasharray: "5 1",
-                  strokeWidth: 1.0,
-                  stroke: "secondary",
-                }}
-              />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={timeValues[primaryCursor.cursorReduced]}
-                lineStyle={{
-                  strokeDasharray: "10 5",
-                  strokeWidth: 2,
-                  stroke: "crimson",
-                }}
-              />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={timeValues[secondaryCursor.cursorReduced]}
-                lineStyle={{
-                  strokeDasharray: "3 3",
-                  strokeWidth: 2,
-                  stroke: "forestgreen",
-                }}
-              />
+              {zeroPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={0}
+                  lineStyle={{
+                    strokeDasharray: "5 1",
+                    strokeWidth: 1.0,
+                    stroke: "secondary",
+                  }}
+                />
+              )}
+              {primaryPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={timeValues[primaryCursor.cursorReduced]}
+                  lineStyle={{
+                    strokeDasharray: "10 5",
+                    strokeWidth: 1.5,
+                    stroke: "fuchsia",
+                  }}
+                />
+              )}
+
+              {secondaryPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={timeValues[secondaryCursor.cursorReduced]}
+                  lineStyle={{
+                    strokeDasharray: "3 3",
+                    strokeWidth: 2,
+                    stroke: "forestgreen",
+                  }}
+                />
+              )}
             </g>
             <ChartsYAxis
               disableTicks
               position="left"
               axisId="currentAxis"
-              tickInterval={[]}
+              tickInterval={[0]}
             />
             <ChartsYAxis
               disableTicks
+              label="CURRENTS"
+              labelStyle={{
+                fontSize: 10,
+                angle: -90,
+                // transform: "translateX(-5px)",
+              }}
               position="right"
               axisId="currentAxis"
               tickInterval={[]}
+              // sx={{
+              //   [`& .${axisClasses.right} .${axisClasses.label}`]: {
+              //     transform: "translateY(3px)",
+              //   },
+              // }}
             />
             <ChartsClipPath id={clipPathId_1} />
             <ChartsXAxis
@@ -487,13 +517,12 @@ const SingleAxisChart = ({
             yAxis={[{ id: "voltageAxis" }]}
             series={voltage_series}
             zoom={zoom}
-            onZoomChange={setZoom}
             margin={{ left: leftMargin, right: rightMargin, top: 0, bottom: 0 }}
             sx={{
               "& .MuiLineElement-root": {
                 strokeWidth: 1.5,
               },
-              //  border: 0.5,
+              borderTop: 0.3,
             }}
           >
             <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
@@ -512,44 +541,64 @@ const SingleAxisChart = ({
               disableTicks
               position="left"
               axisId="voltageAxis"
-              tickInterval={[]}
+              tickInterval={[0]}
             />
             <ChartsYAxis
               disableTicks
+              label="VOLTAGE"
+              labelStyle={{
+                fontSize: 10,
+                angle: -90,
+              }}
               position="right"
               axisId="voltageAxis"
               tickInterval={[]}
             />
             <g clipPath={`url(#${clipPathId_2})`}>
-              <LinePlot />
-              skipAnimation
               <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={0}
+                axisId={"voltageAxis"}
+                y={0}
                 lineStyle={{
-                  strokeDasharray: "5 1",
-                  strokeWidth: 1.0,
-                  stroke: "secondary",
+                  strokeDasharray: "0",
+                  strokeWidth: 0.5,
+                  stroke: "black",
                 }}
               />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={timeValues[primaryCursor.cursorReduced]}
-                lineStyle={{
-                  strokeDasharray: "10 5",
-                  strokeWidth: 2,
-                  stroke: "crimson",
-                }}
-              />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={timeValues[secondaryCursor.cursorReduced]}
-                lineStyle={{
-                  strokeDasharray: "3 3",
-                  strokeWidth: 2,
-                  stroke: "forestgreen",
-                }}
-              />
+              <LinePlot skipAnimation />
+              {zeroPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={0}
+                  lineStyle={{
+                    strokeDasharray: "5 1",
+                    strokeWidth: 1.0,
+                    stroke: "secondary",
+                  }}
+                />
+              )}
+              {primaryPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={timeValues[primaryCursor.cursorReduced]}
+                  lineStyle={{
+                    strokeDasharray: "10 5",
+                    strokeWidth: 1.5,
+                    stroke: "fuchsia",
+                  }}
+                />
+              )}
+
+              {secondaryPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={timeValues[secondaryCursor.cursorReduced]}
+                  lineStyle={{
+                    strokeDasharray: "3 3",
+                    strokeWidth: 2,
+                    stroke: "forestgreen",
+                  }}
+                />
+              )}
             </g>
             <ChartsClipPath id={clipPathId_2} />
           </ResponsiveChartContainerPro>
@@ -559,13 +608,9 @@ const SingleAxisChart = ({
           <ResponsiveChartContainerPro
             key="digital-signals"
             xAxis={[{ ...xAxisCommon, data: timeValues }]}
-            yAxis={[
-              { id: "status" },
-              //  { zoom: true }
-            ]}
+            yAxis={[{ id: "status" }]}
             series={digital_series}
             zoom={zoom}
-            onZoomChange={setZoom}
             margin={{
               left: leftMargin,
               right: rightMargin,
@@ -576,9 +621,7 @@ const SingleAxisChart = ({
               "& .MuiLineElement-root": {
                 strokeWidth: 1.5,
               },
-              // borderLeft: 0.5,
-              // borderRight: 0.5,
-              // borderBottom: 0.5,
+              borderTop: 0.3,
             }}
           >
             <ChartsOnAxisClickHandler
@@ -598,6 +641,11 @@ const SingleAxisChart = ({
             />
             <ChartsYAxis
               disableTicks
+              label="STATUS"
+              labelStyle={{
+                fontSize: 10,
+                angle: -90,
+              }}
               position="right"
               axisId="status"
               tickInterval={[]}
@@ -605,33 +653,39 @@ const SingleAxisChart = ({
             <g clipPath={`url(#${clipPathId_3})`}>
               <AreaPlot skipAnimation />
               <LinePlot skipAnimation />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={0}
-                lineStyle={{
-                  strokeDasharray: "5 1",
-                  strokeWidth: 1.0,
-                  stroke: "secondary",
-                }}
-              />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={timeValues[primaryCursor.cursorReduced]}
-                lineStyle={{
-                  strokeDasharray: "10 5",
-                  strokeWidth: 2,
-                  stroke: "crimson",
-                }}
-              />
-              <ChartsReferenceLine
-                axisId={"time-axis"}
-                x={timeValues[secondaryCursor.cursorReduced]}
-                lineStyle={{
-                  strokeDasharray: "3 3",
-                  strokeWidth: 2,
-                  stroke: "forestgreen",
-                }}
-              />
+              {zeroPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={0}
+                  lineStyle={{
+                    strokeDasharray: "5 1",
+                    strokeWidth: 1.0,
+                    stroke: "secondary",
+                  }}
+                />
+              )}
+              {primaryPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={timeValues[primaryCursor.cursorReduced]}
+                  lineStyle={{
+                    strokeDasharray: "10 5",
+                    strokeWidth: 1.5,
+                    stroke: "fuchsia",
+                  }}
+                />
+              )}
+              {secondaryPresent && (
+                <ChartsReferenceLine
+                  axisId={"time-axis"}
+                  x={timeValues[secondaryCursor.cursorReduced]}
+                  lineStyle={{
+                    strokeDasharray: "3 3",
+                    strokeWidth: 2,
+                    stroke: "forestgreen",
+                  }}
+                />
+              )}
             </g>
             <ChartsClipPath id={clipPathId_3} />
             <ChartsAxisHighlight />
@@ -657,14 +711,13 @@ const SingleAxisChart = ({
           item
           xs={12}
           height="40px"
-          sx={{ bgcolor: "", borderLeft: 0, borderRight: 0 }}
+          sx={{ bgcolor: "" }}
         >
           <ResponsiveChartContainerPro
             xAxis={[
               {
                 ...xAxisCommon,
                 data: timeValues,
-                // data: timeValues_original
               },
             ]}
             yAxis={[
@@ -673,18 +726,11 @@ const SingleAxisChart = ({
             ]}
             series={[]}
             zoom={zoom}
-            onZoomChange={setZoom}
             margin={{
               left: leftMargin,
               right: rightMargin,
               top: 0,
               bottom: 40,
-            }}
-            sx={{
-              borderLeft: 0,
-              borderRight: 0,
-              borderTop: 0,
-              borderBottom: 0,
             }}
           >
             <ChartsXAxis
@@ -692,6 +738,12 @@ const SingleAxisChart = ({
               position="bottom"
               label="Time (seconds)"
               tickInterval={tickInterval}
+            />
+            <ChartsYAxis
+              disableTicks
+              position="left"
+              axisId="y-axis"
+              tickInterval={[]}
             />
             <ChartsYAxis
               disableTicks

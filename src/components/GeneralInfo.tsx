@@ -66,7 +66,7 @@ const GeneralInfo = ({ file_id, project_id }: Props) => {
       <Card
         sx={{
           mt: 10,
-          ml: 2,
+          ml: 0.5,
           mb: 10,
           maxWidth: "700px",
           //height: `calc(100vh - 150px)`

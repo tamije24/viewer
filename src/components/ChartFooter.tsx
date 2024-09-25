@@ -1,11 +1,14 @@
-import { useState } from "react";
-
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Box from "@mui/material/Box";
+//import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Slider, { SliderThumb } from "@mui/material/Slider";
 import { styled } from "@mui/material/styles";
+import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
+import SkipNextIcon from "@mui/icons-material/SkipNext";
+//import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
+import Grid from "@mui/material/Grid";
 
 interface Props {
   timeRange: {
@@ -19,13 +22,11 @@ interface Props {
   onZoomChange: (fromValue: number, toValue: number) => void;
 }
 
+const PAN_FACTOR = 0.5;
+
 const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
-  const [prevZoomValues, setPrevZoomValues] = useState([0, 0]);
-  const [value, setValue] = useState<number[]>([
-    presentZoomValues.startPercent,
-    presentZoomValues.endPercent,
-  ]);
-  let minDistance = 1;
+  let value = [presentZoomValues.startPercent, presentZoomValues.endPercent];
+  let minDistance = 10;
 
   const handleChange = (
     _event: Event,
@@ -38,28 +39,50 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
     if (newValue[1] - newValue[0] < minDistance) {
       if (activeThumb === 0) {
         const clamped = Math.min(newValue[0], 100 - minDistance);
-        setValue([clamped, clamped + minDistance]);
+        value = [clamped, clamped + minDistance];
       } else {
         const clamped = Math.max(newValue[1], minDistance);
-        setValue([clamped - minDistance, clamped]);
+        value = [clamped - minDistance, clamped];
       }
     } else {
-      setValue(newValue as number[]);
+      value = newValue as number[];
     }
     onZoomChange(newValue[0], newValue[1]);
   };
 
-  // STORE NEW ZOOM VALUE TO ENABLE ZOOM STATE CHANGE DETECTION
-  if (
-    prevZoomValues[0] !== presentZoomValues.startPercent ||
-    prevZoomValues[1] !== presentZoomValues.endPercent
-  ) {
-    setPrevZoomValues([
-      presentZoomValues.startPercent,
-      presentZoomValues.endPercent,
-    ]);
-    setValue([presentZoomValues.startPercent, presentZoomValues.endPercent]);
-  }
+  const handlePanLeft = () => {
+    let startValue = value[0];
+    let endValue = value[1];
+
+    let PAN_SPAN = (endValue - startValue) * PAN_FACTOR;
+
+    if (startValue < PAN_SPAN) {
+      endValue = endValue - startValue;
+      startValue = 0;
+    } else {
+      startValue = startValue - PAN_SPAN;
+      endValue = endValue - PAN_SPAN;
+    }
+
+    onZoomChange(startValue, endValue);
+  };
+
+  const handlePanRight = () => {
+    let startValue = value[0];
+    let endValue = value[1];
+
+    let PAN_SPAN = (endValue - startValue) * PAN_FACTOR;
+
+    if (endValue > 100 - PAN_SPAN) {
+      startValue = startValue - (100 - endValue);
+      endValue = 100;
+    } else {
+      startValue = startValue + PAN_SPAN;
+      endValue = endValue + PAN_SPAN;
+    }
+
+    onZoomChange(startValue, endValue);
+  };
 
   return (
     <Card
@@ -79,23 +102,30 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
           paddingLeft: 0,
         }}
       >
-        <Box
+        <Grid
+          container
+          width="100%"
           sx={{
-            height: "70px",
-            width: "100%",
-            pt: 1,
-            pl: 2,
-            pr: 0,
             bgcolor: "",
+            mt: 0.5,
+            p: 0,
+            display: "flex",
+            justifyContent: "space-between",
           }}
         >
-          <Box
-            sx={{
-              width: "100%",
-              bgcolor: "",
-              borderLeft: 0.5,
-              borderRight: 0.5,
-            }}
+          <Grid item width="3%" sx={{ bgcolor: "" }}>
+            <IconButton
+              color="secondary"
+              aria-label="pan-left"
+              onClick={handlePanLeft}
+            >
+              <SkipPreviousIcon />
+            </IconButton>
+          </Grid>
+          <Grid
+            item
+            width="92%"
+            sx={{ borderLeft: 0.5, borderRight: 0.5, ml: 1, mr: 1 }}
           >
             <AirbnbSlider
               slots={{ thumb: AirbnbThumbComponent }}
@@ -106,8 +136,18 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
               max={100}
               sx={{ mt: 0.5, mb: 0.5 }}
             />
-          </Box>
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          </Grid>
+          <Grid item width="3%" sx={{ bgcolor: "" }}>
+            <IconButton
+              color="secondary"
+              aria-label="pan-right"
+              onClick={handlePanRight}
+            >
+              <SkipNextIcon />
+            </IconButton>
+          </Grid>
+          <Grid item width="3%" sx={{ bgcolor: "" }}></Grid>
+          <Grid item width="46%" sx={{}}>
             <Typography
               variant="body2"
               sx={{
@@ -119,6 +159,12 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
             >
               {Math.round(timeRange.minTime * 1000) / 1000} s
             </Typography>
+          </Grid>
+          <Grid
+            item
+            width="46%"
+            sx={{ display: "flex", justifyContent: "flex-end" }}
+          >
             <Typography
               variant="body2"
               sx={{
@@ -130,8 +176,9 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
             >
               {Math.round(timeRange.maxTime * 1000) / 1000} s
             </Typography>
-          </Box>
-        </Box>
+          </Grid>
+          <Grid item width="3%" sx={{ bgcolor: "" }}></Grid>
+        </Grid>
       </CardContent>
     </Card>
   );

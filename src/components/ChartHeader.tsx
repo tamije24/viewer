@@ -25,13 +25,15 @@ import ZoomInIcon from "@mui/icons-material/ZoomInSharp";
 import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
 import TextsmsIcon from "@mui/icons-material/Textsms";
 //import VisibilityIcon from "@mui/icons-material/Visibility";
-import PageviewIcon from "@mui/icons-material/Pageview";
+//import PageviewIcon from "@mui/icons-material/Pageview";
 import RestoreIcon from "@mui/icons-material/Restore";
 import CloseIcon from "@mui/icons-material/Close";
+import { Divider } from "@mui/material";
 
 interface Props {
   stationName: string;
   plotSubtitle: string;
+  timeValues_original: number[];
   presentZoomValues: {
     startPercent: number;
     endPercent: number;
@@ -41,6 +43,7 @@ interface Props {
 
   onZoomResetClick: () => void;
   onZoomInClick: (fromValue: number, toValue: number) => void;
+  toolTipStatus: boolean;
   onToolTipStatusChange: (toolTipStatus: boolean) => void;
   onYZoomClick: (signal: string, zoomType: number) => void;
   timeRange: {
@@ -55,31 +58,58 @@ const signalsToZoom_single = ["Currents", "Voltages"];
 const ChartHeader = ({
   stationName,
   plotSubtitle,
+  timeValues_original,
   presentZoomValues,
   onZoomResetClick,
   onZoomInClick,
+  toolTipStatus,
   onToolTipStatusChange,
   onYZoomClick,
   timeRange,
 }: Props) => {
   // STATE VARIABLES
-  const [isTooltip, setIsTooltip] = useState(false);
-  const [prevZoomValues, setPrevZoomValues] = useState([0, 0]);
-  const [startTime, setStartTime] = useState(timeRange.minTime);
-  const [endTime, setEndTime] = useState(timeRange.maxTime);
+  const [open, setOpen] = useState(false);
+  const [errMessage, setErrorMessage] = useState("");
   const [zoomSignal, setZoomSignal] = useState<string | null>("Ia");
   const [singleZoomSignal, setSingleZoomSignal] = useState<string | null>(
     "Currents"
   );
-  const [open, setOpen] = useState(false);
-  const [errMessage, setErrorMessage] = useState("");
+  // const [startTime, setStartTime] = useState(presentZoomValues.startTime);
+  // const [endTime, setEndTime] = useState(presentZoomValues.endTime);
+
+  // OTHER VARIABLE
+  let isTooltip = toolTipStatus;
+  let startTime = presentZoomValues.startTime;
+  let endTime = presentZoomValues.endTime;
 
   // EVENT HANDLER FUNCTIONS
   const handleZoomViewClick = () => {
+    if (timeValues_original === undefined) return;
+
     const fValue = document.getElementById("fromValue") as HTMLInputElement;
     const tValue = document.getElementById("toValue") as HTMLInputElement;
     const fromValue = parseFloat(fValue.value);
     const toValue = parseFloat(tValue.value);
+
+    let fromValue_Index = timeValues_original.findIndex(
+      (element) => element >= fromValue
+    );
+    fromValue_Index = fromValue_Index === -1 ? 0 : fromValue_Index;
+
+    let toValue_Index = timeValues_original.findIndex(
+      (element) => element >= toValue
+    );
+    toValue_Index = toValue_Index === -1 ? 0 : toValue_Index;
+
+    let toValue_min_allowed =
+      fromValue_Index + 16 > timeValues_original.length - 1
+        ? timeValues_original[timeValues_original.length - 1]
+        : timeValues_original[fromValue_Index + 16];
+
+    let fromValue_min_allowed =
+      toValue_Index - 16 < 0
+        ? timeValues_original[0]
+        : timeValues_original[toValue_Index - 16];
 
     if (fromValue < timeRange.minTime) {
       setErrorMessage("'from value' is lower than minimum available time");
@@ -90,9 +120,16 @@ const ChartHeader = ({
     } else if (fromValue >= toValue) {
       setErrorMessage("'from value' cannot be >= than 'to value'");
       setOpen(true);
+    } else if (toValue < toValue_min_allowed) {
+      setErrorMessage(`'to value' cannot be lower than ${toValue_min_allowed}`);
+      setOpen(true);
+    } else if (fromValue > fromValue_min_allowed) {
+      setErrorMessage(
+        `'from value' cannot be higher than ${fromValue_min_allowed}`
+      );
+      setOpen(true);
     } else {
       onZoomInClick(fromValue, toValue);
-      // setPrevZoomValues([fromValue, toValue]);
     }
   };
 
@@ -126,8 +163,12 @@ const ChartHeader = ({
       let new_end_time =
         (present_end_percentage / 100) * total_time_range + timeRange.minTime;
 
+      // setStartTime(new_start_time);
+      // setEndTime(new_end_time);
+      startTime = new_start_time;
+      endTime = new_end_time;
+
       onZoomInClick(new_start_time, new_end_time);
-      //      setPrevZoomValues([new_start_time, new_end_time]);
     }
   };
 
@@ -161,8 +202,20 @@ const ChartHeader = ({
       let new_end_time =
         (present_end_percentage / 100) * total_time_range + timeRange.minTime;
 
+      // setStartTime(new_start_time);
+      // setEndTime(new_end_time);
+      startTime = new_start_time;
+      endTime = new_end_time;
       onZoomInClick(new_start_time, new_end_time);
     }
+  };
+
+  const handleZoomResetClick = () => {
+    startTime = timeRange.minTime;
+    endTime = timeRange.minTime;
+    // setStartTime(timeRange.minTime);
+    // setEndTime(timeRange.minTime);
+    onZoomResetClick();
   };
 
   const handleYZoomInClick = () => {
@@ -214,17 +267,14 @@ const ChartHeader = ({
     </>
   );
 
-  // STORE NEW ZOOM VALUE TO ENABLE ZOOM STATE CHANGE DETECTION
-  if (
-    prevZoomValues[0] !== presentZoomValues.startTime ||
-    prevZoomValues[1] !== presentZoomValues.endTime
-  ) {
-    setPrevZoomValues([presentZoomValues.startTime, presentZoomValues.endTime]);
-    setStartTime(presentZoomValues.startTime);
-    setEndTime(presentZoomValues.endTime);
-  }
+  // if (
+  //   presentZoomValues.startTime !== startTime ||
+  //   presentZoomValues.endTime !== endTime
+  // ) {
+  //   setStartTime(presentZoomValues.startTime);
+  //   setEndTime(presentZoomValues.endTime);
+  // }
 
-  // console.log("header: ", presentZoomValues);
   return (
     <>
       <Card sx={{ m: 0, height: "85px" }}>
@@ -265,9 +315,16 @@ const ChartHeader = ({
               >
                 <Grid item xs={5.5} sx={{ bgcolor: "" }}>
                   <Stack direction="column">
-                    <Typography variant="caption" color="primary">
-                      Time-Axis controls
-                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      sx={{ border: 0, pl: 0 }}
+                    >
+                      <Typography variant="caption" color="primary">
+                        Time-Axis controls
+                      </Typography>
+                    </Stack>
+
                     <Stack
                       direction="row"
                       spacing={2}
@@ -284,7 +341,9 @@ const ChartHeader = ({
                           value={startTime}
                           onChange={(event: ChangeEvent<HTMLInputElement>) => {
                             if (!isNaN(parseFloat(event.target.value)))
-                              setStartTime(parseFloat(event.target.value));
+                              handleZoomViewClick();
+                            //  startTime = parseFloat(event.target.value);
+                            // setStartTime(parseFloat(event.target.value));
                           }}
                           aria-describedby="x-from-text"
                           inputProps={{
@@ -304,7 +363,9 @@ const ChartHeader = ({
                           value={endTime}
                           onChange={(event: ChangeEvent<HTMLInputElement>) => {
                             if (!isNaN(parseFloat(event.target.value)))
-                              setEndTime(parseFloat(event.target.value));
+                              handleZoomViewClick();
+                            //  endTime = parseFloat(event.target.value);
+                            // setEndTime(parseFloat(event.target.value));
                           }}
                           aria-describedby="x-to-text"
                           inputProps={{
@@ -313,14 +374,15 @@ const ChartHeader = ({
                         />
                         <FormHelperText id="x-to-text">to</FormHelperText>
                       </FormControl>
-                      <IconButton
+                      <Divider orientation="vertical" flexItem />
+                      {/* <IconButton
                         color="primary"
                         aria-label="View"
                         onClick={handleZoomViewClick}
                         sx={{ width: "30px" }}
                       >
                         <PageviewIcon />
-                      </IconButton>
+                      </IconButton> */}
                       <IconButton
                         color="primary"
                         aria-label="Zoom-in"
@@ -340,7 +402,7 @@ const ChartHeader = ({
                       <IconButton
                         color="primary"
                         aria-label="Reset-time-axis"
-                        onClick={onZoomResetClick}
+                        onClick={handleZoomResetClick}
                         sx={{ width: "30px" }}
                       >
                         <RestoreIcon />
@@ -360,8 +422,7 @@ const ChartHeader = ({
                     >
                       {plotSubtitle === "Multiple Axis View" && (
                         <Autocomplete
-                          //    disablePortal
-                          //   disableClearable
+                          // disablePortal
                           size="small"
                           value={zoomSignal}
                           defaultValue={signalsToZoom[0]}
@@ -377,6 +438,7 @@ const ChartHeader = ({
                       )}
                       {plotSubtitle === "Single Axis View" && (
                         <Autocomplete
+                          //disablePortal
                           // disableClearable
                           size="small"
                           value={singleZoomSignal}
@@ -433,7 +495,7 @@ const ChartHeader = ({
                         icon={<TextsmsOutlinedIcon color="success" />}
                         checkedIcon={<TextsmsIcon color="success" />}
                         onChange={(event) => {
-                          setIsTooltip(event.target.checked);
+                          isTooltip = event.target.checked;
                           onToolTipStatusChange(event.target.checked);
                         }}
                         size="large"

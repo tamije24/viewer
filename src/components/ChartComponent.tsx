@@ -19,7 +19,7 @@ import { AnalogChannel } from "../services/analog-channel-service";
 import { Phasor } from "../services/phasor-service";
 
 interface Props {
-  passedStationName: string;
+  stationName: string;
   plotName: string;
   analogSignals: AnalogSignal[];
   analogSignalNames: string[];
@@ -28,7 +28,7 @@ interface Props {
   error: string;
   isAnLoading: boolean;
   isDigLoading: boolean;
-  passedZoomValues: {
+  presentZoomValues: {
     startPercent: number;
     endPercent: number;
     startTime: number;
@@ -61,14 +61,16 @@ interface Props {
     secondaryValue: number,
     secondaryTimestamp: string
   ) => void;
+
   analogChannelInfo: AnalogChannel[];
   dftPhasors: Phasor[];
   sampling_frequency: number;
   pointCount: number;
+  sidebarStatus: boolean;
 }
 
 const ChartComponent = ({
-  passedStationName,
+  stationName,
   plotName,
   analogSignals,
   analogSignalNames,
@@ -77,7 +79,7 @@ const ChartComponent = ({
   error,
   isAnLoading,
   isDigLoading,
-  passedZoomValues,
+  presentZoomValues,
   changePresentZoomLimit,
   cursorValues,
   onAxisClick,
@@ -85,29 +87,14 @@ const ChartComponent = ({
   dftPhasors,
   sampling_frequency,
   pointCount,
+  sidebarStatus,
 }: Props) => {
   // STATE VARIABLES
-  const [stationName, setStationName] = useState(passedStationName);
   const [toolTipStatus, setToolTipStatus] = useState(false);
 
-  const [primaryCursor, setPrimaryCursor] = useState({
-    cursor: cursorValues.primary,
-    cursorReduced: cursorValues.primaryReduced,
-    time: cursorValues.primaryTime,
-    timestamp: cursorValues.primaryTimestamp,
-  });
-  const [secondaryCursor, setSecondaryCursor] = useState({
-    cursor: cursorValues.secondary,
-    cursorReduced: cursorValues.secondaryReduced,
-    time: cursorValues.secondaryTime,
-    timestamp: cursorValues.secondaryTimestamp,
-  });
-  const [presentZoomValues, setPresentZoomValues] = useState({
-    startPercent: passedZoomValues.startPercent,
-    endPercent: passedZoomValues.endPercent,
-    startTime: passedZoomValues.startTime,
-    endTime: passedZoomValues.endTime,
-  });
+  const [usedAnalogSignalNames, setUsedAnalogSignalNames] =
+    useState(analogSignalNames);
+
   const [presentMaxisYZoomValues, setPresentMaxisYZoomValues] = useState<
     {
       start: number;
@@ -150,6 +137,20 @@ const ChartComponent = ({
   const plotSubtitle =
     plotName === "SingleAxis" ? "Single Axis View" : "Multiple Axis View";
 
+  let primaryCursor = {
+    cursor: cursorValues.primary,
+    cursorReduced: cursorValues.primaryReduced,
+    time: cursorValues.primaryTime,
+    timestamp: cursorValues.primaryTimestamp,
+  };
+
+  let secondaryCursor = {
+    cursor: cursorValues.secondary,
+    cursorReduced: cursorValues.secondaryReduced,
+    time: cursorValues.secondaryTime,
+    timestamp: cursorValues.secondaryTimestamp,
+  };
+
   let analog_Values_original: number[][] = [];
   let digital_Values_original: number[][] = [];
   let timeValues_original: number[] = [];
@@ -180,13 +181,6 @@ const ChartComponent = ({
       maxTime = Object.values(analogSignals[L - 1])[0];
     }
 
-    setPresentZoomValues({
-      startPercent: 0,
-      endPercent: 100,
-      startTime: minTime,
-      endTime: maxTime,
-    });
-
     changePresentZoomLimit({
       startPercent: 0,
       endPercent: 100,
@@ -205,15 +199,6 @@ const ChartComponent = ({
       minTime = Object.values(analogSignals[0])[0];
       duration = maxTime - minTime;
     }
-
-    setPresentZoomValues({
-      startPercent:
-        duration !== 0 ? ((fromValue - minTime) / duration) * 100 : 0,
-      endPercent: duration !== 0 ? ((toValue - minTime) / duration) * 100 : 0,
-      startTime: fromValue,
-      endTime: toValue,
-    });
-
     changePresentZoomLimit({
       startPercent:
         duration !== 0 ? ((fromValue - minTime) / duration) * 100 : 0,
@@ -233,14 +218,6 @@ const ChartComponent = ({
       minTime = Object.values(analogSignals[0])[0];
       duration = maxTime - minTime;
     }
-
-    setPresentZoomValues({
-      startPercent: fromValue,
-      endPercent: toValue,
-      startTime: (fromValue / 100) * duration + minTime,
-      endTime: (toValue / 100) * duration + minTime,
-    });
-
     changePresentZoomLimit({
       startPercent: fromValue,
       endPercent: toValue,
@@ -250,8 +227,8 @@ const ChartComponent = ({
   };
 
   // TOOL TIP in Chart header
-  const handleTooltipChange = (toolTipStatus: boolean) => {
-    setToolTipStatus(toolTipStatus);
+  const handleTooltipChange = (tTStatus: boolean) => {
+    setToolTipStatus(tTStatus);
   };
 
   // AXIS click handler
@@ -265,19 +242,21 @@ const ChartComponent = ({
     secondaryValue: number,
     secondaryTimestamp: string
   ) => {
-    setPrimaryCursor({
+    primaryCursor = {
       cursor: dataIndex,
       cursorReduced: dataIndexReduced,
       time: axisValue,
       timestamp: timestamp,
-    });
+    };
 
-    setSecondaryCursor({
+    secondaryCursor = {
       cursor: secondaryIndex,
       cursorReduced: secondaryIndexReduced,
       time: secondaryValue,
       timestamp: secondaryTimestamp,
-    });
+    };
+
+    // console.log("chart component: ", dataIndex, dataIndexReduced);
 
     onAxisClick(
       dataIndex,
@@ -490,20 +469,6 @@ const ChartComponent = ({
     return rmsValue;
   };
 
-  if (passedStationName !== stationName) setStationName(passedStationName);
-
-  if (
-    presentZoomValues.startPercent !== passedZoomValues.startPercent ||
-    presentZoomValues.endPercent !== presentZoomValues.endPercent
-  ) {
-    setPresentZoomValues({
-      startPercent: passedZoomValues.startPercent,
-      endPercent: passedZoomValues.endPercent,
-      startTime: passedZoomValues.startTime,
-      endTime: passedZoomValues.endTime,
-    });
-  }
-
   const analogSignals_split = [];
   if (!isAnLoading && analogSignals !== undefined && analogSignals.length > 0) {
     let L = analogSignals.length;
@@ -534,8 +499,10 @@ const ChartComponent = ({
       primaryCursor.cursor === 0 &&
       secondaryCursor.cursor === 0 &&
       tableValues.length === 0
-    )
+    ) {
+      setUsedAnalogSignalNames([...analogSignalNames]);
       fillSideTable();
+    }
   }
 
   const digitalSignals_split = [];
@@ -560,19 +527,37 @@ const ChartComponent = ({
       digital_Values_original.push(arrayColumn(digitalSignals_split, i + 1));
   }
 
-  //  console.log("chart comp - before return: ", presentMaxisYZoomValues);
-  // console.log("chart comp: ", presentZoomValues);
-  // console.log("chart comp: ", cursorValues);
+  if (analogSignalNames !== undefined) {
+    if (usedAnalogSignalNames === undefined) {
+      setUsedAnalogSignalNames([...analogSignalNames]);
+      fillSideTable();
+    } else if (analogSignalNames[0] !== usedAnalogSignalNames[0]) {
+      setUsedAnalogSignalNames([...analogSignalNames]);
+      fillSideTable();
+    }
+  }
+
+  // console.log(analogSignalNames);
+  // console.log(usedAnalogSignalNames);
+  // console.log(
+  //   "chart component: ",
+  //   primaryCursor.cursor,
+  //   primaryCursor.cursorReduced
+  // );
+
+  //console.log("chart comp ; ", presentZoomValues);
   return (
-    <Grid container sx={{ mt: 9, ml: 2, mb: 0.5 }}>
-      <Grid item xs={9}>
+    <Grid container sx={{ mt: 9, ml: 0.5, mb: 0.5 }}>
+      <Grid item xs={sidebarStatus ? 9 : 12}>
         <Stack>
           <ChartHeader
             stationName={stationName}
             plotSubtitle={plotSubtitle}
+            timeValues_original={timeValues_original}
             presentZoomValues={presentZoomValues}
             onZoomResetClick={handleZoomOutClick}
             onZoomInClick={handleZoomInClick}
+            toolTipStatus={toolTipStatus}
             onToolTipStatusChange={handleTooltipChange}
             onYZoomClick={handleYZoomClick}
             timeRange={{
@@ -622,19 +607,21 @@ const ChartComponent = ({
         </Stack>
       </Grid>
 
-      <Grid item xs={3} sx={{ bgcolor: "" }}>
-        <CursorValues
-          axisClick={{
-            dataIndex: primaryCursor.cursor,
-            axisValue: primaryCursor.time,
-            timestamp: primaryCursor.timestamp,
-            secondaryIndex: secondaryCursor.cursor,
-            secondaryValue: secondaryCursor.time,
-            secondaryTimestamp: secondaryCursor.timestamp,
-          }}
-          tableValues={tableValues}
-        />
-      </Grid>
+      {sidebarStatus && (
+        <Grid item xs={3} sx={{ bgcolor: "" }}>
+          <CursorValues
+            axisClick={{
+              dataIndex: primaryCursor.cursor,
+              axisValue: primaryCursor.time,
+              timestamp: primaryCursor.timestamp,
+              secondaryIndex: secondaryCursor.cursor,
+              secondaryValue: secondaryCursor.time,
+              secondaryTimestamp: secondaryCursor.timestamp,
+            }}
+            tableValues={tableValues}
+          />
+        </Grid>
+      )}
     </Grid>
   );
 };

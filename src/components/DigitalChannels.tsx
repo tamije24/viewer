@@ -114,7 +114,7 @@ const DigitalChannels = ({ station_name, file_id }: Props) => {
 
   if (error) {
     return (
-      <Box sx={{ display: "flex-box", mt: 10, ml: 1, mb: 2 }}>
+      <Box sx={{ display: "flex-box", mt: 10, ml: 0.5, mb: 2 }}>
         <Typography
           variant="overline"
           component="div"
@@ -133,7 +133,7 @@ const DigitalChannels = ({ station_name, file_id }: Props) => {
     <Card
       sx={{
         mt: 10,
-        ml: 2,
+        ml: 0.5,
         mb: 10,
         //height: `calc(100vh - 150px)`
       }}
