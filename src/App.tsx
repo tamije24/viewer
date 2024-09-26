@@ -20,6 +20,9 @@ import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
 // import MicrowaveIcon from "@mui/icons-material/Microwave";
 // import ViewArrayIcon from "@mui/icons-material/ViewArray";
 // import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
+import KeyIcon from "@mui/icons-material/Key";
+import KeyOffIcon from "@mui/icons-material/KeyOff";
+
 import WebIcon from "@mui/icons-material/Web";
 import WebAssetIcon from "@mui/icons-material/WebAsset";
 
@@ -31,6 +34,7 @@ export interface AccessCodes {
 function App() {
   const [mode, setMode] = useState<"light" | "dark">("light");
   const [sidebarStatus, setSidebarStatus] = useState(true);
+  const [tooltipStatus, setTooltipStatus] = useState(true);
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
@@ -115,6 +119,7 @@ function App() {
             <MainComponent
               pointCount={pointCount === null ? 0 : parseInt(pointCount)}
               sidebarStatus={sidebarStatus}
+              tooltipStatus={tooltipStatus}
             />
           ) : (
             <SignIn onAccessCodeReceive={handleAccessCodeReceive} />
@@ -136,53 +141,18 @@ function App() {
           <Grid
             container
             direction="row"
-            sx={{ display: "flex", justifyContent: "space-between" }}
+            sx={{ display: "flex", justifyContent: "flex-left" }}
           >
-            <Grid item xs={2.5}>
-              <BottomNavigation
-                showLabels
-                sx={{
-                  display: "flex",
-                  width: "100%",
-                  alignItems: "center",
-                  justifyContent: "left",
-                  // bgcolor: "background.default",
-                  //bgcolor: "red",
-                  color: "text.primary",
-                  //    borderRadius: 1,
-                  paddingLeft: "10px",
-                }}
-              >
-                <BottomNavigationAction
-                  sx={{ ml: 1 }}
-                  label={`${theme.palette.mode} mode`}
-                  value="recents"
-                  icon={
-                    theme.palette.mode === "dark" ? (
-                      <Brightness7Icon />
-                    ) : (
-                      <Brightness4Icon />
-                    )
-                  }
-                  onClick={colorMode.toggleColorMode}
-                />
-                <BottomNavigationAction
-                  sx={{ ml: 1 }}
-                  label={sidebarStatus ? "Show side bar" : "Hide side bar"}
-                  value="sidebar"
-                  icon={sidebarStatus ? <WebIcon /> : <WebAssetIcon />}
-                  onClick={() => setSidebarStatus(!sidebarStatus)}
-                />
-              </BottomNavigation>
-            </Grid>
             <Grid
               item
-              xs={1.5}
+              //xs={1}
               display="flex"
-              justifyContent="flex-start"
+              justifyContent="center"
               sx={{
                 mt: 1.5,
-                ml: 5,
+                pl: 0,
+                width: "240px",
+                bgcolor: "",
               }}
             >
               <Autocomplete
@@ -200,6 +170,51 @@ function App() {
                 )}
               />
             </Grid>
+            <Grid item xs={3} sx={{ bgcolor: "" }}>
+              <BottomNavigation
+                showLabels
+                sx={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "left",
+                  // bgcolor: "background.default",
+                  bgcolor: "",
+                  color: "text.primary",
+                  //    borderRadius: 1,
+                  paddingLeft: "",
+                }}
+              >
+                <BottomNavigationAction
+                  sx={{ ml: 0.2 }}
+                  label={`${theme.palette.mode} mode`}
+                  value="recents"
+                  icon={
+                    theme.palette.mode === "dark" ? (
+                      <Brightness7Icon />
+                    ) : (
+                      <Brightness4Icon />
+                    )
+                  }
+                  onClick={colorMode.toggleColorMode}
+                />
+                <BottomNavigationAction
+                  sx={{ ml: 1 }}
+                  label={sidebarStatus ? "show side bar" : "hide side bar"}
+                  value="sidebar"
+                  icon={sidebarStatus ? <WebIcon /> : <WebAssetIcon />}
+                  onClick={() => setSidebarStatus(!sidebarStatus)}
+                />
+                <BottomNavigationAction
+                  sx={{ ml: 1 }}
+                  label={tooltipStatus ? "show tooltips" : "hide tooltips"}
+                  value="sidebar"
+                  icon={tooltipStatus ? <KeyIcon /> : <KeyOffIcon />}
+                  onClick={() => setTooltipStatus(!tooltipStatus)}
+                />
+              </BottomNavigation>
+            </Grid>
+
             <Grid
               item
               xs={7}

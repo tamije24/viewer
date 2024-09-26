@@ -38,7 +38,7 @@ interface Props {
   //   endPercent: number;
   // };
   tickInterval: number[];
-  toolTipStatus: boolean;
+  markerStatus: boolean;
   cursorValues: {
     primary: number;
     primaryReduced: number;
@@ -74,7 +74,7 @@ const SingleAxisChart = ({
   timeStamps,
   originalIndexes,
   tickInterval,
-  toolTipStatus,
+  markerStatus,
   cursorValues,
   onAxisClick,
   presentSaxisYZoomValues,
@@ -406,7 +406,7 @@ const SingleAxisChart = ({
               },
             }}
           >
-            <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
+            <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
             <ChartsAxisHighlight />
             <ChartsGrid horizontal />
             <ChartsOnAxisClickHandler
@@ -447,7 +447,7 @@ const SingleAxisChart = ({
                   lineStyle={{
                     strokeDasharray: "10 5",
                     strokeWidth: 1.5,
-                    stroke: "fuchsia",
+                    stroke: "darkorchid",
                   }}
                 />
               )}
@@ -525,7 +525,7 @@ const SingleAxisChart = ({
               borderTop: 0.3,
             }}
           >
-            <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
+            <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
             <ChartsAxisHighlight />
             <ChartsGrid horizontal />
             <ChartsOnAxisClickHandler
@@ -583,7 +583,7 @@ const SingleAxisChart = ({
                   lineStyle={{
                     strokeDasharray: "10 5",
                     strokeWidth: 1.5,
-                    stroke: "fuchsia",
+                    stroke: "darkorchid",
                   }}
                 />
               )}
@@ -624,6 +624,7 @@ const SingleAxisChart = ({
               borderTop: 0.3,
             }}
           >
+            <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
             <ChartsOnAxisClickHandler
               onAxisClick={(event, data) => {
                 handleAxisClick(
@@ -671,7 +672,7 @@ const SingleAxisChart = ({
                   lineStyle={{
                     strokeDasharray: "10 5",
                     strokeWidth: 1.5,
-                    stroke: "fuchsia",
+                    stroke: "darkorchid",
                   }}
                 />
               )}

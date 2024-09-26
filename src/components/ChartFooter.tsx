@@ -11,6 +11,7 @@ import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 //import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
+import Tooltip from "@mui/material/Tooltip";
 
 interface Props {
   timeRange: {
@@ -22,11 +23,18 @@ interface Props {
     endPercent: number;
   };
   onZoomChange: (fromValue: number, toValue: number) => void;
+  tooltipStatus: boolean;
 }
 
 const PAN_FACTOR = 0.5;
+const TOOLTIP_DELAY = 10000;
 
-const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
+const ChartFooter = ({
+  timeRange,
+  presentZoomValues,
+  onZoomChange,
+  tooltipStatus,
+}: Props) => {
   let value = [presentZoomValues.startPercent, presentZoomValues.endPercent];
   let minDistance = 10;
 
@@ -123,7 +131,13 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
               onClick={handlePanLeft}
               sx={{ width: "20px" }}
             >
-              <NavigateBeforeIcon />
+              <Tooltip
+                title="Pan Left"
+                placement="top-start"
+                enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+              >
+                <NavigateBeforeIcon />
+              </Tooltip>
             </IconButton>
           </Grid>
           <Grid
@@ -148,7 +162,13 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
               onClick={handlePanRight}
               sx={{ width: "20px" }}
             >
-              <NavigateNextIcon />
+              <Tooltip
+                title="Pan Right"
+                placement="top-start"
+                enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+              >
+                <NavigateNextIcon />
+              </Tooltip>
             </IconButton>
           </Grid>
           <Grid item width="1%" sx={{ bgcolor: "" }}></Grid>
@@ -230,11 +250,13 @@ interface AirbnbThumbComponentProps extends React.HTMLAttributes<unknown> {}
 function AirbnbThumbComponent(props: AirbnbThumbComponentProps) {
   const { children, ...other } = props;
   return (
-    <SliderThumb {...other}>
-      {children}
-      <span className="airbnb-bar" />
-      <span className="airbnb-bar" />
-      <span className="airbnb-bar" />
-    </SliderThumb>
+    <Tooltip title="Hold and drag to set zoom limits" placement="bottom">
+      <SliderThumb {...other}>
+        {children}
+        <span className="airbnb-bar" />
+        <span className="airbnb-bar" />
+        <span className="airbnb-bar" />
+      </SliderThumb>
+    </Tooltip>
   );
 }

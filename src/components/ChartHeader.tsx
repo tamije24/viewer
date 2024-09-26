@@ -23,14 +23,17 @@ import AutoAwesomeMotionSharpIcon from "@mui/icons-material/AutoAwesomeMotionSha
 import Dns from "@mui/icons-material/Dns";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ZoomInIcon from "@mui/icons-material/ZoomInSharp";
-import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
-import TextsmsIcon from "@mui/icons-material/Textsms";
+// import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
+// import TextsmsIcon from "@mui/icons-material/Textsms";
+import SpeakerNotesOutlinedIcon from "@mui/icons-material/SpeakerNotesOutlined";
+import SpeakerNotesIcon from "@mui/icons-material/SpeakerNotes";
 //import VisibilityIcon from "@mui/icons-material/Visibility";
 //import PageviewIcon from "@mui/icons-material/Pageview";
 import RestoreIcon from "@mui/icons-material/Restore";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { Tooltip } from "@mui/material";
 
 interface Props {
   stationName: string;
@@ -45,15 +48,17 @@ interface Props {
 
   onZoomResetClick: () => void;
   onZoomInClick: (fromValue: number, toValue: number) => void;
-  toolTipStatus: boolean;
-  onToolTipStatusChange: (toolTipStatus: boolean) => void;
+  markerStatus: boolean;
+  onMarkerStatusChange: (markerStatus: boolean) => void;
   onYZoomClick: (signal: string, zoomType: number) => void;
   timeRange: {
     minTime: number;
     maxTime: number;
   };
+  tooltipStatus: boolean;
 }
 
+const TOOLTIP_DELAY = 10000;
 const signalsToZoom = ["Ia", "Ib", "Ic", "Va", "Vb", "Vc"];
 const signalsToZoom_single = ["Currents", "Voltages"];
 
@@ -64,10 +69,11 @@ const ChartHeader = ({
   presentZoomValues,
   onZoomResetClick,
   onZoomInClick,
-  toolTipStatus,
-  onToolTipStatusChange,
+  markerStatus,
+  onMarkerStatusChange,
   onYZoomClick,
   timeRange,
+  tooltipStatus,
 }: Props) => {
   // STATE VARIABLES
   const [open, setOpen] = useState(false);
@@ -80,7 +86,7 @@ const ChartHeader = ({
   // const [endTime, setEndTime] = useState(presentZoomValues.endTime);
 
   // OTHER VARIABLE
-  let isTooltip = toolTipStatus;
+  let isMarker = markerStatus;
   let startTime = presentZoomValues.startTime;
   let endTime = presentZoomValues.endTime;
 
@@ -345,6 +351,8 @@ const ChartHeader = ({
                         variant="standard"
                         sx={{ width: "70px" }}
                       >
+                        {/* {tooltipStatus && */}
+
                         <ZoomTextInput
                           id="fromValue"
                           type="number"
@@ -360,7 +368,13 @@ const ChartHeader = ({
                             "aria-label": "from-x",
                           }}
                         />
-                        <FormHelperText id="x-from-text">from</FormHelperText>
+                        <Tooltip
+                          title="Zoom start time"
+                          placement="bottom"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <FormHelperText id="x-from-text">from</FormHelperText>
+                        </Tooltip>
                       </FormControl>
                       <FormControl
                         id="toValue_form"
@@ -382,24 +396,29 @@ const ChartHeader = ({
                             "aria-label": "to-x",
                           }}
                         />
-                        <FormHelperText id="x-to-text">to</FormHelperText>
+                        <Tooltip
+                          title="Zoom end time"
+                          placement="bottom"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <FormHelperText id="x-to-text">to</FormHelperText>
+                        </Tooltip>
                       </FormControl>
                       <Divider orientation="vertical" flexItem />
-                      {/* <IconButton
-                        color="primary"
-                        aria-label="View"
-                        onClick={handleZoomViewClick}
-                        sx={{ width: "30px" }}
-                      >
-                        <PageviewIcon />
-                      </IconButton> */}
+
                       <IconButton
                         color="primary"
                         aria-label="Zoom-in"
                         onClick={handleZoomInClick}
                         sx={{ width: "30px" }}
                       >
-                        <ZoomInIcon />
+                        <Tooltip
+                          title="Zoom IN"
+                          placement="top"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <ZoomInIcon />
+                        </Tooltip>
                       </IconButton>
                       <IconButton
                         color="primary"
@@ -407,7 +426,13 @@ const ChartHeader = ({
                         onClick={handleZoomOutClick}
                         sx={{ width: "30px" }}
                       >
-                        <ZoomOutIcon />
+                        <Tooltip
+                          title="Zoom OUT"
+                          placement="top"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <ZoomOutIcon />
+                        </Tooltip>
                       </IconButton>
                       <IconButton
                         color="primary"
@@ -415,7 +440,13 @@ const ChartHeader = ({
                         onClick={handleZoomResetClick}
                         sx={{ width: "30px" }}
                       >
-                        <RestoreIcon />
+                        <Tooltip
+                          title="Reset time axis"
+                          placement="top"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <RestoreIcon />
+                        </Tooltip>
                       </IconButton>
                     </Stack>
                   </Stack>
@@ -469,7 +500,13 @@ const ChartHeader = ({
                         onClick={handleYZoomInClick}
                         sx={{ width: "30px" }}
                       >
-                        <ZoomInIcon />
+                        <Tooltip
+                          title="Zoom IN"
+                          placement="top"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <ZoomInIcon />
+                        </Tooltip>
                       </IconButton>
                       <IconButton
                         color="secondary"
@@ -477,7 +514,13 @@ const ChartHeader = ({
                         onClick={handleYZoomOutClick}
                         sx={{ width: "30px" }}
                       >
-                        <ZoomOutIcon />
+                        <Tooltip
+                          title="Zoom OUT"
+                          placement="top"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <ZoomOutIcon />
+                        </Tooltip>
                       </IconButton>
                       <IconButton
                         color="secondary"
@@ -485,7 +528,13 @@ const ChartHeader = ({
                         onClick={handleYReset}
                         sx={{ width: "30px" }}
                       >
-                        <RestoreIcon />
+                        <Tooltip
+                          title="Reset magnitude axis"
+                          placement="top"
+                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                        >
+                          <RestoreIcon />
+                        </Tooltip>
                       </IconButton>
                       <Stack
                         direction="column"
@@ -503,7 +552,13 @@ const ChartHeader = ({
                           onClick={handleYPanUpClick}
                           sx={{ height: "25px" }}
                         >
-                          <ExpandLessIcon />
+                          <Tooltip
+                            title="Pan UP"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <ExpandLessIcon />
+                          </Tooltip>
                         </IconButton>
                         <IconButton
                           color="secondary"
@@ -511,7 +566,13 @@ const ChartHeader = ({
                           onClick={handleYPanDownClick}
                           sx={{ height: "25px" }}
                         >
-                          <ExpandMoreIcon />
+                          <Tooltip
+                            title="Pan DOWN"
+                            placement="bottom"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <ExpandMoreIcon />
+                          </Tooltip>
                         </IconButton>
                       </Stack>
                     </Stack>
@@ -519,21 +580,27 @@ const ChartHeader = ({
                 </Grid>
                 <Grid item xs={1}>
                   <Stack direction="column">
-                    <Typography variant="caption" color="success">
-                      Markers
-                    </Typography>
+                    <Tooltip
+                      title="View instantaneous values on chart"
+                      placement="top"
+                      enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                    >
+                      <Typography variant="caption" color="success">
+                        Markers
+                      </Typography>
+                    </Tooltip>
                     <FormControl
                       variant="standard"
                       sx={{ height: "53px", width: "55px", border: 0.2 }}
                     >
                       <Checkbox
-                        checked={isTooltip}
+                        checked={isMarker}
                         aria-describedby="x-check-text"
-                        icon={<TextsmsOutlinedIcon color="success" />}
-                        checkedIcon={<TextsmsIcon color="success" />}
+                        icon={<SpeakerNotesOutlinedIcon color="success" />}
+                        checkedIcon={<SpeakerNotesIcon color="success" />}
                         onChange={(event) => {
-                          isTooltip = event.target.checked;
-                          onToolTipStatusChange(event.target.checked);
+                          isMarker = event.target.checked;
+                          onMarkerStatusChange(event.target.checked);
                         }}
                         size="large"
                         sx={{ bgcolor: "", padding: 0, mt: 0.8 }}

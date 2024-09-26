@@ -24,7 +24,7 @@ interface Props {
     startTime: number;
     endTime: number;
   };
-  toolTipStatus: boolean;
+  markerStatus: boolean;
   cursorValues: {
     primary: number;
     primaryReduced: number;
@@ -65,7 +65,7 @@ const ChartBody = ({
   timeValues_original,
   timeStamps_original,
   presentZoomValues,
-  toolTipStatus,
+  markerStatus,
   cursorValues,
   onAxisClick,
   pointCount,
@@ -457,7 +457,7 @@ const ChartBody = ({
             //   endPercent: presentZoomValues.endPercent,
             // }}
             tickInterval={tickInterval}
-            toolTipStatus={toolTipStatus}
+            markerStatus={markerStatus}
             cursorValues={{
               primary: primaryCursor.cursor,
               primaryReduced: primaryCursor.cursorReduced,
@@ -486,7 +486,7 @@ const ChartBody = ({
             //   endPercent: presentZoomValues.endPercent,
             // }}
             tickInterval={tickInterval}
-            toolTipStatus={toolTipStatus}
+            markerStatus={markerStatus}
             cursorValues={{
               primary: primaryCursor.cursor,
               primaryReduced: primaryCursor.cursorReduced,

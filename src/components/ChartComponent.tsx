@@ -67,6 +67,7 @@ interface Props {
   sampling_frequency: number;
   pointCount: number;
   sidebarStatus: boolean;
+  tooltipStatus: boolean;
 }
 
 const ChartComponent = ({
@@ -88,9 +89,10 @@ const ChartComponent = ({
   sampling_frequency,
   pointCount,
   sidebarStatus,
+  tooltipStatus,
 }: Props) => {
   // STATE VARIABLES
-  const [toolTipStatus, setToolTipStatus] = useState(false);
+  const [markerStatus, setMarkerStatus] = useState(false);
 
   const [usedAnalogSignalNames, setUsedAnalogSignalNames] =
     useState(analogSignalNames);
@@ -227,8 +229,8 @@ const ChartComponent = ({
   };
 
   // TOOL TIP in Chart header
-  const handleTooltipChange = (tTStatus: boolean) => {
-    setToolTipStatus(tTStatus);
+  const handleMarkerStatusChange = (tTStatus: boolean) => {
+    setMarkerStatus(tTStatus);
   };
 
   // AXIS click handler
@@ -572,8 +574,8 @@ const ChartComponent = ({
             presentZoomValues={presentZoomValues}
             onZoomResetClick={handleZoomOutClick}
             onZoomInClick={handleZoomInClick}
-            toolTipStatus={toolTipStatus}
-            onToolTipStatusChange={handleTooltipChange}
+            markerStatus={markerStatus}
+            onMarkerStatusChange={handleMarkerStatusChange}
             onYZoomClick={handleYZoomClick}
             timeRange={{
               minTime:
@@ -585,6 +587,7 @@ const ChartComponent = ({
                   ? Object.values(analogSignals[analogSignals.length - 1])[0]
                   : 0,
             }}
+            tooltipStatus={tooltipStatus}
           />
           <ChartBody
             plotName={plotName}
@@ -595,7 +598,7 @@ const ChartComponent = ({
             timeValues_original={timeValues_original}
             timeStamps_original={timeStamps_original}
             presentZoomValues={presentZoomValues}
-            toolTipStatus={toolTipStatus}
+            markerStatus={markerStatus}
             cursorValues={cursorValues}
             onAxisClick={handleAxisClick}
             pointCount={pointCount}
@@ -618,6 +621,7 @@ const ChartComponent = ({
               endPercent: presentZoomValues.endPercent,
             }}
             onZoomChange={handleZoomChange}
+            tooltipStatus={tooltipStatus}
           />
         </Stack>
       </Grid>
@@ -634,6 +638,7 @@ const ChartComponent = ({
               secondaryTimestamp: secondaryCursor.timestamp,
             }}
             tableValues={tableValues}
+            tooltipStatus={tooltipStatus}
           />
         </Grid>
       )}

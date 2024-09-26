@@ -84,9 +84,10 @@ const emptyProject: Project = {
 interface Props {
   pointCount: number;
   sidebarStatus: boolean;
+  tooltipStatus: boolean;
 }
 
-const MainComponent = ({ pointCount, sidebarStatus }: Props) => {
+const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
   const [presentZoomValues, setPresentZoomValues] = useState([
     {
       startPercent: 0,
@@ -601,6 +602,7 @@ const MainComponent = ({ pointCount, sidebarStatus }: Props) => {
             }
             pointCount={pointCount}
             sidebarStatus={sidebarStatus}
+            tooltipStatus={tooltipStatus}
           />
         )}
         {selectedPage === "ProjectList" && (

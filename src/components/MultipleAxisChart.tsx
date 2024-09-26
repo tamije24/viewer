@@ -33,7 +33,7 @@ interface Props {
   //   endPercent: number;
   // };
   tickInterval: number[];
-  toolTipStatus: boolean;
+  markerStatus: boolean;
   cursorValues: {
     primary: number;
     primaryReduced: number;
@@ -67,7 +67,7 @@ const MultipleAxisChart = ({
   timeStamps,
   originalIndexes,
   tickInterval,
-  toolTipStatus,
+  markerStatus,
   cursorValues,
   onAxisClick,
   presentMaxisYZoomValues,
@@ -350,7 +350,7 @@ const MultipleAxisChart = ({
                 },
               }}
             >
-              <ChartsTooltip trigger={toolTipStatus ? "axis" : "none"} />
+              <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
               <ChartsAxisHighlight />
               <ChartsGrid horizontal />
               <ChartsOnAxisClickHandler
@@ -381,7 +381,7 @@ const MultipleAxisChart = ({
                     lineStyle={{
                       strokeDasharray: "10 5",
                       strokeWidth: 1.5,
-                      stroke: "fuchsia",
+                      stroke: "darkorchid",
                     }}
                   />
                 )}

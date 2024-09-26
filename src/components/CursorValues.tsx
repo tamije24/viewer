@@ -26,10 +26,15 @@ import { GridColDef } from "@mui/x-data-grid/models/colDef";
 import DeviceHubSharpIcon from "@mui/icons-material/DeviceHubSharp";
 import TableChartSharpIcon from "@mui/icons-material/TableChartSharp";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import FirstPageIcon from "@mui/icons-material/FirstPage";
+import LastPageIcon from "@mui/icons-material/LastPage";
+
+// import SnowshoeingIcon from '@mui/icons-material/Snowshoeing';
 //import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
 
 import Phasors from "./Phasors";
 import Harmonics from "./Harmonics";
+import IconButton from "@mui/material/IconButton";
 
 interface Props {
   axisClick: {
@@ -51,9 +56,11 @@ interface Props {
     pos_peak: number;
     neg_peak: number;
   }[];
+  tooltipStatus: boolean;
 }
+const TOOLTIP_DELAY = 10000;
 
-const CursorValues = ({ axisClick, tableValues }: Props) => {
+const CursorValues = ({ axisClick, tableValues, tooltipStatus }: Props) => {
   // set data rows
   let tempTable: {
     id: string;
@@ -230,86 +237,188 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               xs={6}
               sx={{
                 justifyContent: "space-between",
-                borderLeft: 0.5,
+                borderLeft: 1.5,
+                borderLeftStyle: "dashed",
+                borderColor: "secondary.main",
                 paddingLeft: 0.5,
               }}
             >
-              <Typography
-                variant="overline"
-                component="p"
-                sx={{ fontSize: "0.6rem" }}
-              >
-                Primary Cursor
-              </Typography>
-              <Stack sx={{ justifyContent: "space-between" }}>
-                <Stack
-                  direction="row"
-                  sx={{
-                    alignContent: { xs: "center", sm: "flex-start" },
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
+              <Grid container>
+                <Grid item xs={8}>
                   <Typography
-                    variant="subtitle2"
+                    variant="overline"
                     component="p"
-                    sx={{ fontSize: "0.7rem" }}
+                    sx={{ fontSize: "0.6rem" }}
                   >
-                    {`${(Math.round(axisClick.axisValue * 1000) / 1000).toFixed(
-                      3
-                    )} s`}
+                    Primary
                   </Typography>
-                  <Chip
-                    size="small"
-                    color="secondary"
-                    label={axisClick.dataIndex}
-                    sx={{ minWidth: "40px", fontSize: "0.7rem" }}
-                  />
-                </Stack>
-              </Stack>
+                  <Stack sx={{ justifyContent: "space-between" }}>
+                    <Stack
+                      direction="row"
+                      sx={{
+                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        component="p"
+                        sx={{ fontSize: "0.7rem" }}
+                      >
+                        {`${(
+                          Math.round(axisClick.axisValue * 1000) / 1000
+                        ).toFixed(3)} s`}
+                      </Typography>
+                      <Tooltip
+                        title="Index"
+                        placement="right"
+                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      >
+                        <Chip
+                          size="small"
+                          color="secondary"
+                          label={axisClick.dataIndex}
+                          sx={{ minWidth: "40px", fontSize: "0.7rem" }}
+                        />
+                      </Tooltip>
+                    </Stack>
+                  </Stack>
+                </Grid>
+                <Grid item xs={3} display="flex" alignItems="flex-end">
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    sx={{
+                      width: "40px",
+                      bgcolor: "",
+                    }}
+                  >
+                    <IconButton
+                      color="secondary"
+                      aria-label="View"
+                      //   onClick={handleYZoomInClick}
+                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                    >
+                      <Tooltip
+                        title="move cursor left"
+                        placement="top"
+                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      >
+                        <FirstPageIcon />
+                      </Tooltip>
+                    </IconButton>
+                    <IconButton
+                      color="secondary"
+                      aria-label="View"
+                      //   onClick={handleYZoomInClick}
+                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                    >
+                      <Tooltip
+                        title="move cursor right"
+                        placement="top"
+                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      >
+                        <LastPageIcon />
+                      </Tooltip>
+                    </IconButton>
+                  </Stack>
+                </Grid>
+              </Grid>
             </Grid>
             <Grid
               item
               xs={6}
               sx={{
                 justifyContent: "space-between",
-                borderLeft: 0.5,
+                borderLeft: 2,
+                borderLeftStyle: "dotted",
+                borderColor: "success.main",
                 paddingLeft: 0.5,
               }}
             >
-              <Typography
-                variant="overline"
-                component="p"
-                sx={{ fontSize: "0.6rem" }}
-              >
-                Secondary Cursor
-              </Typography>
-              <Stack sx={{ justifyContent: "space-between" }}>
-                <Stack
-                  direction="row"
-                  sx={{
-                    alignContent: { xs: "center", sm: "flex-start" },
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
+              <Grid container>
+                <Grid item xs={8}>
                   <Typography
-                    variant="subtitle2"
+                    variant="overline"
                     component="p"
-                    sx={{ fontSize: "0.7rem" }}
+                    sx={{ fontSize: "0.6rem" }}
                   >
-                    {`${(
-                      Math.round(axisClick.secondaryValue * 1000) / 1000
-                    ).toFixed(3)} s`}
+                    Secondary
                   </Typography>
-                  <Chip
-                    size="small"
-                    color="success"
-                    label={axisClick.secondaryIndex}
-                    sx={{ minWidth: "40px", fontSize: "0.7rem" }}
-                  />
-                </Stack>
-              </Stack>
+                  <Stack sx={{ justifyContent: "space-between" }}>
+                    <Stack
+                      direction="row"
+                      sx={{
+                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        component="p"
+                        sx={{ fontSize: "0.7rem" }}
+                      >
+                        {`${(
+                          Math.round(axisClick.secondaryValue * 1000) / 1000
+                        ).toFixed(3)} s`}
+                      </Typography>
+                      <Tooltip
+                        title="Index"
+                        placement="right"
+                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      >
+                        <Chip
+                          size="small"
+                          color="success"
+                          label={axisClick.secondaryIndex}
+                          sx={{ minWidth: "40px", fontSize: "0.7rem" }}
+                        />
+                      </Tooltip>
+                    </Stack>
+                  </Stack>
+                </Grid>
+                <Grid item xs={3} display="flex" alignItems="flex-end">
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    sx={{
+                      width: "40px",
+                      bgcolor: "",
+                    }}
+                  >
+                    <IconButton
+                      color="success"
+                      aria-label="View"
+                      //   onClick={handleYZoomInClick}
+                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                    >
+                      <Tooltip
+                        title="move cursor left"
+                        placement="top"
+                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      >
+                        <FirstPageIcon />
+                      </Tooltip>
+                    </IconButton>
+                    <IconButton
+                      color="success"
+                      aria-label="View"
+                      //   onClick={handleYZoomInClick}
+                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                    >
+                      <Tooltip
+                        title="move cursor right"
+                        placement="top"
+                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      >
+                        <LastPageIcon />
+                      </Tooltip>
+                    </IconButton>
+                  </Stack>
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
 
@@ -384,44 +493,42 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
             </Typography>
           </Box>
           {selectedTab === "table" && (
-            <>
-              <Box
+            <Box
+              sx={{
+                mt: 0,
+                // ml: 2,
+                mr: 2,
+                width: "100%",
+                height: "100%",
+                border: 0.2,
+                borderColor: "divider",
+                fontSize: "0.7rem",
+              }}
+            >
+              <DataGridPro
+                rows={rows}
+                columns={columns}
+                pinnedColumns={pinnedColumns}
+                hideFooterRowCount
+                checkboxSelection={false}
+                disableRowSelectionOnClick
+                showCellVerticalBorder={true}
+                showColumnVerticalBorder={true}
+                disableColumnMenu={true}
+                // rowHeight={60}
+                density={"compact"}
+                slots={{ toolbar: CustomToolbar }}
                 sx={{
-                  mt: 0,
-                  // ml: 2,
-                  mr: 2,
                   width: "100%",
-                  height: "100%",
-                  border: 0.2,
-                  borderColor: "divider",
+                  height: "85%",
                   fontSize: "0.7rem",
                 }}
-              >
-                <DataGridPro
-                  rows={rows}
-                  columns={columns}
-                  pinnedColumns={pinnedColumns}
-                  hideFooterRowCount
-                  checkboxSelection={false}
-                  disableRowSelectionOnClick
-                  showCellVerticalBorder={true}
-                  showColumnVerticalBorder={true}
-                  disableColumnMenu={true}
-                  // rowHeight={60}
-                  density={"compact"}
-                  slots={{ toolbar: CustomToolbar }}
-                  sx={{
-                    width: "100%",
-                    height: "85%",
-                    fontSize: "0.7rem",
-                  }}
-                  hideFooter={true}
-                />
-                <Typography variant="caption" sx={{ ml: 1 }}>
-                  * all values are in primary
-                </Typography>
-              </Box>
-            </>
+                hideFooter={true}
+              />
+              <Typography variant="caption" sx={{ ml: 1 }}>
+                * all values are in primary
+              </Typography>
+            </Box>
           )}
           {selectedTab === "phasors" && (
             <Phasors
@@ -466,7 +573,11 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               }}
               value="table"
               icon={
-                <Tooltip title="Values" placement="top">
+                <Tooltip
+                  title="Values"
+                  placement="top"
+                  enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                >
                   <TableChartSharpIcon fontSize="medium" />
                 </Tooltip>
               }
@@ -478,7 +589,11 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               }}
               value="phasors"
               icon={
-                <Tooltip title="Phasors" placement="top">
+                <Tooltip
+                  title="Phasors"
+                  placement="top"
+                  enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                >
                   <DeviceHubSharpIcon fontSize="medium" />
                 </Tooltip>
               }
@@ -490,7 +605,11 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
               }}
               value="harmonics"
               icon={
-                <Tooltip title="Harmonics" placement="top">
+                <Tooltip
+                  title="Harmonics"
+                  placement="top"
+                  enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                >
                   <BarChartIcon fontSize="medium" />
                 </Tooltip>
               }
