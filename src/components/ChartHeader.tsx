@@ -6,6 +6,7 @@ import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Checkbox from "@mui/material/Checkbox";
+import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
@@ -28,7 +29,8 @@ import TextsmsIcon from "@mui/icons-material/Textsms";
 //import PageviewIcon from "@mui/icons-material/Pageview";
 import RestoreIcon from "@mui/icons-material/Restore";
 import CloseIcon from "@mui/icons-material/Close";
-import { Divider } from "@mui/material";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 interface Props {
   stationName: string;
@@ -230,6 +232,14 @@ const ChartHeader = ({
     handleYZoom(3);
   };
 
+  const handleYPanUpClick = () => {
+    handleYZoom(4);
+  };
+
+  const handleYPanDownClick = () => {
+    handleYZoom(5);
+  };
+
   const handleYZoom = (code: number) => {
     let selectedSignal = "";
 
@@ -313,7 +323,7 @@ const ChartHeader = ({
                 justifyContent="space-between"
                 sx={{ padding: 0.5 }}
               >
-                <Grid item xs={5.5} sx={{ bgcolor: "" }}>
+                <Grid item xs={5} sx={{ bgcolor: "" }}>
                   <Stack direction="column">
                     <Stack
                       direction="row"
@@ -410,7 +420,7 @@ const ChartHeader = ({
                     </Stack>
                   </Stack>
                 </Grid>
-                <Grid item xs={5}>
+                <Grid item xs={5.5}>
                   <Stack direction="column">
                     <Typography variant="caption" color="secondary">
                       Y-Axis controls
@@ -432,7 +442,7 @@ const ChartHeader = ({
                           options={signalsToZoom}
                           sx={{ width: 150, pl: 0.5, pt: 1 }}
                           renderInput={(params) => (
-                            <TextField {...params} label="Signal to zoom" />
+                            <TextField {...params} label="Signal to control" />
                           )}
                         />
                       )}
@@ -449,7 +459,7 @@ const ChartHeader = ({
                           options={signalsToZoom_single}
                           sx={{ width: 150, pl: 0.5, pt: 1 }}
                           renderInput={(params) => (
-                            <TextField {...params} label="Signal to zoom" />
+                            <TextField {...params} label="Signal to control" />
                           )}
                         />
                       )}
@@ -477,6 +487,33 @@ const ChartHeader = ({
                       >
                         <RestoreIcon />
                       </IconButton>
+                      <Stack
+                        direction="column"
+                        width="37px"
+                        sx={{
+                          borderLeft: 0.3,
+                          borderColor: "divider",
+                          pl: 0.5,
+                          bgcolor: "",
+                        }}
+                      >
+                        <IconButton
+                          color="secondary"
+                          aria-label="View"
+                          onClick={handleYPanUpClick}
+                          sx={{ height: "25px" }}
+                        >
+                          <ExpandLessIcon />
+                        </IconButton>
+                        <IconButton
+                          color="secondary"
+                          aria-label="View"
+                          onClick={handleYPanDownClick}
+                          sx={{ height: "25px" }}
+                        >
+                          <ExpandMoreIcon />
+                        </IconButton>
+                      </Stack>
                     </Stack>
                   </Stack>
                 </Grid>

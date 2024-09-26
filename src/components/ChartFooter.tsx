@@ -6,6 +6,8 @@ import Slider, { SliderThumb } from "@mui/material/Slider";
 import { styled } from "@mui/material/styles";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 //import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
@@ -86,7 +88,7 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
 
   return (
     <Card
-      variant="outlined"
+      //variant="outlined"
       sx={{
         mt: 0,
         mb: 0.5,
@@ -100,6 +102,7 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
           height: "70px",
           paddingTop: 0,
           paddingLeft: 0,
+          paddingRight: 0,
         }}
       >
         <Grid
@@ -110,22 +113,23 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
             mt: 0.5,
             p: 0,
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
           }}
         >
-          <Grid item width="3%" sx={{ bgcolor: "" }}>
+          <Grid item width="20px" sx={{ bgcolor: "" }}>
             <IconButton
-              color="secondary"
+              color="primary"
               aria-label="pan-left"
               onClick={handlePanLeft}
+              sx={{ width: "20px" }}
             >
-              <SkipPreviousIcon />
+              <NavigateBeforeIcon />
             </IconButton>
           </Grid>
           <Grid
             item
-            width="92%"
-            sx={{ borderLeft: 0.5, borderRight: 0.5, ml: 1, mr: 1 }}
+            width={`calc(100% - 50px)`}
+            sx={{ borderLeft: 0.5, borderRight: 0.5, ml: 0, mr: 0 }}
           >
             <AirbnbSlider
               slots={{ thumb: AirbnbThumbComponent }}
@@ -134,24 +138,25 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
               valueLabelDisplay="off"
               min={0}
               max={100}
-              sx={{ mt: 0.5, mb: 0.5 }}
+              sx={{ mt: 0.5, mb: 0.5, zIndex: 100 }}
             />
           </Grid>
-          <Grid item width="3%" sx={{ bgcolor: "" }}>
+          <Grid item width="20px" sx={{ bgcolor: "" }}>
             <IconButton
-              color="secondary"
+              color="primary"
               aria-label="pan-right"
               onClick={handlePanRight}
+              sx={{ width: "20px" }}
             >
-              <SkipNextIcon />
+              <NavigateNextIcon />
             </IconButton>
           </Grid>
-          <Grid item width="3%" sx={{ bgcolor: "" }}></Grid>
-          <Grid item width="46%" sx={{}}>
+          <Grid item width="1%" sx={{ bgcolor: "" }}></Grid>
+          <Grid item width="49%" sx={{}}>
             <Typography
               variant="body2"
               sx={{
-                minWidth: "40px",
+                minWidth: "30px",
                 ml: 0,
                 bgcolor: "primary",
                 fontSize: 10,
@@ -162,14 +167,14 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
           </Grid>
           <Grid
             item
-            width="46%"
-            sx={{ display: "flex", justifyContent: "flex-end" }}
+            width="49%"
+            sx={{ display: "flex", justifyContent: "flex-end", bgcolor: "" }}
           >
             <Typography
               variant="body2"
               sx={{
                 minWidth: "40px",
-                mr: -2,
+                mr: 0,
                 bgcolor: "primary",
                 fontSize: 10,
               }}
@@ -177,7 +182,7 @@ const ChartFooter = ({ timeRange, presentZoomValues, onZoomChange }: Props) => {
               {Math.round(timeRange.maxTime * 1000) / 1000} s
             </Typography>
           </Grid>
-          <Grid item width="3%" sx={{ bgcolor: "" }}></Grid>
+          <Grid item width="1%" sx={{ bgcolor: "" }}></Grid>
         </Grid>
       </CardContent>
     </Card>

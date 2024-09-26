@@ -214,7 +214,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
   return (
     <>
       <Card
-        variant="outlined"
+        //      variant="outlined"
         sx={{
           pt: 0,
           ml: 0.5,
@@ -223,7 +223,7 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
           bgcolor: "",
         }}
       >
-        <CardContent sx={{ mt: 0.8, ml: 1, bgcolor: "", p: 0 }}>
+        <CardContent sx={{ mt: 1, ml: 1, bgcolor: "", p: 0 }}>
           <Grid container sx={{ bgcolor: "", p: 0, m: 0 }}>
             <Grid
               item
@@ -350,14 +350,14 @@ const CursorValues = ({ axisClick, tableValues }: Props) => {
       </Card>
 
       <Card
-        variant="outlined"
+        // variant="outlined"
         sx={{
-          mt: 0,
+          mt: 0.5,
           ml: 0.5,
           mr: 0,
           mb: 0.5,
           bgcolor: "",
-          height: `calc(100vh - 210px)`,
+          height: `calc(100vh - 218px)`,
         }}
       >
         <CardContent

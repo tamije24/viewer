@@ -304,7 +304,22 @@ const ChartComponent = ({
         present_zoom_start = present_zoom_start - ZOOM_STEP;
         present_zoom_end = present_zoom_end + ZOOM_STEP;
       }
+    } else if (zoomType === 4) {
+      // Pan-up button clicked
+      if (present_zoom_end !== 100) {
+        present_zoom_start = present_zoom_start + ZOOM_STEP;
+        present_zoom_end = present_zoom_end + ZOOM_STEP;
+      }
+    } else if (zoomType === 5) {
+      // Pan-down button clicked
+      if (present_zoom_start !== 0) {
+        present_zoom_start = present_zoom_start - ZOOM_STEP;
+        present_zoom_end = present_zoom_end - ZOOM_STEP;
+      }
     }
+
+    if (present_zoom_start < 0) present_zoom_start = 0;
+    if (present_zoom_end > 100) present_zoom_end = 100;
 
     let tempZoom = [...presentSaxisYZoomValues];
 
