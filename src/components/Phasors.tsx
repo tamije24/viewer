@@ -1,14 +1,12 @@
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
+import { useState } from "react";
 
-// import AbcIcon from "@mui/icons-material/Abc";
-//import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
-// import CategoryIcon from "@mui/icons-material/Category";
-import Diversity2Icon from "@mui/icons-material/Diversity2";
-import Diversity3Icon from "@mui/icons-material/Diversity3";
-import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Tooltip from "@mui/material/Tooltip";
+
 import {
   DataGridPro,
   GridCallbackDetails,
@@ -19,11 +17,15 @@ import {
   MuiEvent,
 } from "@mui/x-data-grid-pro";
 
+// import AbcIcon from "@mui/icons-material/Abc";
+//import CategoryTwoToneIcon from "@mui/icons-material/CategoryTwoTone";
+// import CategoryIcon from "@mui/icons-material/Category";
+import Diversity2Icon from "@mui/icons-material/Diversity2";
+import Diversity3Icon from "@mui/icons-material/Diversity3";
+
 import Plot from "react-plotly.js";
-import { useState } from "react";
 
 import { complex, pi, add, multiply } from "mathjs";
-import Divider from "@mui/material/Divider";
 
 interface phasorProps {
   passed_magnitudes: number[];
