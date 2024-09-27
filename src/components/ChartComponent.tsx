@@ -645,6 +645,8 @@ const ChartComponent = ({
   const reduceValues = (values: any[], requiredIndexes: number[]) => {
     let returnValues: any[] = [];
 
+    // if (values === undefined) return new number[];
+
     for (let i = 0; i <= requiredIndexes.length; i++) {
       if (values[requiredIndexes[i]] !== undefined)
         returnValues[i] = values[requiredIndexes[i]];
@@ -834,10 +836,10 @@ const ChartComponent = ({
     let factor = 0.3;
     for (let i = 0; i < L; i++) {
       let value = Object.values(digitalSignals[i]);
-      value[1] = factor * value[1] + 0.5;
-      value[2] = factor * value[2] + 1.5;
-      value[3] = factor * value[3] + 2.5;
-      value[4] = factor * value[4] + 3.5;
+      value[1] = factor * value[1] + 0.3;
+      value[2] = factor * value[2] + 1.3;
+      value[3] = factor * value[3] + 2.3;
+      value[4] = factor * value[4] + 3.3;
       digitalSignals_split.push(value);
     }
 

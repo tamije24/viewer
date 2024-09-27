@@ -277,8 +277,8 @@ const SingleAxisChart = ({
     voltage_series.push(a);
   }
 
-  let baseline = [0.5, 1.5, 2.5, 3.5];
-  for (let i = 0; i < 4; i++) {
+  let baseline = [0.3, 1.3, 2.3, 3.3];
+  for (let i = 3; i >= 0; i--) {
     // if (digitalSignalNames[i] === "") continue;
 
     let label = digitalSignalNames[i];
@@ -295,6 +295,9 @@ const SingleAxisChart = ({
         highlighted: "series",
         faded: "global",
       } as HighlightScope,
+      valueFormatter: (_v) => {
+        return "";
+      },
     };
     digital_series.push(d);
   }
@@ -721,10 +724,7 @@ const SingleAxisChart = ({
                 data: timeValues,
               },
             ]}
-            yAxis={[
-              { id: "y-axis" },
-              //  { zoom: true }
-            ]}
+            yAxis={[{ id: "y-axis" }]}
             series={[]}
             zoom={zoom}
             margin={{
