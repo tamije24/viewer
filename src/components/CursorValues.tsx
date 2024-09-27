@@ -57,10 +57,16 @@ interface Props {
     neg_peak: number;
   }[];
   tooltipStatus: boolean;
+  onCursorMove: (cursor: string, step: number) => void;
 }
 const TOOLTIP_DELAY = 10000;
 
-const CursorValues = ({ axisClick, tableValues, tooltipStatus }: Props) => {
+const CursorValues = ({
+  axisClick,
+  tableValues,
+  tooltipStatus,
+  onCursorMove,
+}: Props) => {
   // set data rows
   let tempTable: {
     id: string;
@@ -105,9 +111,7 @@ const CursorValues = ({ axisClick, tableValues, tooltipStatus }: Props) => {
       )}`,
     });
   }
-
   const rows = tempTable;
-
   const columns: GridColDef<(typeof rows)[number]>[] = [
     {
       field: "id",
@@ -214,10 +218,10 @@ const CursorValues = ({ axisClick, tableValues, tooltipStatus }: Props) => {
     else setTitleText("HARMONICS");
   };
 
-  // console.log(tableValues.length, tableValues[0].channel);
-  // console.log(tempTable.length, tempTable[0].channel);
-  // console.log(magnitudes);
-  // console.log(angles);
+  const handleCursorMove = (cursor: string, step: number) => {
+    onCursorMove(cursor, step);
+  };
+
   return (
     <>
       <Card
@@ -243,88 +247,88 @@ const CursorValues = ({ axisClick, tableValues, tooltipStatus }: Props) => {
                 paddingLeft: 0.5,
               }}
             >
-              <Grid container>
-                <Grid item xs={8}>
+              <Stack
+                direction="row"
+                sx={{ justifyContent: "space-between", alignItems: "center" }}
+              >
+                <Typography
+                  variant="overline"
+                  component="p"
+                  sx={{ fontSize: "0.6rem" }}
+                >
+                  Primary
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  sx={{
+                    mr: 2,
+                    width: "40px",
+                    bgcolor: "",
+                  }}
+                >
+                  <IconButton
+                    color="secondary"
+                    aria-label="View"
+                    onClick={() => handleCursorMove("primary", -1)}
+                    sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                  >
+                    <Tooltip
+                      title="move cursor left"
+                      placement="top"
+                      enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                    >
+                      <FirstPageIcon />
+                    </Tooltip>
+                  </IconButton>
+                  <IconButton
+                    color="secondary"
+                    aria-label="View"
+                    onClick={() => handleCursorMove("primary", 1)}
+                    sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                  >
+                    <Tooltip
+                      title="move cursor right"
+                      placement="top"
+                      enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                    >
+                      <LastPageIcon />
+                    </Tooltip>
+                  </IconButton>
+                </Stack>
+              </Stack>
+              <Stack sx={{ justifyContent: "space-between" }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    alignContent: { xs: "center", sm: "flex-start" },
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
                   <Typography
-                    variant="overline"
+                    variant="subtitle2"
                     component="p"
-                    sx={{ fontSize: "0.6rem" }}
+                    sx={{ fontSize: "0.7rem" }}
                   >
-                    Primary
+                    {`${(Math.round(axisClick.axisValue * 1000) / 1000).toFixed(
+                      3
+                    )} s`}
                   </Typography>
-                  <Stack sx={{ justifyContent: "space-between" }}>
-                    <Stack
-                      direction="row"
-                      sx={{
-                        alignContent: { xs: "center", sm: "flex-start" },
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="subtitle2"
-                        component="p"
-                        sx={{ fontSize: "0.7rem" }}
-                      >
-                        {`${(
-                          Math.round(axisClick.axisValue * 1000) / 1000
-                        ).toFixed(3)} s`}
-                      </Typography>
-                      <Tooltip
-                        title="Index"
-                        placement="right"
-                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                      >
-                        <Chip
-                          size="small"
-                          color="secondary"
-                          label={axisClick.dataIndex}
-                          sx={{ minWidth: "40px", fontSize: "0.7rem" }}
-                        />
-                      </Tooltip>
-                    </Stack>
-                  </Stack>
-                </Grid>
-                <Grid item xs={3} display="flex" alignItems="flex-end">
-                  <Stack
-                    direction="row"
-                    spacing={0.5}
-                    sx={{
-                      width: "40px",
-                      bgcolor: "",
-                    }}
+                  <Tooltip
+                    title="Index"
+                    placement="right"
+                    enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
                   >
-                    <IconButton
+                    <Chip
+                      size="small"
                       color="secondary"
-                      aria-label="View"
-                      //   onClick={handleYZoomInClick}
-                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
-                    >
-                      <Tooltip
-                        title="move cursor left"
-                        placement="top"
-                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                      >
-                        <FirstPageIcon />
-                      </Tooltip>
-                    </IconButton>
-                    <IconButton
-                      color="secondary"
-                      aria-label="View"
-                      //   onClick={handleYZoomInClick}
-                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
-                    >
-                      <Tooltip
-                        title="move cursor right"
-                        placement="top"
-                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                      >
-                        <LastPageIcon />
-                      </Tooltip>
-                    </IconButton>
-                  </Stack>
-                </Grid>
-              </Grid>
+                      label={axisClick.dataIndex}
+                      sx={{ minWidth: "40px", fontSize: "0.7rem" }}
+                    />
+                  </Tooltip>
+                </Stack>
+              </Stack>
             </Grid>
             <Grid
               item
@@ -337,88 +341,88 @@ const CursorValues = ({ axisClick, tableValues, tooltipStatus }: Props) => {
                 paddingLeft: 0.5,
               }}
             >
-              <Grid container>
-                <Grid item xs={8}>
+              <Stack
+                direction="row"
+                sx={{ justifyContent: "space-between", alignItems: "center" }}
+              >
+                <Typography
+                  variant="overline"
+                  component="p"
+                  sx={{ fontSize: "0.6rem" }}
+                >
+                  Secondary
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  sx={{
+                    width: "40px",
+                    bgcolor: "",
+                    mr: 2,
+                  }}
+                >
+                  <IconButton
+                    color="success"
+                    aria-label="View"
+                    onClick={() => handleCursorMove("secondary", -1)}
+                    sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                  >
+                    <Tooltip
+                      title="move cursor left"
+                      placement="top"
+                      enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                    >
+                      <FirstPageIcon />
+                    </Tooltip>
+                  </IconButton>
+                  <IconButton
+                    color="success"
+                    aria-label="View"
+                    onClick={() => handleCursorMove("secondary", 1)}
+                    sx={{ width: "20px", height: "10px", bgcolor: "" }}
+                  >
+                    <Tooltip
+                      title="move cursor right"
+                      placement="top"
+                      enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                    >
+                      <LastPageIcon />
+                    </Tooltip>
+                  </IconButton>
+                </Stack>
+              </Stack>
+              <Stack sx={{ justifyContent: "space-between" }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    alignContent: { xs: "center", sm: "flex-start" },
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
                   <Typography
-                    variant="overline"
+                    variant="subtitle2"
                     component="p"
-                    sx={{ fontSize: "0.6rem" }}
+                    sx={{ fontSize: "0.7rem" }}
                   >
-                    Secondary
+                    {`${(
+                      Math.round(axisClick.secondaryValue * 1000) / 1000
+                    ).toFixed(3)} s`}
                   </Typography>
-                  <Stack sx={{ justifyContent: "space-between" }}>
-                    <Stack
-                      direction="row"
-                      sx={{
-                        alignContent: { xs: "center", sm: "flex-start" },
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="subtitle2"
-                        component="p"
-                        sx={{ fontSize: "0.7rem" }}
-                      >
-                        {`${(
-                          Math.round(axisClick.secondaryValue * 1000) / 1000
-                        ).toFixed(3)} s`}
-                      </Typography>
-                      <Tooltip
-                        title="Index"
-                        placement="right"
-                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                      >
-                        <Chip
-                          size="small"
-                          color="success"
-                          label={axisClick.secondaryIndex}
-                          sx={{ minWidth: "40px", fontSize: "0.7rem" }}
-                        />
-                      </Tooltip>
-                    </Stack>
-                  </Stack>
-                </Grid>
-                <Grid item xs={3} display="flex" alignItems="flex-end">
-                  <Stack
-                    direction="row"
-                    spacing={0.5}
-                    sx={{
-                      width: "40px",
-                      bgcolor: "",
-                    }}
+                  <Tooltip
+                    title="Index"
+                    placement="right"
+                    enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
                   >
-                    <IconButton
+                    <Chip
+                      size="small"
                       color="success"
-                      aria-label="View"
-                      //   onClick={handleYZoomInClick}
-                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
-                    >
-                      <Tooltip
-                        title="move cursor left"
-                        placement="top"
-                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                      >
-                        <FirstPageIcon />
-                      </Tooltip>
-                    </IconButton>
-                    <IconButton
-                      color="success"
-                      aria-label="View"
-                      //   onClick={handleYZoomInClick}
-                      sx={{ width: "20px", height: "10px", bgcolor: "" }}
-                    >
-                      <Tooltip
-                        title="move cursor right"
-                        placement="top"
-                        enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                      >
-                        <LastPageIcon />
-                      </Tooltip>
-                    </IconButton>
-                  </Stack>
-                </Grid>
-              </Grid>
+                      label={axisClick.secondaryIndex}
+                      sx={{ minWidth: "40px", fontSize: "0.7rem" }}
+                    />
+                  </Tooltip>
+                </Stack>
+              </Stack>
             </Grid>
           </Grid>
 

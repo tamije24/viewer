@@ -187,7 +187,12 @@ function App() {
               >
                 <BottomNavigationAction
                   sx={{ ml: 0.2 }}
-                  label={`${theme.palette.mode} mode`}
+                  // label={`${theme.palette.mode} mode`}
+                  label={
+                    theme.palette.mode === "light"
+                      ? "view dark mode"
+                      : "view light mode"
+                  }
                   value="recents"
                   icon={
                     theme.palette.mode === "dark" ? (
@@ -200,14 +205,14 @@ function App() {
                 />
                 <BottomNavigationAction
                   sx={{ ml: 1 }}
-                  label={sidebarStatus ? "show side bar" : "hide side bar"}
+                  label={sidebarStatus ? "hide side bar" : "show side bar"}
                   value="sidebar"
                   icon={sidebarStatus ? <WebIcon /> : <WebAssetIcon />}
                   onClick={() => setSidebarStatus(!sidebarStatus)}
                 />
                 <BottomNavigationAction
                   sx={{ ml: 1 }}
-                  label={tooltipStatus ? "show tooltips" : "hide tooltips"}
+                  label={tooltipStatus ? "hide tooltips" : "show tooltips"}
                   value="sidebar"
                   icon={tooltipStatus ? <KeyIcon /> : <KeyOffIcon />}
                   onClick={() => setTooltipStatus(!tooltipStatus)}
@@ -217,7 +222,7 @@ function App() {
 
             <Grid
               item
-              xs={7}
+              xs={5}
               sx={{
                 display: "flex",
                 justifyContent: "flex-end",

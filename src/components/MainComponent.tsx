@@ -187,9 +187,9 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
     };
 
     // console.log(axisClick);
-    // console.log(aValue);
     // console.log(selectedIndex);
-    //    console.log("main component: ", dataIndex, dataIndexReduced);
+    // console.log("main component: ", dataIndex, dataIndexReduced);
+    // console.log(aValue);
 
     setAxisClick(aValue);
   };

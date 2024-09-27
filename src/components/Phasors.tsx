@@ -11,9 +11,12 @@ import Tooltip from "@mui/material/Tooltip";
 import Grid from "@mui/material/Grid";
 import {
   DataGridPro,
+  GridCallbackDetails,
   GridColDef,
-  GridToolbarContainer,
-  GridToolbarExport,
+  GridRowParams,
+  // GridToolbarContainer,
+  // GridToolbarExport,
+  MuiEvent,
 } from "@mui/x-data-grid-pro";
 
 import Plot from "react-plotly.js";
@@ -142,7 +145,7 @@ const Phasors = ({
       <CustomTabPanel value={value} index={0}>
         <PolarPlotAndTable
           magnitudes={magnitudes}
-          angles={angles}
+          angles_original={angles}
           unit={unit}
           plotType="phase"
         />
@@ -150,7 +153,7 @@ const Phasors = ({
       <CustomTabPanel value={value} index={1}>
         <PolarPlotAndTable
           magnitudes={sequence_magnitudes}
-          angles={sequence_angles}
+          angles_original={sequence_angles}
           unit={unit}
           plotType="sequence"
         />
@@ -192,21 +195,35 @@ function a11yProps(index: number) {
 
 interface plotProps {
   magnitudes: number[];
-  angles: number[];
+  angles_original: number[];
   unit: string[];
   plotType: string;
 }
 
 const PolarPlotAndTable = ({
   magnitudes,
-  angles,
+  angles_original,
   unit,
   plotType,
 }: plotProps) => {
+  // STATE VARIABLES
+  const [selectedRow, setSelectedRow] = useState(-1);
+
+  // OTHER VARAIBLES
   let signal =
     plotType === "phase"
       ? ["IA", "IB", "IC", "VA", "VB", "VC"]
       : ["I1", "I2", "I0", "V1", "V2", "V0"];
+
+  let angles: number[] = [];
+  // rotate angle if row is selected
+  if (selectedRow === -1) {
+    // no rotation
+    angles = [...angles_original];
+  } else {
+    let refAngle = angles_original[selectedRow];
+    angles = angles_original.map((angle) => angle - refAngle);
+  }
 
   const rows = [];
   for (let i = 0; i < 6; i++) {
@@ -223,15 +240,6 @@ const PolarPlotAndTable = ({
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     {
-      field: "Signal",
-      headerName: "",
-      description: "Signal",
-      sortable: false,
-      headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
-      headerAlign: "center",
-      width: 30,
-    },
-    {
       field: "Mag",
       headerName: "MAGNITUDE",
       description: "DFT magnitude",
@@ -239,7 +247,7 @@ const PolarPlotAndTable = ({
       headerClassName: "super-app-theme--header",
       align: "right",
       headerAlign: "center",
-      width: 90,
+      //   width: 90,
     },
     {
       field: "Ang",
@@ -247,8 +255,18 @@ const PolarPlotAndTable = ({
       description: "DFT angle",
       sortable: false,
       headerClassName: "super-app-theme--header",
-      align: "right",
+      align: "center",
       headerAlign: "center",
+    },
+    {
+      field: "Signal",
+      headerName: "SIGNAL",
+      description: "Signal",
+      sortable: false,
+      headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+      align: "center",
+      headerAlign: "center",
+      // width: 30,
     },
   ];
 
@@ -277,6 +295,16 @@ const PolarPlotAndTable = ({
         ]
       : ["blue", "magenta", "green", "blue", "magenta", "green"];
 
+  const handleRowClick = (
+    params: GridRowParams,
+    _event: MuiEvent,
+    _details: GridCallbackDetails
+  ) => {
+    if (selectedRow === params.row.id) setSelectedRow(-1);
+    else setSelectedRow(params.row.id);
+    //  console.log(params.row.id);
+  };
+
   return (
     <Grid container>
       <Grid
@@ -284,21 +312,21 @@ const PolarPlotAndTable = ({
         xs={12}
         sx={{
           border: 0,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: `calc((100vh - 430px)*0.7)`,
+          height: `calc((100vh - 350px)*0.63)`,
           bgcolor: "",
+          m: 0,
+          p: 0,
         }}
       >
         <Box
           sx={{
             display: "flex",
             justifyContent: "center",
-            alignItems: "center",
+            alignItems: "flex-start",
             height: "100%",
             width: "100%",
-            mt: 1,
+            m: 0,
+            p: 0,
             bgcolor: "",
           }}
         >
@@ -307,7 +335,7 @@ const PolarPlotAndTable = ({
               {
                 name: signal[0],
                 type: "scatterpolar",
-                mode: "lines+markers",
+                mode: "lines",
                 r: [0, r_values[0]],
                 theta: [
                   (angles[0] * 180) / Math.PI,
@@ -321,12 +349,12 @@ const PolarPlotAndTable = ({
                   symbol: CURRENT_MARKER,
                   size: MARKER_SIZE,
                 },
-                hoverinfo: "none",
+                hoverinfo: "name",
               },
               {
                 name: signal[1],
                 type: "scatterpolar",
-                mode: "lines+markers",
+                mode: "lines",
                 r: [0, r_values[1]],
                 theta: [
                   (angles[1] * 180) / Math.PI,
@@ -340,12 +368,12 @@ const PolarPlotAndTable = ({
                   symbol: CURRENT_MARKER,
                   size: MARKER_SIZE,
                 },
-                hoverinfo: "none",
+                hoverinfo: "name",
               },
               {
                 name: signal[2],
                 type: "scatterpolar",
-                mode: "lines+markers",
+                mode: "lines",
                 r: [0, r_values[2]],
                 theta: [
                   (angles[2] * 180) / Math.PI,
@@ -359,12 +387,12 @@ const PolarPlotAndTable = ({
                   symbol: CURRENT_MARKER,
                   size: MARKER_SIZE,
                 },
-                hoverinfo: "none",
+                hoverinfo: "name",
               },
               {
                 name: signal[3],
                 type: "scatterpolar",
-                mode: "lines+markers",
+                mode: "lines",
                 r: [0, r_values[3]],
                 theta: [
                   (angles[3] * 180) / Math.PI,
@@ -379,12 +407,12 @@ const PolarPlotAndTable = ({
                   symbol: VOLTAGE_MARKER,
                   size: MARKER_SIZE,
                 },
-                hoverinfo: "none",
+                hoverinfo: "name",
               },
               {
                 name: signal[4],
                 type: "scatterpolar",
-                mode: "lines+markers",
+                mode: "lines",
                 r: [0, r_values[4]],
                 theta: [
                   (angles[4] * 180) / Math.PI,
@@ -399,12 +427,12 @@ const PolarPlotAndTable = ({
                   symbol: VOLTAGE_MARKER,
                   size: MARKER_SIZE,
                 },
-                hoverinfo: "none",
+                hoverinfo: "name",
               },
               {
                 name: signal[5],
                 type: "scatterpolar",
-                mode: "lines+markers",
+                mode: "lines",
                 r: [0, r_values[5]],
                 theta: [
                   (angles[5] * 180) / Math.PI,
@@ -419,27 +447,28 @@ const PolarPlotAndTable = ({
                   symbol: VOLTAGE_MARKER,
                   size: MARKER_SIZE,
                 },
-                hoverinfo: "none",
+                hoverinfo: "name",
               },
             ]}
             layout={{
-              width: 330,
-              height: 330,
+              //autosize: true,
+              width: 290,
+              height: 350,
               margin: {
-                b: 0,
-                l: 0,
+                b: 50,
+                l: 30,
                 pad: 0,
-                r: 0,
-                t: 25,
+                r: 20,
+                t: 20,
               },
               paper_bgcolor: "",
               showlegend: true,
               legend: {
                 orientation: "h",
                 font: {
-                  size: 8,
+                  size: 7,
                 },
-                itemwidth: 40,
+                xref: "paper",
                 xanchor: "left",
               },
               polar: {
@@ -464,7 +493,7 @@ const PolarPlotAndTable = ({
               },
             }}
             config={{
-              //  responsive: true,
+              responsive: true,
               displayModeBar: true,
               displaylogo: false,
               // scrollZoom: true,
@@ -478,7 +507,7 @@ const PolarPlotAndTable = ({
         xs={12}
         sx={{
           mt: 0.2,
-          height: `calc((100vh - 430px)*0.39)`,
+          height: `calc((100vh - 350px)*0.3)`,
           bgcolor: "",
         }}
       >
@@ -487,38 +516,48 @@ const PolarPlotAndTable = ({
           columns={columns}
           hideFooterRowCount
           checkboxSelection={false}
-          disableRowSelectionOnClick
           showCellVerticalBorder={true}
           showColumnVerticalBorder={true}
           disableColumnMenu={true}
           density={"compact"}
           columnHeaderHeight={35}
           rowHeight={33}
-          slots={{ toolbar: CustomToolbar }}
+          // slots={{ toolbar: CustomToolbar }}
           sx={{
             fontSize: "0.7rem",
-            width: "72%",
+            //  width: "100%",
+            "&.Mui-selected": { backgroundColor: "red" },
+            //  "&:hover": { backgroundColor: "green" },
+          }}
+          slotProps={{
+            row: {
+              style: {
+                cursor: "pointer",
+                // backgroundColor: (params.id) "red"
+              },
+            },
           }}
           hideFooter={true}
+          onRowClick={handleRowClick}
         />
       </Grid>
     </Grid>
   );
 };
 
-function CustomToolbar() {
-  return (
-    <GridToolbarContainer
-      sx={{
-        borderBottom: 0.2,
-        borderColor: "divider",
-        justifyContent: "left",
-        height: "30px",
-        mt: 0,
-        pt: 0,
-      }}
-    >
-      <GridToolbarExport />
-    </GridToolbarContainer>
-  );
-}
+// function CustomToolbar() {
+//   return (
+//     <GridToolbarContainer
+//       sx={{
+//         borderBottom: 0.2,
+//         borderColor: "divider",
+//         justifyContent: "left",
+//         height: "30px",
+//         mt: 0,
+//         pt: 0,
+//       }}
+//     >
+//       <GridToolbarExport />
+//     </GridToolbarContainer>
+//   );
+// }

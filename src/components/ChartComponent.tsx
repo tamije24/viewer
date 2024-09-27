@@ -135,10 +135,44 @@ const ChartComponent = ({
     }[]
   >([]);
 
-  // OTHER VARIABLES
-  const plotSubtitle =
-    plotName === "SingleAxis" ? "Single Axis View" : "Multiple Axis View";
+  // STATE VARIABLES
+  // const [primaryCursor, setPrimaryCursor] = useState({
+  //   cursor: cursorValues.primary,
+  //   cursorReduced: cursorValues.primaryReduced,
+  //   time: cursorValues.primaryTime,
+  //   timestamp: cursorValues.primaryTimestamp,
+  // });
+  // const [secondaryCursor, setSecondaryCursor] = useState({
+  //   cursor: cursorValues.secondary,
+  //   cursorReduced: cursorValues.secondaryReduced,
+  //   time: cursorValues.secondaryTime,
+  //   timestamp: cursorValues.secondaryTimestamp,
+  // });
+  const [tickInterval, setTickInterval] = useState<number[]>([]);
+  const [prevZoomValue, setPrevZoomValue] = useState<number[]>([0, 100]);
+  const [originalIndexes, setOriginalIndexes] = useState<number[]>([]);
+  const [timeValues, setTimeValues] = useState<number[]>([]);
+  const [timeStamps, setTimeStamps] = useState<string[]>([]);
 
+  const [windowLimits, setWindowLimits] = useState([0, 0]);
+  const [analogValues_window, setAnalogValues_window] = useState<number[][]>([
+    [],
+    [],
+    [],
+    [],
+  ]);
+  const [digitalValues_window, setDigitalValues_window] = useState<number[][]>([
+    [],
+    [],
+    [],
+    [],
+  ]);
+
+  const [prevPointCount, setPrevPointCount] = useState(500);
+  const [prevAnalogSignalNames, setPrevAnalogSignalNames] =
+    useState(analogSignalNames);
+
+  // OTHER VARIABLES
   let primaryCursor = {
     cursor: cursorValues.primary,
     cursorReduced: cursorValues.primaryReduced,
@@ -152,6 +186,8 @@ const ChartComponent = ({
     time: cursorValues.secondaryTime,
     timestamp: cursorValues.secondaryTimestamp,
   };
+  const plotSubtitle =
+    plotName === "SingleAxis" ? "Single Axis View" : "Multiple Axis View";
 
   let analog_Values_original: number[][] = [];
   let digital_Values_original: number[][] = [];
@@ -228,7 +264,7 @@ const ChartComponent = ({
     });
   };
 
-  // TOOL TIP in Chart header
+  // MARKER in Chart header
   const handleMarkerStatusChange = (tTStatus: boolean) => {
     setMarkerStatus(tTStatus);
   };
@@ -251,14 +287,15 @@ const ChartComponent = ({
       timestamp: timestamp,
     };
 
+    // console.log("handle axis - ", primaryCursor);
+    // console.log(originalIndexes);
+
     secondaryCursor = {
       cursor: secondaryIndex,
       cursorReduced: secondaryIndexReduced,
       time: secondaryValue,
       timestamp: secondaryTimestamp,
     };
-
-    // console.log("chart component: ", dataIndex, dataIndexReduced);
 
     onAxisClick(
       dataIndex,
@@ -374,11 +411,276 @@ const ChartComponent = ({
     setPresentMaxisYZoomValues(tempZoom);
   };
 
+  const handleCursorMove = (cursor: string, step: number) => {
+    // console.log(cursor, step);
+    let primary_cursor_present = primaryCursor.cursorReduced + windowLimits[0];
+    let secondary_cursor_present =
+      secondaryCursor.cursorReduced + windowLimits[0];
+
+    if (cursor === "primary") {
+      // primary cursor moved
+      if (
+        (primary_cursor_present >= timeValues.length - 1 && step === 1) ||
+        (primary_cursor_present <= 0 && step === -1) ||
+        primary_cursor_present + step <= secondary_cursor_present
+      )
+        return;
+
+      primaryCursor = {
+        cursor: originalIndexes[primary_cursor_present + step],
+        cursorReduced: primary_cursor_present - windowLimits[0] + step,
+        time: timeValues[primary_cursor_present + step],
+        timestamp: timeStamps[primary_cursor_present + step],
+      };
+    } else {
+      // secondary cursor moved
+
+      if (
+        (secondary_cursor_present >= timeValues.length - 1 && step === 1) ||
+        (secondary_cursor_present <= 0 && step === -1) ||
+        secondary_cursor_present + step >= primary_cursor_present
+      )
+        return;
+
+      secondaryCursor = {
+        cursor: originalIndexes[secondary_cursor_present + step],
+        cursorReduced: secondary_cursor_present - windowLimits[0] + step,
+        time: timeValues[secondary_cursor_present + step],
+        timestamp: timeStamps[secondary_cursor_present + step],
+      };
+    }
+
+    onAxisClick(
+      primaryCursor.cursor,
+      primaryCursor.cursorReduced,
+      primaryCursor.time,
+      primaryCursor.timestamp,
+      secondaryCursor.cursor,
+      secondaryCursor.cursorReduced,
+      secondaryCursor.time,
+      secondaryCursor.timestamp
+    );
+
+    fillSideTable();
+  };
+
   // HELPER FUNCTIONS
   const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
   const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
 
   // OTHER FUNCTIONS
+  const reduceAllArrays = () => {
+    let skipCount = 10;
+    let MAX_SAMPLE_DISPLAYED = pointCount;
+    const MAX_TICKS = 16;
+
+    let zeroIndex = timeValues_original.findIndex((element) => element === 0);
+    if (zeroIndex === -1) {
+      zeroIndex = 0;
+    }
+
+    let diff_sample_count =
+      (timeValues_original.length *
+        (presentZoomValues.endPercent - presentZoomValues.startPercent)) /
+      100;
+
+    skipCount = Math.round(diff_sample_count / MAX_SAMPLE_DISPLAYED);
+    if (skipCount === 0) skipCount = 1;
+
+    // original indexes
+    let tempIndexes = calculateIndexes(
+      timeValues_original.length,
+      skipCount,
+      zeroIndex
+    );
+    setOriginalIndexes(tempIndexes);
+
+    // time values and time stamps
+    setTimeValues(reduceValues(timeValues_original, tempIndexes));
+    setTimeStamps(reduceValues(timeStamps_original, tempIndexes));
+
+    // console.log(
+    //   "recalc time values: ",
+    //   reduceValues(timeValues_original, tempIndexes)
+    // );
+
+    // Determine plotting window
+    let startPercent_index =
+      (presentZoomValues.startPercent / 100) * timeValues_original.length;
+    let endPercent_index =
+      (presentZoomValues.endPercent / 100) * timeValues_original.length;
+
+    let startIndex = tempIndexes.findIndex(
+      (element) => element >= startPercent_index
+    );
+
+    let endIndex = tempIndexes.findIndex(
+      (element) => element >= endPercent_index - 1
+    );
+    if (endIndex === -1) endIndex = tempIndexes.length - 1;
+
+    setWindowLimits([startIndex, endIndex]);
+
+    // analog signals filtered - full array
+    let temp: number[][] = [];
+    for (let i = 0; i < 6; i++) {
+      temp.push(reduceValues(analog_Values_original[i], tempIndexes));
+    }
+
+    // analog signals - plot window
+    let temp_window: number[][] = [];
+    for (let i = 0; i < 6; i++) {
+      temp_window.push(temp[i].slice(startIndex, endIndex));
+    }
+    setAnalogValues_window(temp_window);
+
+    // digital signals filtered - full array
+    temp = [];
+    for (let i = 0; i < 4; i++) {
+      //  console.log(i);
+      temp.push(reduceValues(digital_Values_original[i], tempIndexes));
+      //  console.log(i);
+    }
+
+    // digital signals  - plot window
+    temp_window = [];
+    for (let i = 0; i < 4; i++) {
+      temp_window.push(temp[i].slice(startIndex, endIndex));
+    }
+    setDigitalValues_window(temp_window);
+
+    let tempVal = reduceValues(timeValues_original, tempIndexes);
+    let timeInd = 0;
+
+    // Update primary cursor
+    timeInd = tempVal.findIndex(
+      (element) => element === timeValues_original[primaryCursor.cursor]
+    );
+
+    if (timeInd === -1)
+      timeInd = tempVal.findIndex(
+        (element) => element > timeValues_original[primaryCursor.cursor]
+      );
+
+    //console.log("index: ", timeInd);
+
+    let pc = primaryCursor;
+    let updated_primary_reduced_index = pc.cursorReduced;
+    if (timeInd !== -1) {
+      primaryCursor = {
+        cursor: pc.cursor,
+        cursorReduced: timeInd - startIndex,
+        time: pc.time,
+        timestamp: pc.timestamp,
+      };
+      updated_primary_reduced_index = timeInd - startIndex;
+    }
+
+    // Update secondary cursor
+    timeInd = tempVal.findIndex(
+      (element) => element === timeValues_original[secondaryCursor.cursor]
+    );
+    if (timeInd === -1)
+      timeInd = tempVal.findIndex(
+        (element) => element > timeValues_original[secondaryCursor.cursor]
+      );
+
+    let sc = secondaryCursor;
+    let updated_secondary_reduced_index = sc.cursorReduced;
+    if (timeInd !== -1) {
+      secondaryCursor = {
+        cursor: sc.cursor,
+        cursorReduced: timeInd - startIndex,
+        time: sc.time,
+        timestamp: sc.timestamp,
+      };
+      updated_secondary_reduced_index = timeInd - startIndex;
+    }
+
+    onAxisClick(
+      pc.cursor,
+      updated_primary_reduced_index,
+      pc.time,
+      pc.timestamp,
+      sc.cursor,
+      updated_secondary_reduced_index,
+      sc.time,
+      sc.timestamp
+    );
+
+    // CALCULATE TICK INTERVALS
+
+    // determine tick size
+    let tickSize = Math.round((endIndex - startIndex) / MAX_TICKS);
+    if (tickSize === 0) tickSize = 1;
+
+    // find the index corresponding to zero in the reduced tiem array
+    zeroIndex = tempVal.findIndex((element) => element === 0);
+    if (zeroIndex === -1) {
+      zeroIndex = 0;
+    }
+
+    let tickIntervalArray: number[] = [];
+
+    // include zero in the tick
+    tickIntervalArray.push(tempVal[zeroIndex]);
+
+    // include ticks before zero
+    for (let i = zeroIndex - tickSize; i >= 0; i = i - tickSize) {
+      //if (i % tickSize === 0) {
+      tickIntervalArray.push(tempVal[i]);
+      //}
+    }
+    tickIntervalArray.reverse();
+
+    // include ticks after zero
+    for (let i = zeroIndex + tickSize; i < tempVal.length; i = i + tickSize) {
+      // if (i % tickSize === 0) {
+      tickIntervalArray.push(tempVal[i]);
+      // }
+    }
+    setTickInterval(tickIntervalArray);
+  };
+
+  const reduceValues = (values: any[], requiredIndexes: number[]) => {
+    let returnValues: any[] = [];
+
+    for (let i = 0; i <= requiredIndexes.length; i++) {
+      if (values[requiredIndexes[i]] !== undefined)
+        returnValues[i] = values[requiredIndexes[i]];
+      else returnValues[i] = 0;
+    }
+    return returnValues;
+  };
+
+  const calculateIndexes = (
+    L: number,
+    skipCount: number,
+    zeroIndex: number
+  ) => {
+    let returnIndexes: number[] = [];
+
+    let j = 0;
+    returnIndexes[j] = zeroIndex;
+    j++;
+    for (let i = zeroIndex - 1; i >= 0; i--) {
+      if (i % skipCount === 0) {
+        returnIndexes[j] = i;
+        j++;
+      }
+    }
+    returnIndexes.reverse();
+
+    for (let i = zeroIndex + 1; i < L; i++) {
+      if (i % skipCount === 0) {
+        returnIndexes[j] = i;
+        j++;
+      }
+    }
+    //  console.log(returnIndexes);
+    return returnIndexes;
+  };
+
   const fillSideTable = () => {
     let dataIndex = primaryCursor.cursor;
     let secondaryIndex = secondaryCursor.cursor;
@@ -554,6 +856,46 @@ const ChartComponent = ({
     }
   }
 
+  // calculate reduced values after initial loading
+  if (
+    analog_Values_original !== undefined &&
+    analog_Values_original.length > 0 &&
+    digital_Values_original !== undefined &&
+    digital_Values_original.length > 0 &&
+    originalIndexes.length === 0
+  ) {
+    setPrevZoomValue([
+      presentZoomValues.startPercent,
+      presentZoomValues.endPercent,
+    ]);
+    reduceAllArrays();
+  }
+
+  // recalculate when station changes
+  if (prevAnalogSignalNames != analogSignalNames) {
+    setPrevAnalogSignalNames(analogSignalNames);
+    reduceAllArrays();
+  }
+
+  // recalculate when zoom changes
+  if (
+    presentZoomValues.startPercent !== prevZoomValue[0] ||
+    presentZoomValues.endPercent !== prevZoomValue[1]
+  ) {
+    setPrevZoomValue([
+      presentZoomValues.startPercent,
+      presentZoomValues.endPercent,
+    ]);
+    reduceAllArrays();
+    // console.log("finished reducing arrays");
+  }
+
+  // recalculate when display point count changes
+  if (prevPointCount !== pointCount) {
+    setPrevPointCount(pointCount);
+    reduceAllArrays();
+  }
+
   // console.log(analogSignalNames);
   // console.log(usedAnalogSignalNames);
   // console.log(
@@ -589,19 +931,23 @@ const ChartComponent = ({
             }}
             tooltipStatus={tooltipStatus}
           />
+
           <ChartBody
             plotName={plotName}
             analogSignalNames={analogSignalNames}
             digitalSignalNames={digitalSignalNames}
-            analog_Values_original={analog_Values_original}
-            digital_Values_original={digital_Values_original}
-            timeValues_original={timeValues_original}
-            timeStamps_original={timeStamps_original}
-            presentZoomValues={presentZoomValues}
+            analogValues_window={analogValues_window}
+            digitalValues_window={digitalValues_window}
+            timeValues={timeValues.slice(windowLimits[0], windowLimits[1])}
+            timeStamps={timeStamps.slice(windowLimits[0], windowLimits[1])}
+            originalIndexes={originalIndexes.slice(
+              windowLimits[0],
+              windowLimits[1]
+            )}
+            tickInterval={tickInterval}
             markerStatus={markerStatus}
             cursorValues={cursorValues}
             onAxisClick={handleAxisClick}
-            pointCount={pointCount}
             presentMaxisYZoomValues={presentMaxisYZoomValues}
             presentSaxisYZoomValues={presentSaxisYZoomValues}
           />
@@ -639,6 +985,7 @@ const ChartComponent = ({
             }}
             tableValues={tableValues}
             tooltipStatus={tooltipStatus}
+            onCursorMove={handleCursorMove}
           />
         </Grid>
       )}
