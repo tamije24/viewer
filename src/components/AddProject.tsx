@@ -77,6 +77,10 @@ const AddProject = ({ onAddProject }: Props) => {
       setTerminalsError(true);
       setTerminalsErrorMessage("No of terminals required");
       isValid = false;
+    } else if (Number(terminals.value) < 2) {
+      setTerminalsError(true);
+      setTerminalsErrorMessage("No of terminals cannot be less than 2");
+      isValid = false;
     } else {
       setTerminalsError(false);
       setTerminalsErrorMessage("");
