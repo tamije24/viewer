@@ -927,11 +927,11 @@ const ChartComponent = ({
             timeRange={{
               minTime:
                 analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[0])[0]
+                  ? Object.values(analogSignals[0])[6]
                   : 0,
               maxTime:
                 analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[analogSignals.length - 1])[0]
+                  ? Object.values(analogSignals[analogSignals.length - 1])[6]
                   : 0,
             }}
             tooltipStatus={tooltipStatus}
@@ -960,11 +960,11 @@ const ChartComponent = ({
             timeRange={{
               minTime:
                 analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[0])[0]
+                  ? Object.values(analogSignals[0])[6]
                   : 0,
               maxTime:
                 analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[analogSignals.length - 1])[0]
+                  ? Object.values(analogSignals[analogSignals.length - 1])[6]
                   : 0,
             }}
             presentZoomValues={{
