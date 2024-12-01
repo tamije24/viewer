@@ -58,6 +58,8 @@ interface Props {
   }[];
   tooltipStatus: boolean;
   onCursorMove: (cursor: string, step: number) => void;
+  selectedFile: number;
+  projectId: number;
 }
 const TOOLTIP_DELAY = 10000;
 
@@ -66,6 +68,8 @@ const CursorValues = ({
   tableValues,
   tooltipStatus,
   onCursorMove,
+  selectedFile,
+  projectId,
 }: Props) => {
   // set data rows
   let tempTable: {
@@ -545,7 +549,14 @@ const CursorValues = ({
               }}
             />
           )}
-          {selectedTab === "harmonics" && <Harmonics />}
+          {selectedTab === "harmonics" && (
+            <Harmonics
+              selectedFile={selectedFile}
+              projectId={projectId}
+              dataIndex={axisClick.dataIndex}
+              secondaryIndex={axisClick.secondaryIndex}
+            />
+          )}
         </CardContent>
 
         <CardActions

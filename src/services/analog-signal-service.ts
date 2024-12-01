@@ -9,7 +9,8 @@ export interface AnalogSignal{
 class AnalogSignalService {
     
     getAllAnalogSignals(file_id: number) {
-        const endpoint = `/comtrade_reader/files/${file_id}/asignals/`;
+        // const endpoint = `/comtrade_reader/files/${file_id}/asignals/`;
+        const endpoint = `/comtrade_reader/asignals/${file_id}/`;
         return apiClient.get<AnalogSignal[]>(endpoint)    
     }
 }

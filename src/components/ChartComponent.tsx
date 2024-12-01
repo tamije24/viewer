@@ -68,6 +68,8 @@ interface Props {
   pointCount: number;
   sidebarStatus: boolean;
   tooltipStatus: boolean;
+  selectedFile: number;
+  projectId: number;
 }
 
 const ChartComponent = ({
@@ -90,6 +92,8 @@ const ChartComponent = ({
   pointCount,
   sidebarStatus,
   tooltipStatus,
+  selectedFile,
+  projectId,
 }: Props) => {
   // STATE VARIABLES
   const [markerStatus, setMarkerStatus] = useState(false);
@@ -136,18 +140,7 @@ const ChartComponent = ({
   >([]);
 
   // STATE VARIABLES
-  // const [primaryCursor, setPrimaryCursor] = useState({
-  //   cursor: cursorValues.primary,
-  //   cursorReduced: cursorValues.primaryReduced,
-  //   time: cursorValues.primaryTime,
-  //   timestamp: cursorValues.primaryTimestamp,
-  // });
-  // const [secondaryCursor, setSecondaryCursor] = useState({
-  //   cursor: cursorValues.secondary,
-  //   cursorReduced: cursorValues.secondaryReduced,
-  //   time: cursorValues.secondaryTime,
-  //   timestamp: cursorValues.secondaryTimestamp,
-  // });
+
   const [tickInterval, setTickInterval] = useState<number[]>([]);
   const [prevZoomValue, setPrevZoomValue] = useState<number[]>([0, 100]);
   const [originalIndexes, setOriginalIndexes] = useState<number[]>([]);
@@ -648,7 +641,8 @@ const ChartComponent = ({
     // if (values === undefined) return new number[];
 
     for (let i = 0; i <= requiredIndexes.length; i++) {
-      if (values[requiredIndexes[i]] !== undefined)
+      if (values === undefined) returnValues[i] = 0;
+      else if (values[requiredIndexes[i]] !== undefined)
         returnValues[i] = values[requiredIndexes[i]];
       else returnValues[i] = 0;
     }
@@ -719,12 +713,12 @@ const ChartComponent = ({
     }
 
     let sample_values =
-      analogSignals !== undefined
+      analogSignals !== undefined && analogSignals.length > 0
         ? Object.values(analogSignals[dataIndex])
         : new Array(7).fill(0);
 
     let phasor_values =
-      dftPhasors !== undefined
+      dftPhasors !== undefined && dftPhasors.length > 0
         ? Object.values(dftPhasors[dataIndex])
         : new Array(6 * 2).fill(0);
 
@@ -755,18 +749,18 @@ const ChartComponent = ({
       let label = names[i];
       let unit = units[i];
       let positivePeak =
-        a_sig.length > 0 ? Math.max(...arrayColumn(a_sig, i + 1)) : 0;
+        a_sig.length > 0 ? Math.max(...arrayColumn(a_sig, i)) : 0;
       let negativePeak =
-        a_sig.length > 0 ? Math.min(...arrayColumn(a_sig, i + 1)) : 0;
+        a_sig.length > 0 ? Math.min(...arrayColumn(a_sig, i)) : 0;
 
       let rowValue = {
         id: id[i],
         channel: label,
         unit: unit,
-        inst: sample_values[i + 1],
+        inst: sample_values[i],
         phasor_mag: phasor_values[2 * i],
         phasor_ang: phasor_values[2 * i + 1],
-        true_rms: calculateRMS([...arrayColumn(a_sig_rms, i + 1)]),
+        true_rms: calculateRMS([...arrayColumn(a_sig_rms, i)]),
         pos_peak: positivePeak,
         neg_peak: negativePeak,
       };
@@ -800,11 +794,18 @@ const ChartComponent = ({
 
     timeValues_original = [];
     timeStamps_original = [];
-    timeValues_original = arrayColumn(analogSignals_split, 0);
+    timeValues_original = arrayColumn(analogSignals_split, 6);
     timeStamps_original = strArrayColumn(analogSignals_split, 7);
+
     analog_Values_original = [];
-    for (let i = 0; i < 6; i++)
-      analog_Values_original.push(arrayColumn(analogSignals_split, i + 1));
+    analog_Values_original.push(arrayColumn(analogSignals_split, 0));
+    analog_Values_original.push(arrayColumn(analogSignals_split, 1));
+    analog_Values_original.push(arrayColumn(analogSignals_split, 2));
+    analog_Values_original.push(arrayColumn(analogSignals_split, 3));
+    analog_Values_original.push(arrayColumn(analogSignals_split, 4));
+    analog_Values_original.push(arrayColumn(analogSignals_split, 5));
+
+    // console.log(arrayColumn(analogSignals_split, 7));
 
     if (primaryCursor.cursor === 0) {
       primaryCursor.time = timeValues_original[0];
@@ -836,16 +837,18 @@ const ChartComponent = ({
     let factor = 0.3;
     for (let i = 0; i < L; i++) {
       let value = Object.values(digitalSignals[i]);
-      value[1] = factor * value[1] + 0.3;
-      value[2] = factor * value[2] + 1.3;
-      value[3] = factor * value[3] + 2.3;
-      value[4] = factor * value[4] + 3.3;
+      value[0] = factor * value[0] + 0.3;
+      value[1] = factor * value[1] + 1.3;
+      value[2] = factor * value[2] + 2.3;
+      value[3] = factor * value[3] + 3.3;
       digitalSignals_split.push(value);
     }
 
+    // console.log(arrayColumn(digitalSignals_split, 1));
+
     digital_Values_original = [];
     for (let i = 0; i < 4; i++)
-      digital_Values_original.push(arrayColumn(digitalSignals_split, i + 1));
+      digital_Values_original.push(arrayColumn(digitalSignals_split, i));
   }
 
   if (analogSignalNames !== undefined) {
@@ -923,11 +926,11 @@ const ChartComponent = ({
             onYZoomClick={handleYZoomClick}
             timeRange={{
               minTime:
-                analogSignals !== undefined
+                analogSignals !== undefined && analogSignals.length > 0
                   ? Object.values(analogSignals[0])[0]
                   : 0,
               maxTime:
-                analogSignals !== undefined
+                analogSignals !== undefined && analogSignals.length > 0
                   ? Object.values(analogSignals[analogSignals.length - 1])[0]
                   : 0,
             }}
@@ -956,11 +959,11 @@ const ChartComponent = ({
           <ChartFooter
             timeRange={{
               minTime:
-                analogSignals !== undefined
+                analogSignals !== undefined && analogSignals.length > 0
                   ? Object.values(analogSignals[0])[0]
                   : 0,
               maxTime:
-                analogSignals !== undefined
+                analogSignals !== undefined && analogSignals.length > 0
                   ? Object.values(analogSignals[analogSignals.length - 1])[0]
                   : 0,
             }}
@@ -988,6 +991,8 @@ const ChartComponent = ({
             tableValues={tableValues}
             tooltipStatus={tooltipStatus}
             onCursorMove={handleCursorMove}
+            selectedFile={selectedFile}
+            projectId={projectId}
           />
         </Grid>
       )}

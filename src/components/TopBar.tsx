@@ -38,7 +38,7 @@ const TopBar = ({ user, onLogoutRequest }: Props) => {
         <Toolbar>
           <AdbSharpIcon sx={{ ml: 0, mr: 2 }} />
           <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
-            Signal Analyser
+            Signal Analyser 4.0
           </Typography>
 
           {user.id !== 0 && (

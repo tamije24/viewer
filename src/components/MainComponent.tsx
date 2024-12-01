@@ -21,6 +21,7 @@ import digitalSignalService, {
   DigitalSignal,
 } from "../services/digital-signal-service";
 import phasorService, { Phasor } from "../services/phasor-service";
+// import harmonicService, { Harmonic } from "../services/harmonic-service";
 import projectService, { Project } from "../services/project-service";
 import { ComtradeFile } from "../services/comtrade-file-service";
 import analogChannelService, {
@@ -249,12 +250,14 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
     }
 
     let sample_values =
-      analogSignals[selectedIndex] !== undefined
+      analogSignals[selectedIndex] !== undefined &&
+      analogSignals[selectedIndex].length > 0
         ? Object.values(analogSignals[selectedIndex][dataIndex])
         : new Array(analogSignals.length).fill(0);
 
     let phasor_values =
-      dftPhasors[selectedIndex] !== undefined
+      dftPhasors[selectedIndex] !== undefined &&
+      dftPhasors[selectedIndex].length > 0
         ? Object.values(dftPhasors[selectedIndex][dataIndex])
         : new Array((analogSignals.length - 1) * 2).fill(0);
 
@@ -336,14 +339,14 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
     // get phasors
     getPhasors(project);
-
-    // get harmonics
   };
 
   const getAnalogSignals = (project: Project) => {
     // reset all data
-    analogSignals = [];
-    analogSignalNames = [];
+    for (let i = 0; i < project.files.length; i++) {
+      analogSignals.push([]);
+      analogSignalNames.push([]);
+    }
 
     // get analog signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -356,19 +359,28 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         analogSignalService
           .getAllAnalogSignals(file_id)
           .then((res) => {
+            // check which file has returned
+            let results = JSON.parse(String(res.data));
+            let m = 0;
+            let returned_fileid = results.file;
+
+            for (let k = 0; k < project.files.length; k++) {
+              if (returned_fileid === project.files[k].file_id) m = k;
+            }
             let sig_names = [
-              project.files[i].ia_channel,
-              project.files[i].ib_channel,
-              project.files[i].ic_channel,
-              project.files[i].va_channel,
-              project.files[i].vb_channel,
-              project.files[i].vc_channel,
+              project.files[m].ia_channel,
+              project.files[m].ib_channel,
+              project.files[m].ic_channel,
+              project.files[m].va_channel,
+              project.files[m].vb_channel,
+              project.files[m].vc_channel,
             ];
-            analogSignals.push(res.data);
-            analogSignalNames.push([...sig_names]);
+
+            analogSignals[m] = results.signals;
+            analogSignalNames[m] = [...sig_names];
 
             a = [...asigLoading];
-            a[i] = false;
+            a[m] = false;
             setAsigLoading(a);
           })
           .catch((err) => {
@@ -388,8 +400,10 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const getDigitalSignals = (project: Project) => {
     // reset all data
-    digitalSignals = [];
-    digitalSignalNames = [];
+    for (let i = 0; i < project.files.length; i++) {
+      digitalSignals.push([]);
+      digitalSignalNames.push([]);
+    }
 
     // get digital signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -402,18 +416,26 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         digitalSignalService
           .getAllDigitalSignals(file_id)
           .then((res) => {
+            // check which file has returned
+            let results = JSON.parse(String(res.data));
+            let m = 0;
+            let returned_fileid = results.file;
+
+            for (let k = 0; k < project.files.length; k++) {
+              if (returned_fileid === project.files[k].file_id) m = k;
+            }
             let sig_names = [
-              project.files[i].d1_channel,
-              project.files[i].d2_channel,
-              project.files[i].d3_channel,
-              project.files[i].d4_channel,
+              project.files[m].d1_channel,
+              project.files[m].d2_channel,
+              project.files[m].d3_channel,
+              project.files[m].d4_channel,
             ];
 
-            digitalSignals.push(res.data);
-            digitalSignalNames.push([...sig_names]);
+            digitalSignals[m] = results.signals;
+            digitalSignalNames[m] = [...sig_names];
 
             a = [...dsigLoading];
-            a[i] = false;
+            a[m] = false;
             setDsigLoading(a);
           })
           .catch((err) => {
@@ -433,7 +455,10 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const getPhasors = (project: Project) => {
     // reset all data
-    dftPhasors = [];
+    for (let i = 0; i < project.files.length; i++) {
+      dftPhasors.push([]);
+    }
+
     // get phasors from backend
     if (project !== null && project.files.length !== 0) {
       for (let i = 0; i < project.files.length; i++) {
@@ -445,18 +470,21 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         phasorService
           .getAllAPhasors(file_id)
           .then((res) => {
-            if (dftPhasors.length >= i + 1) {
-              dftPhasors[i] = JSON.parse(String(res.data)).phasors;
-            } else {
-              dftPhasors.push(JSON.parse(String(res.data)).phasors);
+            let results = JSON.parse(String(res.data));
+            let m = 0;
+            let returned_fileid = results.file;
+            for (let k = 0; k < project.files.length; k++) {
+              if (returned_fileid === project.files[k].file_id) m = k;
             }
+
+            dftPhasors[m] = results.phasors;
             a = [...phasorLoading];
-            a[i] = false;
+            a[m] = false;
             setPhasorLoading(a);
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
-            let e = [...dsigError];
+            let e = [...phasorError];
             e[i] = err.message;
             setPhasorError(e);
 
@@ -471,7 +499,9 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const getAnalogChannels = (project: Project) => {
     // reset all data
-    analogChannelInfo = [];
+    for (let i = 0; i < project.files.length; i++) {
+      analogChannelInfo.push([]);
+    }
 
     // get analog channel information from backend
     if (project !== null && project.files.length !== 0) {
@@ -484,9 +514,16 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         analogChannelService
           .getAllAnalogChannels(file_id)
           .then((res) => {
-            analogChannelInfo.push(res.data);
+            // decide which file from name of channel id - before
+            let m = 0;
+            for (let k = 0; k < project.files.length; k++) {
+              let returned_fileid = res.data[0].file;
+              if (returned_fileid === project.files[k].file_id) m = k;
+            }
+
+            analogChannelInfo[m] = res.data;
             a = [...analogChannelLoading];
-            a[i] = false;
+            a[m] = false;
             setAnalogChannelLoading(a);
           })
           .catch((err) => {
@@ -511,11 +548,6 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
   };
 
   if (selectedIndex <= axisClick.length) fillSideTable();
-
-  //  console.log("just before - ", axisClick);
-  // console.log(selectedIndex);
-  // if (presentZoomValues.length >= selectedIndex + 1)
-  //   console.log("main: ", presentZoomValues[selectedIndex]);
 
   return (
     <Grid
@@ -603,6 +635,8 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
             pointCount={pointCount}
             sidebarStatus={sidebarStatus}
             tooltipStatus={tooltipStatus}
+            selectedFile={selectedFile === null ? 0 : selectedFile}
+            projectId={selectedProject.project_id}
           />
         )}
         {selectedPage === "ProjectList" && (

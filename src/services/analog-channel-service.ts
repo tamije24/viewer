@@ -11,6 +11,7 @@ export interface AnalogChannel {
     secondary: number;
     pors: string;
     selected: boolean;
+    file:number;
   }
 
 class AnalogChannelService {

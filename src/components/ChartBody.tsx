@@ -69,6 +69,7 @@ const ChartBody = ({
     analogSignalNames === undefined ||
     digitalSignalNames === undefined ||
     analogValues_window === undefined ||
+    analogValues_window[0].length === 0 ||
     digitalValues_window === undefined
   )
     return (
