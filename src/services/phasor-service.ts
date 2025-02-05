@@ -8,8 +8,8 @@ export interface Phasor{
 
 class PhasorService {
     
-    getAllAPhasors(file_id: number) {
-        const endpoint = `/comtrade_reader/phasors/${file_id}/`;
+    getAllAPhasors(file_id: number, src:number) {
+        const endpoint = `/comtrade_reader/phasors/${file_id}/${src}/`;
         return apiClient.get<Phasor[]>(endpoint)    
     }
 }

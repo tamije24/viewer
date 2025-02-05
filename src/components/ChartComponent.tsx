@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { GridRowSelectionModel } from "@mui/x-data-grid-pro";
 
 // Our components
 import ChartBody from "./ChartBody";
@@ -13,18 +14,24 @@ import ChartHeader from "./ChartHeader";
 import CursorValues from "./CursorValues";
 
 // Our Services
-import { AnalogSignal } from "../services/analog-signal-service";
-import { DigitalSignal } from "../services/digital-signal-service";
 import { AnalogChannel } from "../services/analog-channel-service";
-import { Phasor } from "../services/phasor-service";
+//import { Phasor } from "../services/phasor-service";
+import Slider, { SliderThumb } from "@mui/material/Slider";
+import { styled } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 
 interface Props {
   stationName: string;
   plotName: string;
-  analogSignals: AnalogSignal[];
+  selectedIndex: number;
+  digitalChannelCount: number[];
+  timeValues_original: number[];
+  timeStamps_original: string[];
+  analog_Values_original: number[][];
   analogSignalNames: string[];
-  digitalSignals: DigitalSignal[];
+  digital_Values_original: number[][];
   digitalSignalNames: string[];
+  dftPhasors: number[][];
   error: string;
   isAnLoading: boolean;
   isDigLoading: boolean;
@@ -63,22 +70,34 @@ interface Props {
   ) => void;
 
   analogChannelInfo: AnalogChannel[];
-  dftPhasors: Phasor[];
   sampling_frequency: number;
   pointCount: number;
   sidebarStatus: boolean;
   tooltipStatus: boolean;
-  selectedFile: number;
+  selectedFile: number[];
   projectId: number;
+  rowSelectionModel: GridRowSelectionModel;
+  digitalRowSelectionModel: GridRowSelectionModel;
+  onRowSelectionModelChange: (
+    newRowSelectionModel: GridRowSelectionModel
+  ) => void;
+  onDigitalRowSelectionModelChange: (
+    newRowSelectionModel: GridRowSelectionModel
+  ) => void;
 }
 
 const ChartComponent = ({
   stationName,
   plotName,
-  analogSignals,
+  selectedIndex,
+  digitalChannelCount,
+  timeValues_original,
+  timeStamps_original,
+  analog_Values_original,
   analogSignalNames,
-  digitalSignals,
+  digital_Values_original,
   digitalSignalNames,
+  dftPhasors,
   error,
   isAnLoading,
   isDigLoading,
@@ -87,15 +106,19 @@ const ChartComponent = ({
   cursorValues,
   onAxisClick,
   analogChannelInfo,
-  dftPhasors,
   sampling_frequency,
   pointCount,
   sidebarStatus,
   tooltipStatus,
   selectedFile,
   projectId,
+  rowSelectionModel,
+  digitalRowSelectionModel,
+  onRowSelectionModelChange,
+  onDigitalRowSelectionModelChange,
 }: Props) => {
   // STATE VARIABLES
+  const [sliderValue, setSliderValue] = useState(70);
   const [markerStatus, setMarkerStatus] = useState(false);
 
   const [usedAnalogSignalNames, setUsedAnalogSignalNames] =
@@ -106,14 +129,7 @@ const ChartComponent = ({
       start: number;
       end: number;
     }[]
-  >([
-    { start: 0, end: 100 },
-    { start: 0, end: 100 },
-    { start: 0, end: 100 },
-    { start: 0, end: 100 },
-    { start: 0, end: 100 },
-    { start: 0, end: 100 },
-  ]);
+  >([]);
 
   const [presentSaxisYZoomValues, setPresentSaxisYZoomValues] = useState<
     {
@@ -125,6 +141,8 @@ const ChartComponent = ({
     { start: 0, end: 100 },
   ]);
 
+  const [selectedSinglePlot, SetSelectedSinglePlot] = useState(0);
+  const [selectedMultipleAxisPlot, SetSelectedMultipleAxisPlot] = useState(0);
   const [tableValues, setTableValues] = useState<
     {
       id: string;
@@ -138,15 +156,19 @@ const ChartComponent = ({
       neg_peak: number;
     }[]
   >([]);
-
-  // STATE VARIABLES
+  const [tableValuesDigital, setTableValuesDigital] = useState<
+    {
+      id: string;
+      channel: string;
+      status: number;
+    }[]
+  >([]);
 
   const [tickInterval, setTickInterval] = useState<number[]>([]);
   const [prevZoomValue, setPrevZoomValue] = useState<number[]>([0, 100]);
   const [originalIndexes, setOriginalIndexes] = useState<number[]>([]);
   const [timeValues, setTimeValues] = useState<number[]>([]);
   const [timeStamps, setTimeStamps] = useState<string[]>([]);
-
   const [windowLimits, setWindowLimits] = useState([0, 0]);
   const [analogValues_window, setAnalogValues_window] = useState<number[][]>([
     [],
@@ -165,6 +187,19 @@ const ChartComponent = ({
   const [prevAnalogSignalNames, setPrevAnalogSignalNames] =
     useState(analogSignalNames);
 
+  // const [prevAxisClick, setPrevAxisClick] = useState([
+  //   {
+  //     dataIndex: 0,
+  //     dataIndexReduced: 0,
+  //     axisValue: 0,
+  //     timestamp: "",
+  //     secondaryIndex: 0,
+  //     secondaryIndexReduced: 0,
+  //     secondaryValue: 0,
+  //     secondaryTimestamp: "",
+  //   },
+  // ]);
+
   // OTHER VARIABLES
   let primaryCursor = {
     cursor: cursorValues.primary,
@@ -180,12 +215,9 @@ const ChartComponent = ({
     timestamp: cursorValues.secondaryTimestamp,
   };
   const plotSubtitle =
-    plotName === "SingleAxis" ? "Single Axis View" : "Multiple Axis View";
-
-  let analog_Values_original: number[][] = [];
-  let digital_Values_original: number[][] = [];
-  let timeValues_original: number[] = [];
-  let timeStamps_original: string[] = [];
+    plotName === "SingleAxis" || plotName === "MergeSingleView"
+      ? "Single Axis"
+      : "Multiple Axis";
 
   const ZOOM_STEP = 5;
 
@@ -199,6 +231,23 @@ const ChartComponent = ({
       </Box>
     );
 
+  // If data not loaded yet, display loading message
+  if (
+    isAnLoading ||
+    analog_Values_original === undefined ||
+    analog_Values_original.length === 0 ||
+    isDigLoading ||
+    digital_Values_original === undefined ||
+    digital_Values_original.length === 0
+  )
+    return (
+      <Box sx={{ display: "flex-box", mt: 30, ml: 10, mb: 2 }}>
+        <Typography variant="overline" component="div" color="forestgreen">
+          Data loading ... please wait.
+        </Typography>
+      </Box>
+    );
+
   // If no error proceed with reading data ....
 
   // EVENT HANDLERS
@@ -206,10 +255,10 @@ const ChartComponent = ({
   const handleZoomOutClick = () => {
     let minTime = 0;
     let maxTime = 0;
-    if (analogSignals !== undefined) {
-      let L = analogSignals.length;
-      minTime = Object.values(analogSignals[0])[0];
-      maxTime = Object.values(analogSignals[L - 1])[0];
+    if (timeValues_original !== undefined) {
+      let L = timeValues_original.length;
+      minTime = timeValues_original[0];
+      maxTime = timeValues_original[L - 1];
     }
 
     changePresentZoomLimit({
@@ -224,10 +273,10 @@ const ChartComponent = ({
   const handleZoomInClick = (fromValue: number, toValue: number) => {
     let duration = 0;
     let minTime = 0;
-    if (analogSignals !== undefined) {
-      let L = analogSignals.length;
-      let maxTime = Object.values(analogSignals[L - 1])[0];
-      minTime = Object.values(analogSignals[0])[0];
+    if (timeValues_original !== undefined) {
+      let L = timeValues_original.length;
+      let maxTime = timeValues_original[L - 1];
+      minTime = timeValues_original[0];
       duration = maxTime - minTime;
     }
     changePresentZoomLimit({
@@ -243,10 +292,10 @@ const ChartComponent = ({
   const handleZoomChange = (fromValue: number, toValue: number) => {
     let duration = 0;
     let minTime = 0;
-    if (analogSignals !== undefined) {
-      let L = analogSignals.length;
-      let maxTime = Object.values(analogSignals[L - 1])[0];
-      minTime = Object.values(analogSignals[0])[0];
+    if (timeValues_original !== undefined) {
+      let L = timeValues_original.length;
+      let maxTime = timeValues_original[L - 1];
+      minTime = timeValues_original[0];
       duration = maxTime - minTime;
     }
     changePresentZoomLimit({
@@ -304,18 +353,29 @@ const ChartComponent = ({
     fillSideTable();
   };
 
-  // Y-Axis Zoom handler
-  const handleYZoomClick = (signal: string, zoomType: number) => {
-    plotName === "SingleAxis"
-      ? handleSAxisYZoomClick(signal, zoomType)
-      : handleMAxisYZoomClick(signal, zoomType);
+  // Single-axis plot selector
+  const handleSinglePlotSelected = (plotNumber: number) => {
+    SetSelectedSinglePlot(plotNumber);
   };
 
-  const handleSAxisYZoomClick = (signal: string, zoomType: number) => {
+  // Multiple-axis plot selector
+  const handleMultipleAxisPlotSelected = (plotNumber: number) => {
+    SetSelectedMultipleAxisPlot(plotNumber);
+  };
+
+  // Y-Axis Zoom handler
+  const handleYZoomClick = (zoomType: number) => {
+    plotName === "SingleAxis"
+      ? handleSAxisYZoomClick(zoomType)
+      : handleMAxisYZoomClick(zoomType);
+  };
+
+  const handleSAxisYZoomClick = (zoomType: number) => {
     // Check which signal is selected
     let index = 0;
-    if (signal === "Currents") index = 0;
-    else if (signal === "Voltages") index = 1;
+    if (selectedSinglePlot === 1) index = 0;
+    else if (selectedSinglePlot === 2) index = 1;
+    else return;
 
     let present_zoom_start = presentSaxisYZoomValues[index].start;
     let present_zoom_end = presentSaxisYZoomValues[index].end;
@@ -364,15 +424,11 @@ const ChartComponent = ({
     setPresentSaxisYZoomValues(tempZoom);
   };
 
-  const handleMAxisYZoomClick = (signal: string, zoomType: number) => {
+  const handleMAxisYZoomClick = (zoomType: number) => {
     // Check which signal is selected
     let index = 0;
-    if (signal === "Ia") index = 0;
-    else if (signal === "Ib") index = 1;
-    else if (signal === "Ic") index = 2;
-    else if (signal === "Va") index = 3;
-    else if (signal === "Vb") index = 4;
-    else if (signal === "Vc") index = 5;
+    if (selectedMultipleAxisPlot > 0) index = selectedMultipleAxisPlot - 1;
+    else return;
 
     let present_zoom_start = presentMaxisYZoomValues[index].start;
     let present_zoom_end = presentMaxisYZoomValues[index].end;
@@ -457,12 +513,12 @@ const ChartComponent = ({
     fillSideTable();
   };
 
-  // HELPER FUNCTIONS
-  const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
-  const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
+  const handleSliderChange = (_event: Event, newValue: number | number[]) => {
+    setSliderValue(newValue as number);
+  };
 
   // OTHER FUNCTIONS
-  const reduceAllArrays = () => {
+  const reduceAllArrays = (initialLoading: boolean) => {
     let skipCount = 10;
     let MAX_SAMPLE_DISPLAYED = pointCount;
     const MAX_TICKS = 16;
@@ -492,11 +548,6 @@ const ChartComponent = ({
     setTimeValues(reduceValues(timeValues_original, tempIndexes));
     setTimeStamps(reduceValues(timeStamps_original, tempIndexes));
 
-    // console.log(
-    //   "recalc time values: ",
-    //   reduceValues(timeValues_original, tempIndexes)
-    // );
-
     // Determine plotting window
     let startPercent_index =
       (presentZoomValues.startPercent / 100) * timeValues_original.length;
@@ -516,20 +567,28 @@ const ChartComponent = ({
 
     // analog signals filtered - full array
     let temp: number[][] = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < analog_Values_original.length; i++) {
       temp.push(reduceValues(analog_Values_original[i], tempIndexes));
     }
 
     // analog signals - plot window
     let temp_window: number[][] = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < temp.length; i++) {
       temp_window.push(temp[i].slice(startIndex, endIndex));
     }
     setAnalogValues_window(temp_window);
 
+    // set initial zoom values for multiple axis plot
+
+    let tempZoom = [];
+    for (let i = 0; i < temp_window.length; i++) {
+      tempZoom.push({ start: 0, end: 100 });
+    }
+    setPresentMaxisYZoomValues(tempZoom);
+
     // digital signals filtered - full array
     temp = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < digital_Values_original.length; i++) {
       //  console.log(i);
       temp.push(reduceValues(digital_Values_original[i], tempIndexes));
       //  console.log(i);
@@ -537,7 +596,7 @@ const ChartComponent = ({
 
     // digital signals  - plot window
     temp_window = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < temp.length; i++) {
       temp_window.push(temp[i].slice(startIndex, endIndex));
     }
     setDigitalValues_window(temp_window);
@@ -590,17 +649,6 @@ const ChartComponent = ({
       updated_secondary_reduced_index = timeInd - startIndex;
     }
 
-    onAxisClick(
-      pc.cursor,
-      updated_primary_reduced_index,
-      pc.time,
-      pc.timestamp,
-      sc.cursor,
-      updated_secondary_reduced_index,
-      sc.time,
-      sc.timestamp
-    );
-
     // CALCULATE TICK INTERVALS
 
     // determine tick size
@@ -633,12 +681,23 @@ const ChartComponent = ({
       // }
     }
     setTickInterval(tickIntervalArray);
+
+    if (!initialLoading) {
+      onAxisClick(
+        pc.cursor,
+        updated_primary_reduced_index,
+        pc.time,
+        pc.timestamp,
+        sc.cursor,
+        updated_secondary_reduced_index,
+        sc.time,
+        sc.timestamp
+      );
+    }
   };
 
   const reduceValues = (values: any[], requiredIndexes: number[]) => {
     let returnValues: any[] = [];
-
-    // if (values === undefined) return new number[];
 
     for (let i = 0; i <= requiredIndexes.length; i++) {
       if (values === undefined) returnValues[i] = 0;
@@ -681,6 +740,7 @@ const ChartComponent = ({
     let dataIndex = primaryCursor.cursor;
     let secondaryIndex = secondaryCursor.cursor;
 
+    // ANALOG TABLE VALUES
     let tempTable: {
       id: string;
       channel: string;
@@ -712,25 +772,36 @@ const ChartComponent = ({
       return;
     }
 
-    let sample_values =
-      analogSignals !== undefined && analogSignals.length > 0
-        ? Object.values(analogSignals[dataIndex])
-        : new Array(7).fill(0);
+    let ind: { start: number; end: number } = {
+      start: secondaryIndex,
+      end: dataIndex,
+    };
 
-    let phasor_values =
-      dftPhasors !== undefined && dftPhasors.length > 0
-        ? Object.values(dftPhasors[dataIndex])
-        : new Array(6 * 2).fill(0);
+    let channelCount = analog_Values_original.length;
+    let sample_values = [];
+    let a_sig = [];
 
-    let ind: { start: number; end: number } =
-      dataIndex > secondaryIndex
-        ? { start: secondaryIndex, end: dataIndex }
-        : { start: dataIndex, end: secondaryIndex };
+    if (
+      analog_Values_original !== undefined &&
+      analog_Values_original.length > 0
+    ) {
+      for (let i = 0; i < channelCount; i++) {
+        sample_values.push(analog_Values_original[i][dataIndex]);
+        a_sig.push(analog_Values_original[i].slice(ind.start, ind.end));
+      }
+    } else {
+      sample_values = new Array(channelCount).fill(0);
+      a_sig = new Array(channelCount).fill(0);
+    }
 
-    const a_sig = [];
-    for (let i = ind.start; i < ind.end; i++) {
-      let value = Object.values(analogSignals[i]);
-      a_sig.push(value);
+    let phasorCount = dftPhasors.length;
+    let phasor_values = [];
+    if (dftPhasors !== undefined && dftPhasors.length > 0) {
+      for (let i = 0; i < phasorCount; i++) {
+        phasor_values.push(dftPhasors[i][dataIndex]);
+      }
+    } else {
+      phasor_values = new Array(phasorCount).fill(0);
     }
 
     // indexes for rms
@@ -739,19 +810,41 @@ const ChartComponent = ({
     let start_rms = dataIndex > N ? dataIndex - N + 1 : 0;
 
     const a_sig_rms = [];
-    for (let i = start_rms; i < end_rms + 1; i++) {
-      let value = Object.values(analogSignals[i]);
-      a_sig_rms.push(value);
+    for (let i = 0; i < analog_Values_original.length; i++)
+      a_sig_rms.push(analog_Values_original[i].slice(start_rms, end_rms));
+
+    let id_temp = ["IA", "IB", "IC", "IN", "VA", "VB", "VC"];
+    let no_of_stations = names.length / id_temp.length;
+    let id = [];
+
+    if (selectedIndex === -1) {
+      for (let i = 1; i <= no_of_stations; i++) {
+        for (let j = 0; j < id_temp.length; j++) {
+          id.push(id_temp[j] + "-" + i);
+        }
+      }
+    } else {
+      let n = selectedIndex + 1;
+      for (let j = 0; j < id_temp.length; j++) {
+        id.push(id_temp[j] + "-" + n);
+      }
     }
 
-    let id = ["IA", "IB", "IC", "VA", "VB", "VC"];
     for (let i = 0; i < names.length; i++) {
       let label = names[i];
       let unit = units[i];
       let positivePeak =
-        a_sig.length > 0 ? Math.max(...arrayColumn(a_sig, i)) : 0;
+        a_sig.length > 0
+          ? a_sig[i].length === 0
+            ? a_sig[i][0]
+            : Math.max(...a_sig[i])
+          : 0;
       let negativePeak =
-        a_sig.length > 0 ? Math.min(...arrayColumn(a_sig, i)) : 0;
+        a_sig.length > 0
+          ? a_sig[i].length === 0
+            ? a_sig[i][0]
+            : Math.min(...a_sig[i])
+          : 0;
 
       let rowValue = {
         id: id[i],
@@ -760,13 +853,61 @@ const ChartComponent = ({
         inst: sample_values[i],
         phasor_mag: phasor_values[2 * i],
         phasor_ang: phasor_values[2 * i + 1],
-        true_rms: calculateRMS([...arrayColumn(a_sig_rms, i)]),
+        true_rms: calculateRMS(a_sig_rms[i]),
         pos_peak: positivePeak,
         neg_peak: negativePeak,
       };
       tempTable.push(rowValue);
     }
     setTableValues(tempTable);
+
+    // DIGITAL TABLE VALUES
+    // Set table values to be displayed
+
+    let tempTableDigital: {
+      id: string;
+      channel: string;
+      status: number;
+    }[] = [];
+
+    // Set table values to be displayed
+    let namesDigital: string[] = [];
+    if (digitalSignalNames !== undefined) {
+      namesDigital = [...digitalSignalNames];
+    } else {
+      return;
+    }
+
+    let digital_sample_values =
+      digital_Values_original !== undefined &&
+      digital_Values_original.length > 0
+        ? digital_Values_original.slice()[dataIndex]
+        : new Array(digital_Values_original.length).fill(0);
+
+    id = [];
+    if (selectedIndex === -1) {
+      for (let i = 1; i <= no_of_stations; i++) {
+        for (let j = 1; j <= digitalChannelCount[i - 1]; j++) {
+          id.push("D" + j + "-" + i);
+        }
+      }
+    } else {
+      let n = selectedIndex + 1;
+      for (let j = 1; j <= namesDigital.length; j++) {
+        id.push("D" + j + "-" + n);
+      }
+    }
+
+    for (let i = 0; i < namesDigital.length; i++) {
+      let label = namesDigital[i];
+      let rowValueDigital = {
+        id: id[i],
+        channel: label,
+        status: digital_sample_values ? Number(digital_sample_values[i]) : 0,
+      };
+      tempTableDigital.push(rowValueDigital);
+    }
+    setTableValuesDigital(tempTableDigital);
   };
 
   const calculateRMS = (values: number[]) => {
@@ -779,34 +920,20 @@ const ChartComponent = ({
     }
 
     // root and mean
-    rmsValue = Math.sqrt(rmsValue / N);
+    if (N > 0) rmsValue = Math.sqrt(rmsValue / N);
+    else rmsValue = 0;
 
     return rmsValue;
   };
 
-  const analogSignals_split = [];
-  if (!isAnLoading && analogSignals !== undefined && analogSignals.length > 0) {
-    let L = analogSignals.length;
-    for (let i = 0; i < L; i++) {
-      let value = Object.values(analogSignals[i]);
-      analogSignals_split.push(value);
-    }
-
-    timeValues_original = [];
-    timeStamps_original = [];
-    timeValues_original = arrayColumn(analogSignals_split, 6);
-    timeStamps_original = strArrayColumn(analogSignals_split, 7);
-
-    analog_Values_original = [];
-    analog_Values_original.push(arrayColumn(analogSignals_split, 0));
-    analog_Values_original.push(arrayColumn(analogSignals_split, 1));
-    analog_Values_original.push(arrayColumn(analogSignals_split, 2));
-    analog_Values_original.push(arrayColumn(analogSignals_split, 3));
-    analog_Values_original.push(arrayColumn(analogSignals_split, 4));
-    analog_Values_original.push(arrayColumn(analogSignals_split, 5));
-
-    // console.log(arrayColumn(analogSignals_split, 7));
-
+  if (
+    !isAnLoading &&
+    analog_Values_original !== undefined &&
+    analog_Values_original.length > 0 &&
+    !isDigLoading &&
+    digital_Values_original !== undefined &&
+    digital_Values_original.length > 0
+  ) {
     if (primaryCursor.cursor === 0) {
       primaryCursor.time = timeValues_original[0];
       primaryCursor.timestamp = timeStamps_original[0];
@@ -827,30 +954,6 @@ const ChartComponent = ({
     }
   }
 
-  const digitalSignals_split = [];
-  if (
-    !isDigLoading &&
-    digitalSignals !== undefined &&
-    digitalSignals.length > 0
-  ) {
-    let L = digitalSignals.length;
-    let factor = 0.3;
-    for (let i = 0; i < L; i++) {
-      let value = Object.values(digitalSignals[i]);
-      value[0] = factor * value[0] + 0.3;
-      value[1] = factor * value[1] + 1.3;
-      value[2] = factor * value[2] + 2.3;
-      value[3] = factor * value[3] + 3.3;
-      digitalSignals_split.push(value);
-    }
-
-    // console.log(arrayColumn(digitalSignals_split, 1));
-
-    digital_Values_original = [];
-    for (let i = 0; i < 4; i++)
-      digital_Values_original.push(arrayColumn(digitalSignals_split, i));
-  }
-
   if (analogSignalNames !== undefined) {
     if (usedAnalogSignalNames === undefined) {
       setUsedAnalogSignalNames([...analogSignalNames]);
@@ -869,17 +972,17 @@ const ChartComponent = ({
     digital_Values_original.length > 0 &&
     originalIndexes.length === 0
   ) {
+    reduceAllArrays(true);
     setPrevZoomValue([
       presentZoomValues.startPercent,
       presentZoomValues.endPercent,
     ]);
-    reduceAllArrays();
   }
 
   // recalculate when station changes
   if (prevAnalogSignalNames != analogSignalNames) {
     setPrevAnalogSignalNames(analogSignalNames);
-    reduceAllArrays();
+    reduceAllArrays(true);
   }
 
   // recalculate when zoom changes
@@ -891,28 +994,31 @@ const ChartComponent = ({
       presentZoomValues.startPercent,
       presentZoomValues.endPercent,
     ]);
-    reduceAllArrays();
-    // console.log("finished reducing arrays");
+    reduceAllArrays(false);
   }
 
   // recalculate when display point count changes
   if (prevPointCount !== pointCount) {
     setPrevPointCount(pointCount);
-    reduceAllArrays();
+    reduceAllArrays(false);
   }
 
-  // console.log(analogSignalNames);
-  // console.log(usedAnalogSignalNames);
-  // console.log(
-  //   "chart component: ",
-  //   primaryCursor.cursor,
-  //   primaryCursor.cursorReduced
-  // );
-
-  //console.log("chart comp ; ", presentZoomValues);
   return (
-    <Grid container sx={{ mt: 9, ml: 0.5, mb: 0.5 }}>
-      <Grid item xs={sidebarStatus ? 9 : 12}>
+    <Grid container sx={{ mt: 7.5, ml: 0.5, mb: 0.5 }}>
+      {sidebarStatus && (
+        <Grid item xs={12} sx={{ height: 15 }}>
+          <MySlider
+            size="small"
+            aria-label="Small"
+            valueLabelDisplay="off"
+            value={sliderValue}
+            onChange={handleSliderChange}
+            sx={{ height: 0, pt: 0, mt: 0 }}
+            slots={{ thumb: AirbnbThumbComponent }}
+          />
+        </Grid>
+      )}
+      <Grid item xs={sidebarStatus ? 12 * (sliderValue / 100) : 12}>
         <Stack>
           <ChartHeader
             stationName={stationName}
@@ -926,12 +1032,14 @@ const ChartComponent = ({
             onYZoomClick={handleYZoomClick}
             timeRange={{
               minTime:
-                analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[0])[6]
+                timeValues_original !== undefined &&
+                timeValues_original.length > 0
+                  ? timeValues_original[0]
                   : 0,
               maxTime:
-                analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[analogSignals.length - 1])[6]
+                timeValues_original !== undefined &&
+                timeValues_original.length > 0
+                  ? timeValues_original[timeValues_original.length - 1]
                   : 0,
             }}
             tooltipStatus={tooltipStatus}
@@ -939,6 +1047,8 @@ const ChartComponent = ({
 
           <ChartBody
             plotName={plotName}
+            selectedIndex={selectedIndex}
+            digitalChannelCount={digitalChannelCount}
             analogSignalNames={analogSignalNames}
             digitalSignalNames={digitalSignalNames}
             analogValues_window={analogValues_window}
@@ -955,16 +1065,22 @@ const ChartComponent = ({
             onAxisClick={handleAxisClick}
             presentMaxisYZoomValues={presentMaxisYZoomValues}
             presentSaxisYZoomValues={presentSaxisYZoomValues}
+            onSinglePlotSelected={handleSinglePlotSelected}
+            onMultipleAxisPlotSelected={handleMultipleAxisPlotSelected}
+            rowSelectionModel={rowSelectionModel}
+            digitalRowSelectionModel={digitalRowSelectionModel}
           />
           <ChartFooter
             timeRange={{
               minTime:
-                analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[0])[6]
+                timeValues_original !== undefined &&
+                timeValues_original.length > 0
+                  ? timeValues_original[0]
                   : 0,
               maxTime:
-                analogSignals !== undefined && analogSignals.length > 0
-                  ? Object.values(analogSignals[analogSignals.length - 1])[6]
+                timeValues_original !== undefined &&
+                timeValues_original.length > 0
+                  ? timeValues_original[timeValues_original.length - 1]
                   : 0,
             }}
             presentZoomValues={{
@@ -978,8 +1094,14 @@ const ChartComponent = ({
       </Grid>
 
       {sidebarStatus && (
-        <Grid item xs={3} sx={{ bgcolor: "" }}>
+        <Grid
+          item
+          xs={(12 * (100 - sliderValue)) / 100}
+          sx={{ borderLeft: 2, borderColor: "lightgray", pl: 0 }}
+        >
           <CursorValues
+            selectedIndex={selectedIndex}
+            digitalChannelCount={digitalChannelCount}
             axisClick={{
               dataIndex: primaryCursor.cursor,
               axisValue: primaryCursor.time,
@@ -989,10 +1111,15 @@ const ChartComponent = ({
               secondaryTimestamp: secondaryCursor.timestamp,
             }}
             tableValues={tableValues}
+            tableValuesDigital={tableValuesDigital}
             tooltipStatus={tooltipStatus}
             onCursorMove={handleCursorMove}
             selectedFile={selectedFile}
             projectId={projectId}
+            rowSelectionModel={rowSelectionModel}
+            digitalRowSelectionModel={digitalRowSelectionModel}
+            onRowSelectionModelChange={onRowSelectionModelChange}
+            onDigitalRowSelectionModelChange={onDigitalRowSelectionModelChange}
           />
         </Grid>
       )}
@@ -1001,3 +1128,74 @@ const ChartComponent = ({
 };
 
 export default ChartComponent;
+
+const myBoxShadow =
+  "0 3px 1px rgba(0,0,0,0.9),0 4px 8px rgba(0,0,0,0.13),0 0 0 1px rgba(0,0,0,0.02)";
+
+const MySlider = styled(Slider)(({ theme }) => ({
+  color: theme.palette.mode === "light" ? "#444444" : "#999999",
+  height: 0,
+  padding: "1px 0px 20px 2px",
+  "& .MuiSlider-thumb": {
+    height: 10,
+    width: 45,
+    backgroundColor: "#fff",
+    border: "1px solid #fff",
+    // ...theme.applyStyles("dark", {
+    //   backgroundColor: "honeydew",
+    //   border: "1px solid darkslategrey",
+    // }),
+
+    boxShadow: "0 1px 1px 0px rgba(0, 0, 0, 0.4)",
+    "&:focus, &:hover, &.Mui-active": {
+      boxShadow: "0px 0px 3px 1px rgba(0, 0, 0, 0.1)",
+      // Reset on touch devices, it doesn't add specificity
+      "@media (hover: none)": {
+        boxShadow: myBoxShadow,
+      },
+    },
+    "&:before": {
+      boxShadow:
+        "0px 0px 1px 0px rgba(0,0,0,0.2), 0px 0px 0px 0px rgba(0,0,0,0.14), 0px 0px 1px 0px rgba(0,0,0,0.12)",
+    },
+    "& .airbnb-bar": {
+      height: 9,
+      width: 2,
+      backgroundColor: "gray",
+      marginLeft: 2,
+      marginRight: 2,
+    },
+  },
+}));
+
+interface AirbnbThumbComponentProps extends React.HTMLAttributes<unknown> {}
+
+function AirbnbThumbComponent(props: AirbnbThumbComponentProps) {
+  const { children, ...other } = props;
+  return (
+    <Tooltip title="Hold and drag to adjust sidepanel width" placement="top">
+      <SliderThumb {...other}>
+        {children}
+        <Typography
+          sx={{
+            color: "gray",
+            fontSize: 16,
+            pr: 0.2,
+          }}
+        >
+          &gt;
+        </Typography>
+        <span className="airbnb-bar" />
+        <Typography
+          sx={{
+            color: "gray",
+            fontSize: 16,
+            pl: 0.2,
+          }}
+        >
+          &lt;
+        </Typography>
+      </SliderThumb>
+    </Tooltip>
+  );
+}

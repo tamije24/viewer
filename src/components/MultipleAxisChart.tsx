@@ -20,11 +20,13 @@ import useId from "@mui/utils/useId";
 import CloseIcon from "@mui/icons-material/Close";
 import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
 import IconButton from "@mui/material/IconButton";
+import CardActionArea from "@mui/material/CardActionArea";
 
 interface Props {
   analogSignalNames: string[];
   analogValues_window: number[][];
   //digitalValues_window: number[][];
+  stationCount: number;
   timeValues: number[];
   timeStamps: string[];
   originalIndexes: number[];
@@ -58,11 +60,14 @@ interface Props {
     start: number;
     end: number;
   }[];
+  onMultipleAxisPlotSelected: (plotNumber: number) => void;
+  selectedWaveform: boolean[];
 }
 
 const MultipleAxisChart = ({
   analogSignalNames,
   analogValues_window,
+  stationCount,
   timeValues,
   timeStamps,
   originalIndexes,
@@ -71,49 +76,55 @@ const MultipleAxisChart = ({
   cursorValues,
   onAxisClick,
   presentMaxisYZoomValues,
+  onMultipleAxisPlotSelected,
+  selectedWaveform,
 }: Props) => {
   // STATE VARIABLES
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errMessage, setErrorMessage] = useState("");
+  const [selectedPlot, setSelectedPlot] = useState(0);
 
   // OTHER VARIABLES
-  let zoom: ZoomData[] = [
-    {
-      axisId: "time-axis",
-      start: 0,
-      end: 100,
-    },
-    {
-      axisId: "Ia-axis",
-      start: presentMaxisYZoomValues[0].start,
-      end: presentMaxisYZoomValues[0].end,
-    },
-    {
-      axisId: "Ib-axis",
-      start: presentMaxisYZoomValues[1].start,
-      end: presentMaxisYZoomValues[1].end,
-    },
-    {
-      axisId: "Ic-axis",
-      start: presentMaxisYZoomValues[2].start,
-      end: presentMaxisYZoomValues[2].end,
-    },
-    {
-      axisId: "Va-axis",
-      start: presentMaxisYZoomValues[3].start,
-      end: presentMaxisYZoomValues[3].end,
-    },
-    {
-      axisId: "Vb-axis",
-      start: presentMaxisYZoomValues[4].start,
-      end: presentMaxisYZoomValues[4].end,
-    },
-    {
-      axisId: "Vc-axis",
-      start: presentMaxisYZoomValues[5].start,
-      end: presentMaxisYZoomValues[5].end,
-    },
+
+  const temp_signals = ["IA", "IB", "IC", "IN", "VA", "VB", "VC"];
+  const temp_color = [
+    "crimson",
+    "goldenrod",
+    "deepskyblue",
+    "black",
+    "crimson",
+    "goldenrod",
+    "deepskyblue",
   ];
+
+  const signals: string[] = [];
+  const yAxisNames: string[] = [];
+  const color_light: string[] = [];
+  const clipPathIds: string[] = [];
+  const zoom: ZoomData[] = [];
+
+  const id = useId();
+  for (let i = 1; i <= stationCount; i++) {
+    for (let j = 0; j < temp_signals.length; j++) {
+      signals.push(temp_signals[j] + "-" + i);
+      yAxisNames.push(temp_signals[j] + "-axis-" + i);
+      color_light.push(temp_color[j]);
+      clipPathIds.push(`${id}-clip-path-${j + 1}-${i}`);
+    }
+  }
+  zoom.push({
+    axisId: "time-axis",
+    start: 0,
+    end: 100,
+  });
+
+  for (let i = 0; i < yAxisNames.length; i++) {
+    zoom.push({
+      axisId: yAxisNames[i],
+      start: presentMaxisYZoomValues[i].start,
+      end: presentMaxisYZoomValues[i].end,
+    });
+  }
 
   let primaryCursor = {
     cursor: cursorValues.primary,
@@ -129,34 +140,7 @@ const MultipleAxisChart = ({
     timestamp: cursorValues.secondaryTimestamp,
   };
 
-  let color_light = [
-    "crimson",
-    "goldenrod",
-    "deepskyblue",
-    "crimson",
-    "goldenrod",
-    "deepskyblue",
-  ];
-
   let series: LineSeriesType[] = [];
-  const id = useId();
-  const clipPathIds = [
-    `${id}-clip-path-1`,
-    `${id}-clip-path-2`,
-    `${id}-clip-path-3`,
-    `${id}-clip-path-4`,
-    `${id}-clip-path-5`,
-    `${id}-clip-path-6`,
-  ];
-
-  const yAxisNames = [
-    "Ia-axis",
-    "Ib-axis",
-    "Ic-axis",
-    "Va-axis",
-    "Vb-axis",
-    "Vc-axis",
-  ];
 
   let zeroPresent =
     timeValues.findIndex((element) => element === 0) === -1 ? false : true;
@@ -256,7 +240,8 @@ const MultipleAxisChart = ({
   );
 
   series = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < analogSignalNames.length; i++) {
+    //   if (selectedWaveform[i]) {
     let label = analogSignalNames[i];
     let a: LineSeriesType = {
       type: "line",
@@ -271,6 +256,7 @@ const MultipleAxisChart = ({
       } as HighlightScope,
     };
     series.push(a);
+    //   }
   }
 
   const timeFormatter = (
@@ -307,129 +293,183 @@ const MultipleAxisChart = ({
     },
   } as const;
 
-  const leftMargin = 20;
+  const leftMargin = 0;
   const rightMargin = 30;
-  const signals = ["IA", "IB", "IC", "VA", "VB", "VC"];
+
+  // Calculate plot heights
+  let PlotHeight = `calc(100vh - 330px)`;
+  const PlotCount = selectedWaveform.filter((i) => i === true).length;
+
+  if (PlotCount === 0) {
+    return (
+      <Grid
+        container
+        rowSpacing={0}
+        columnSpacing={0}
+        padding="0"
+        margin="0"
+        height={`calc(100vh - 290px)`}
+        sx={{ bgcolor: "" }}
+      >
+        No Waveform selected
+      </Grid>
+    );
+  } else {
+    PlotHeight = `calc((100vh - 330px)/${PlotCount})`;
+  }
+  const selectedColor = "#C2EBFF";
+
+  // console.log(series.length);
+  // console.log(selectedWaveform);
+  // console.log(yAxisNames);
 
   return (
     <>
       <Grid
         container
+        key={"multchartholder"}
         height={`calc(100vh - 290px)`}
         sx={{ padding: 0, m: 0, bgcolor: "" }}
       >
-        {series.map((series, index) => (
-          <Grid
-            key={"multiple-" + index}
-            item
-            xs={12}
-            height={`calc((100vh - 340px)/6)`}
-            sx={{ bgcolor: "" }}
-          >
-            <ResponsiveChartContainerPro
-              xAxis={[{ ...xAxisCommon, data: timeValues }]}
-              yAxis={[
-                { id: yAxisNames[index] },
-                //  { zoom: true }
-              ]}
-              series={[series]}
-              zoom={zoom}
-              margin={{
-                left: leftMargin,
-                right: rightMargin,
-                top: 0,
-                bottom: 0,
-              }}
-              sx={{
-                // borderLeft: 0.5,
-                // borderRight: 0.5,
-                borderTop: 0.3,
-                // borderBottom: 0,
-                "& .MuiLineElement-root": {
-                  strokeWidth: 1.5,
-                },
-              }}
-            >
-              <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
-              <ChartsAxisHighlight />
-              <ChartsGrid horizontal />
-              <ChartsOnAxisClickHandler
-                onAxisClick={(event, data) => {
-                  handleAxisClick(
-                    event,
-                    data ? data.dataIndex : 0,
-                    data ? Number(data.axisValue ? data.axisValue : 0) : 0
-                  );
-                }}
-              />
-              <g clipPath={`url(#${clipPathIds[index]})`}>
-                {zeroPresent && (
-                  <ChartsReferenceLine
-                    axisId={"time-axis"}
-                    x={0}
-                    lineStyle={{
-                      strokeDasharray: "5 1",
-                      strokeWidth: 1.0,
-                      stroke: "secondary",
-                    }}
-                  />
-                )}
-                {primaryPresent && (
-                  <ChartsReferenceLine
-                    axisId={"time-axis"}
-                    x={timeValues[primaryCursor.cursorReduced]}
-                    lineStyle={{
-                      strokeDasharray: "10 5",
-                      strokeWidth: 1.5,
-                      stroke: "darkorchid",
-                    }}
-                  />
-                )}
+        <Grid item xs={12}>
+          {series.map((series, index) => (
+            <div key={"plot-" + index}>
+              {selectedWaveform[index] && (
+                <Grid container key={"holder-" + index} sx={{ width: "100%" }}>
+                  <Grid item key={"multend-" + index} xs={0.2}>
+                    <CardActionArea
+                      key={"multselect-" + index}
+                      onClick={() => {
+                        if (selectedPlot == index + 1) {
+                          setSelectedPlot(0);
+                          onMultipleAxisPlotSelected(0);
+                        } else {
+                          setSelectedPlot(index + 1);
+                          onMultipleAxisPlotSelected(index + 1);
+                        }
+                      }}
+                      sx={{
+                        height: "100%",
+                        width: "100%",
+                        alignContent: "center",
+                        bgcolor: selectedPlot == index + 1 ? selectedColor : "",
+                      }}
+                    />
+                  </Grid>
+                  <Grid
+                    item
+                    key={"multiple-" + index}
+                    xs={11.8}
+                    height={PlotHeight}
+                  >
+                    <ResponsiveChartContainerPro
+                      key={"multchart-" + index}
+                      xAxis={[{ ...xAxisCommon, data: timeValues }]}
+                      yAxis={[{ id: yAxisNames[index] }]}
+                      series={[series]}
+                      zoom={zoom}
+                      margin={{
+                        left: leftMargin,
+                        right: rightMargin,
+                        top: 0,
+                        bottom: 0,
+                      }}
+                      sx={{
+                        bgcolor: selectedPlot == index + 1 ? "azure" : "",
+                        borderTop: 0.3,
+                        "& .MuiLineElement-root": {
+                          strokeWidth: 1.5,
+                        },
+                      }}
+                    >
+                      <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
+                      <ChartsAxisHighlight />
+                      <ChartsGrid horizontal />
+                      <ChartsOnAxisClickHandler
+                        onAxisClick={(event, data) => {
+                          handleAxisClick(
+                            event,
+                            data ? data.dataIndex : 0,
+                            data
+                              ? Number(data.axisValue ? data.axisValue : 0)
+                              : 0
+                          );
+                        }}
+                      />
+                      <g clipPath={`url(#${clipPathIds[index]})`}>
+                        {zeroPresent && (
+                          <ChartsReferenceLine
+                            axisId={"time-axis"}
+                            x={0}
+                            lineStyle={{
+                              strokeDasharray: "5 1",
+                              strokeWidth: 1.0,
+                              stroke: "secondary",
+                            }}
+                          />
+                        )}
+                        {primaryPresent && (
+                          <ChartsReferenceLine
+                            axisId={"time-axis"}
+                            x={timeValues[primaryCursor.cursorReduced]}
+                            lineStyle={{
+                              strokeDasharray: "10 5",
+                              strokeWidth: 1.5,
+                              stroke: "darkorchid",
+                            }}
+                          />
+                        )}
 
-                {secondaryPresent && (
-                  <ChartsReferenceLine
-                    axisId={"time-axis"}
-                    x={timeValues[secondaryCursor.cursorReduced]}
-                    lineStyle={{
-                      strokeDasharray: "3 3",
-                      strokeWidth: 2,
-                      stroke: "forestgreen",
-                    }}
-                  />
-                )}
-                <ChartsReferenceLine
-                  axisId={yAxisNames[index]}
-                  y={0}
-                  lineStyle={{
-                    strokeDasharray: "0",
-                    strokeWidth: 0.5,
-                    stroke: "black",
-                  }}
-                />
-                <LinePlot skipAnimation />
-              </g>
-              <ChartsClipPath id={clipPathIds[index]} />
-              <ChartsYAxis
-                disableTicks
-                position="left"
-                axisId={yAxisNames[index]}
-                tickInterval={[0]}
-              />
-              <ChartsYAxis
-                disableTicks
-                position="right"
-                label={signals[index]}
-                labelStyle={{
-                  fontSize: 10,
-                  angle: -90,
-                  transform: "translateX(-10px)",
-                }}
-                axisId={yAxisNames[index]}
-                tickInterval={[]}
-              />
-            </ResponsiveChartContainerPro>
-          </Grid>
-        ))}
+                        {secondaryPresent && (
+                          <ChartsReferenceLine
+                            axisId={"time-axis"}
+                            x={timeValues[secondaryCursor.cursorReduced]}
+                            lineStyle={{
+                              strokeDasharray: "3 3",
+                              strokeWidth: 2,
+                              stroke: "forestgreen",
+                            }}
+                          />
+                        )}
+                        <ChartsReferenceLine
+                          axisId={yAxisNames[index]}
+                          y={0}
+                          lineStyle={{
+                            strokeDasharray: "0",
+                            strokeWidth: 0.5,
+                            stroke: "black",
+                          }}
+                        />
+                        <LinePlot
+                        //skipAnimation
+                        />
+                      </g>
+                      <ChartsClipPath id={clipPathIds[index]} />
+                      <ChartsYAxis
+                        disableTicks
+                        position="left"
+                        axisId={yAxisNames[index]}
+                        tickInterval={[0]}
+                      />
+                      <ChartsYAxis
+                        disableTicks
+                        position="right"
+                        label={signals[index]}
+                        labelStyle={{
+                          fontSize: 10,
+                          angle: -90,
+                          transform: "translateX(-10px)",
+                        }}
+                        axisId={yAxisNames[index]}
+                        tickInterval={[]}
+                      />
+                    </ResponsiveChartContainerPro>
+                  </Grid>
+                </Grid>
+              )}
+            </div>
+          ))}
+        </Grid>
         <Grid
           key={"multiple-timeaxis"}
           item

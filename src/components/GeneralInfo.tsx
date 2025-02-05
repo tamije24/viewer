@@ -170,6 +170,22 @@ const GeneralInfo = ({ file_id, project_id }: Props) => {
               </Typography>
             </Grid>
             <Grid item xs={1}>
+              <InboxIcon />
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="overline">Resampled Frequency</Typography>
+            </Grid>
+            <Grid item xs={7}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontSize: 17, color: "dodgerblue" }}
+              >
+                {comtradeFile.resampled_frequency === 0
+                  ? "-"
+                  : comtradeFile.resampled_frequency}
+              </Typography>
+            </Grid>
+            <Grid item xs={1}>
               <HourglassFullIcon />
             </Grid>
             <Grid item xs={4}>

@@ -1,7 +1,6 @@
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -10,27 +9,38 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import BackupIcon from "@mui/icons-material/Backup";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import AddLocationIcon from "@mui/icons-material/AddLocation";
 import PlaceSharpIcon from "@mui/icons-material/PlaceSharp";
-import Skeleton from "@mui/material/Skeleton";
+import CloseIcon from "@mui/icons-material/Close";
 
 import projectService, { Project } from "../services/project-service";
 import Grid from "@mui/material/Grid";
+import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import { useState } from "react";
-import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import Divider from "@mui/material/Divider";
 import {
+  Autocomplete,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   FormHelperText,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   styled,
 } from "@mui/material";
+
+import {
+  DataGridPro,
+  GridRowParams,
+  GridCallbackDetails,
+  MuiEvent,
+  GridActionsCellItem,
+} from "@mui/x-data-grid-pro";
+import { GridColDef } from "@mui/x-data-grid/models/colDef";
+
 import comtradeFileService, {
   ComtradeFile,
 } from "../services/comtrade-file-service";
@@ -39,7 +49,7 @@ let cfgfile_element: HTMLInputElement;
 let datfile_element: HTMLInputElement;
 
 let signal_list: string[] = [];
-let digital_signal_list: string[] = [];
+let digital_signal_list: { id: number; title: string }[] = [];
 
 interface Props {
   project: Project;
@@ -53,6 +63,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const [linenameErrorMessage, setLinenameErrorMessage] = useState("");
   const [terminalsError, setTerminalsError] = useState(false);
   const [terminalsErrorMessage, setTerminalsErrorMessage] = useState("");
+  const [addStationVisible, setAddStationVisible] = useState(false);
 
   const [cfgSelected, setCfgSelected] = useState(false);
   const [datSelected, setDatSelected] = useState(false);
@@ -64,9 +75,14 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
     "Select COMTRADE files to upload"
   );
 
+  const [selectedRow, setSelectedRow] = useState(-1);
+  const [selectedStation, setSelectedStation] = useState("");
+  const [open, setOpen] = useState(false);
+
   const [iaChannelErrorMsg, setIaChannelErrorMsg] = useState("");
   const [ibChannelErrorMsg, setIbChannelErrorMsg] = useState("");
   const [icChannelErrorMsg, setIcChannelErrorMsg] = useState("");
+  const [inChannelErrorMsg, setInChannelErrorMsg] = useState("");
   const [vaChannelErrorMsg, setVaChannelErrorMsg] = useState("");
   const [vbChannelErrorMsg, setVbChannelErrorMsg] = useState("");
   const [vcChannelErrorMsg, setVcChannelErrorMsg] = useState("");
@@ -74,20 +90,66 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const [iaChannelError, setIaChannelError] = useState(false);
   const [ibChannelError, setIbChannelError] = useState(false);
   const [icChannelError, setIcChannelError] = useState(false);
+  const [inChannelError, setInChannelError] = useState(false);
   const [vaChannelError, setVaChannelError] = useState(false);
   const [vbChannelError, setVbChannelError] = useState(false);
   const [vcChannelError, setVcChannelError] = useState(false);
 
-  const [iaSignal, setIaSignal] = useState("");
-  const [ibSignal, setIbSignal] = useState("");
-  const [icSignal, setIcSignal] = useState("");
-  const [vaSignal, setVaSignal] = useState("");
-  const [vbSignal, setVbSignal] = useState("");
-  const [vcSignal, setVcSignal] = useState("");
-  const [d1Signal, setD1Signal] = useState("");
-  const [d2Signal, setD2Signal] = useState("");
-  const [d3Signal, setD3Signal] = useState("");
-  const [d4Signal, setD4Signal] = useState("");
+  const [iaSignal, setIaSignal] = useState<string | null>(null);
+  const [ibSignal, setIbSignal] = useState<string | null>(null);
+  const [icSignal, setIcSignal] = useState<string | null>(null);
+  const [inSignal, setInSignal] = useState<string | null>(null);
+  const [vaSignal, setVaSignal] = useState<string | null>(null);
+  const [vbSignal, setVbSignal] = useState<string | null>(null);
+  const [vcSignal, setVcSignal] = useState<string | null>(null);
+  const [d1Signal, setD1Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d2Signal, setD2Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d3Signal, setD3Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d4Signal, setD4Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d5Signal, setD5Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d6Signal, setD6Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d7Signal, setD7Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d8Signal, setD8Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d9Signal, setD9Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d10Signal, setD10Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d11Signal, setD11Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [d12Signal, setD12Signal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
 
   const ReadCfgFIle = () => {
     if (cfgfile_element.files === null) return;
@@ -132,7 +194,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       for (let k = 0; k < digitalChannelCount; k++) {
         temArray = cfgContent[i].split(",");
         i++;
-        digital_signal_list.push(temArray[1]);
+        digital_signal_list.push({ id: k, title: temArray[1] });
       }
       setCfgSelected(true);
       setFileAddMessage("Select channels before adding station to list");
@@ -168,6 +230,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   };
 
   const handleCfgFile = () => {
+    resetAddFields();
     setFileAddMessage("");
     cfgfile_element = document.getElementById(
       "cfg_file_button"
@@ -195,48 +258,80 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const handleNewFileAdd = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (cfgfile_element.files !== null && datfile_element.files !== null) {
-      setFileAdding(true);
-      setFileAddMessage("Uploading .. please wait");
-      comtradeFileService
-        .createComtradeFile(
-          project.project_id,
-          cfgfile_element.files[0],
-          datfile_element.files[0],
-          iaSignal,
-          ibSignal,
-          icSignal,
-          vaSignal,
-          vbSignal,
-          vcSignal,
-          d1Signal,
-          d2Signal,
-          d3Signal,
-          d4Signal
-        )
-        .then((_res) => {
-          setFileAdding(false);
-          onAddFiles();
-          setFileAddMessage("Station added successfully");
-          resetAddFields();
-        })
-        .catch((err) => {
-          setFileAdding(false);
-          setFileAddMessage(err.message);
-          resetAddFields();
-        });
+      if (validateChannels()) {
+        setFileAdding(true);
+        setFileAddMessage("Uploading .. please wait");
+        comtradeFileService
+          .createComtradeFile(
+            project.project_id,
+            cfgfile_element.files[0],
+            datfile_element.files[0],
+            iaSignal == null ? "" : iaSignal,
+            ibSignal == null ? "" : ibSignal,
+            icSignal == null ? "" : icSignal,
+            inSignal == null ? "" : inSignal,
+            vaSignal == null ? "" : vaSignal,
+            vbSignal == null ? "" : vbSignal,
+            vcSignal == null ? "" : vcSignal,
+            d1Signal == null ? "" : d1Signal.title,
+            d2Signal == null ? "" : d2Signal.title,
+            d3Signal == null ? "" : d3Signal.title,
+            d4Signal == null ? "" : d4Signal.title,
+            d5Signal == null ? "" : d5Signal.title,
+            d6Signal == null ? "" : d6Signal.title,
+            d7Signal == null ? "" : d7Signal.title,
+            d8Signal == null ? "" : d8Signal.title,
+            d9Signal == null ? "" : d9Signal.title,
+            d10Signal == null ? "" : d10Signal.title,
+            d11Signal == null ? "" : d11Signal.title,
+            d12Signal == null ? "" : d12Signal.title
+          )
+          .then((_res) => {
+            setFileAdding(false);
+            onAddFiles();
+            setFileAddMessage("Station added successfully");
+            resetAddFields();
+            setAddStationVisible(false);
+          })
+          .catch((err) => {
+            setFileAdding(false);
+            setFileAddMessage(err.message);
+            resetAddFields();
+            // setAddStationVisible(false);
+          });
+      }
     }
   };
 
+  const onRowSelect = (
+    params: GridRowParams,
+    _event: MuiEvent,
+    _details: GridCallbackDetails
+  ) => {
+    setSelectedRow(params.row.id);
+    setSelectedStation(params.row.station);
+  };
+
   const handleFileDelete = (file_id: number) => {
-    // TODO confirm delete before doing actual delete
     comtradeFileService
       .deleteComtradeFile(project.project_id, file_id)
       .then((_res) => {
         onAddFiles();
+        setSelectedRow(-1);
       })
       .catch((err) => {
         setError(err.message);
       });
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setSelectedRow(-1);
+  };
+
+  const handleOk = () => {
+    handleFileDelete(selectedRow);
+    setOpen(false);
   };
 
   const validateInputs = () => {
@@ -268,7 +363,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   const validateChannels = () => {
     let isValid = true;
 
-    if (iaSignal == "") {
+    if (!iaSignal) {
       setIaChannelError(true);
       setIaChannelErrorMsg("Ia channel required");
 
@@ -278,7 +373,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       setIaChannelErrorMsg("");
     }
 
-    if (ibSignal == "") {
+    if (!ibSignal) {
       setIbChannelError(true);
       setIbChannelErrorMsg("Ib channel required");
 
@@ -288,7 +383,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       setIbChannelErrorMsg("");
     }
 
-    if (icSignal == "") {
+    if (!icSignal) {
       setIcChannelError(true);
       setIcChannelErrorMsg("Ic channel required");
 
@@ -298,7 +393,17 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       setIcChannelErrorMsg("");
     }
 
-    if (vaSignal == "") {
+    if (!inSignal) {
+      setInChannelError(true);
+      setInChannelErrorMsg("In channel required");
+
+      isValid = false;
+    } else {
+      setInChannelError(false);
+      setInChannelErrorMsg("");
+    }
+
+    if (!vaSignal) {
       setVaChannelError(true);
       setVaChannelErrorMsg("Va channel required");
 
@@ -308,7 +413,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       setVaChannelErrorMsg("");
     }
 
-    if (vbSignal == "") {
+    if (!vbSignal) {
       setVbChannelError(true);
       setVbChannelErrorMsg("Vb channel required");
 
@@ -318,7 +423,7 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       setVbChannelErrorMsg("");
     }
 
-    if (vcSignal == "") {
+    if (!vcSignal) {
       setVcChannelError(true);
       setVcChannelErrorMsg("Vc channel required");
 
@@ -332,400 +437,1035 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
   };
 
   const FileAddForm = () => {
+    const defaultProps = {
+      fullWidth: true,
+      handleHomeEndKeys: true,
+      noOptionsText: "No channels",
+      clearOnEscape: true,
+      disableClearable: true,
+    };
+
+    const analogChannelProps = {
+      options: signal_list,
+      getOptionLabel: (option: string) => option,
+    };
+
+    const digitalChannelProps = {
+      options: digital_signal_list,
+      getOptionKey: (option: { id: number; title: string }) => option.id,
+      getOptionLabel: (option: { id: number; title: string }) => option.title,
+    };
+
     return (
       <form onSubmit={handleNewFileAdd} noValidate>
-        <Typography sx={{ ml: 4, mt: 1, mb: 1 }} variant="overline">
-          Add Station
-        </Typography>
-        <Stack
-          display="flex"
-          alignItems="center"
-          direction="row"
-          spacing={2}
-          sx={{ ml: 4, mt: 1, mb: 1 }}
+        <Card
+          sx={{
+            mt: 0,
+            ml: 0,
+            mb: 0,
+            pt: 0,
+          }}
         >
-          <Button
-            component="label"
-            role={undefined}
-            variant="outlined"
+          <CardHeader
             sx={{
-              color: cfgSelected ? "primary" : "black",
-              borderColor: cfgSelected ? "primary" : "black",
+              m: 0,
+              pt: 1,
+              pl: 2,
+              pb: 1,
+              borderBottom: 0.5,
+              // bgcolor: "red",
             }}
-            endIcon={<BackupIcon />}
-          >
-            <Typography
-              variant="body2"
-              sx={{ color: cfgSelected ? "primary" : "black" }}
-            >
-              {cfgFileName}
-            </Typography>
-            <VisuallyHiddenInput
-              id="cfg_file_button"
-              type="file"
-              onChange={handleCfgFile}
-              multiple={false}
-            />
-          </Button>
-          <Button
-            component="label"
-            role={undefined}
-            variant="outlined"
-            sx={{
-              color: datSelected ? "primary" : "black",
-              borderColor: datSelected ? "primary" : "black",
-            }}
-            endIcon={<BackupIcon />}
-          >
-            <Typography
-              variant="body2"
-              sx={{ color: datSelected ? "primary" : "black" }}
-            >
-              {datFileName}
-            </Typography>
-            <VisuallyHiddenInput
-              id="dat_file_button"
-              type="file"
-              onChange={handleDatFile}
-              multiple={false}
-            />
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!cfgSelected || !datSelected}
-            endIcon={<FileUploadIcon />}
-            onClick={validateChannels}
-          >
-            <Typography variant="body2">Upload Files</Typography>
-          </Button>
-          <Typography
-            variant="overline"
-            sx={{ pl: 2, color: fileAdding ? "error.main" : "success.main" }}
-          >
-            {fileAddMessage}
-          </Typography>
-        </Stack>
-        {cfgSelected && (
-          <>
-            <Divider />
-
-            <Stack
-              display="flex"
-              alignItems="center"
-              direction="row"
-              spacing={2}
-              sx={{ ml: 4, mt: 2, mb: 1 }}
-            >
-              <FormControl
-                size="small"
+            avatar={
+              <Avatar sx={{ m: 1, bgcolor: "orchid" }}>
+                <AddLocationIcon />
+              </Avatar>
+            }
+            title="Add New Station"
+            subheader={
+              <Typography
                 sx={{
-                  width: "150px",
+                  fontSize: fileAdding ? 16 : 13,
+                  color: fileAdding ? "error.main" : "success.main",
                 }}
-                required
-                focused
-                error={iaChannelError}
-                color="error"
               >
-                <InputLabel id="ia_signal-label">Ia Channel</InputLabel>
-                <Select
-                  labelId="ia_signal-label"
-                  id="ia_signal"
-                  value={iaSignal}
-                  label="Ia Channel"
-                  onChange={(event: SelectChangeEvent) => {
-                    setIaSignal(event.target.value as string);
+                {fileAddMessage}
+              </Typography>
+            }
+            action={
+              <Stack
+                display="flex"
+                alignItems="center"
+                direction="row"
+                spacing={2}
+                sx={{ ml: 4, mt: 1, mb: 0 }}
+              >
+                <Button
+                  type="submit"
+                  size="small"
+                  variant="contained"
+                  disabled={!cfgSelected || !datSelected}
+                  endIcon={<FileUploadIcon />}
+                  color="primary"
+                  sx={{ mt: 1 }}
+                >
+                  <Typography variant="caption">Upload</Typography>
+                </Button>
+                <Button
+                  type="reset"
+                  size="small"
+                  variant="contained"
+                  endIcon={<CloseIcon />}
+                  color="warning"
+                  sx={{ ml: 0 }}
+                  onClick={() => {
+                    resetAddFields();
+                    setAddStationVisible(false);
                   }}
                 >
-                  {signal_list.map((option, index) => (
-                    <MenuItem key={option + "ia" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{iaChannelErrorMsg}</FormHelperText>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                required
-                focused
-                error={ibChannelError}
-                color="warning"
-              >
-                <InputLabel id="ib_signal-label">Ib Channel</InputLabel>
-                <Select
-                  labelId="ib_signal-label"
-                  id="ib_signal"
-                  value={ibSignal}
-                  label="Ib Channel"
-                  onChange={(event: SelectChangeEvent) => {
-                    setIbSignal(event.target.value as string);
+                  <Typography variant="caption">Cancel</Typography>
+                </Button>
+              </Stack>
+            }
+          />
+          <CardContent sx={{ bgcolor: "", pl: 4 }}>
+            <Grid2 container spacing={1} sx={{ pb: 2 }}>
+              <Grid2 xs={6}>
+                <Button
+                  component="label"
+                  role={undefined}
+                  variant="outlined"
+                  sx={{
+                    width: "100%",
+                    color: cfgSelected ? "primary" : "black",
+                    borderColor: cfgSelected ? "primary" : "black",
                   }}
+                  endIcon={<BackupIcon />}
                 >
-                  {signal_list.map((option, index) => (
-                    <MenuItem key={option + "ib" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{ibChannelErrorMsg}</FormHelperText>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                required
-                focused
-                error={icChannelError}
-              >
-                <InputLabel id="ic_signal-label">Ic Channel</InputLabel>
-                <Select
-                  labelId="ic_signal-label"
-                  id="ic_signal"
-                  value={icSignal}
-                  label="Ic Channel"
-                  onChange={(event: SelectChangeEvent) => {
-                    setIcSignal(event.target.value as string);
+                  <Typography
+                    variant="body2"
+                    sx={{ color: cfgSelected ? "primary" : "black" }}
+                  >
+                    {cfgFileName}
+                  </Typography>
+                  <VisuallyHiddenInput
+                    id="cfg_file_button"
+                    type="file"
+                    onChange={handleCfgFile}
+                    multiple={false}
+                  />
+                </Button>
+              </Grid2>
+              <Grid2 xs={6}>
+                <Button
+                  component="label"
+                  role={undefined}
+                  variant="outlined"
+                  sx={{
+                    width: "100%",
+                    color: datSelected ? "primary" : "black",
+                    borderColor: datSelected ? "primary" : "black",
                   }}
+                  endIcon={<BackupIcon />}
                 >
-                  {signal_list.map((option, index) => (
-                    <MenuItem key={option + "ic" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{icChannelErrorMsg}</FormHelperText>
-              </FormControl>
-            </Stack>
-
-            <Stack
-              display="flex"
-              alignItems="center"
-              direction="row"
-              spacing={2}
-              sx={{ ml: 4, mt: 2, mb: 1 }}
-            >
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                required
-                focused
-                error={vaChannelError}
-                color="error"
-              >
-                <InputLabel id="va_signal-label">Va Channel</InputLabel>
-                <Select
-                  labelId="va_signal-label"
-                  id="va_signal"
-                  value={vaSignal}
-                  label="Va Channel"
-                  onChange={(event: SelectChangeEvent) => {
-                    setVaSignal(event.target.value as string);
-                  }}
-                >
-                  {signal_list.map((option, index) => (
-                    <MenuItem key={option + "va" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{vaChannelErrorMsg}</FormHelperText>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                required
-                focused
-                error={vbChannelError}
-                color="warning"
-              >
-                <InputLabel id="vb_signal-label">Vb Channel</InputLabel>
-                <Select
-                  labelId="vb_signal-label"
-                  id="vb_signal"
-                  value={vbSignal}
-                  label="Vb Channel"
-                  onChange={(event: SelectChangeEvent) => {
-                    setVbSignal(event.target.value as string);
-                  }}
-                >
-                  {signal_list.map((option, index) => (
-                    <MenuItem key={option + "vb" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{vbChannelErrorMsg}</FormHelperText>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                required
-                focused
-                error={vcChannelError}
-              >
-                <InputLabel id="vc_signal-label">Vc Channel</InputLabel>
-                <Select
-                  labelId="vc_signal-label"
-                  id="vc_signal"
-                  value={vcSignal}
-                  label="Vc Channel"
-                  onChange={(event: SelectChangeEvent) => {
-                    setVcSignal(event.target.value as string);
-                  }}
-                >
-                  {signal_list.map((option, index) => (
-                    <MenuItem key={option + "vc" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{vcChannelErrorMsg}</FormHelperText>
-              </FormControl>
-            </Stack>
-
-            <Stack
-              display="flex"
-              alignItems="center"
-              direction="row"
-              spacing={2}
-              sx={{ ml: 4, mt: 2, mb: 1 }}
-            >
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                focused
-                color="success"
-              >
-                <InputLabel id="d1_signal-label">Digital Channel 1</InputLabel>
-                <Select
-                  labelId="d1_signal-label"
-                  id="d1_signal"
-                  value={d1Signal}
-                  label="Digital Channel 1"
-                  onChange={(event: SelectChangeEvent) => {
-                    setD1Signal(event.target.value as string);
-                  }}
-                >
-                  {digital_signal_list.map((option, index) => (
-                    <MenuItem key={option + "d1" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                focused
-                color="success"
-              >
-                <InputLabel id="d2_signal-label">Digital Channel 2</InputLabel>
-                <Select
-                  labelId="d2_signal-label"
-                  id="d2_signal"
-                  value={d2Signal}
-                  label="Digital Channel 2"
-                  onChange={(event: SelectChangeEvent) => {
-                    setD2Signal(event.target.value as string);
-                  }}
-                >
-                  {digital_signal_list.map((option, index) => (
-                    <MenuItem key={option + "d2" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                focused
-                color="success"
-              >
-                <InputLabel id="d3_signal-label">Digital Channel 3</InputLabel>
-                <Select
-                  labelId="d3_signal-label"
-                  id="d3_signal"
-                  value={d3Signal}
-                  label="Digital Channel 3"
-                  onChange={(event: SelectChangeEvent) => {
-                    setD3Signal(event.target.value as string);
-                  }}
-                >
-                  {digital_signal_list.map((option, index) => (
-                    <MenuItem key={option + "d3" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl
-                size="small"
-                sx={{
-                  width: "150px",
-                }}
-                focused
-                color="success"
-              >
-                <InputLabel id="d4_signal-label">Digital Channel 4</InputLabel>
-                <Select
-                  labelId="d4_signal-label"
-                  id="d4_signal"
-                  value={d4Signal}
-                  label="Digital Channel 4"
-                  onChange={(event: SelectChangeEvent) => {
-                    setD4Signal(event.target.value as string);
-                  }}
-                >
-                  {digital_signal_list.map((option, index) => (
-                    <MenuItem key={option + "d4" + index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Stack>
-          </>
-        )}
+                  <Typography
+                    variant="body2"
+                    sx={{ color: datSelected ? "primary" : "black" }}
+                  >
+                    {datFileName}
+                  </Typography>
+                  <VisuallyHiddenInput
+                    id="dat_file_button"
+                    type="file"
+                    onChange={handleDatFile}
+                    multiple={false}
+                  />
+                </Button>
+              </Grid2>
+            </Grid2>
+            {cfgSelected && (
+              <>
+                <Grid2 container rowSpacing={3} columnSpacing={1}>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      // focused
+                      error={iaChannelError}
+                      //  color="error"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="ia_signal"
+                        value={iaSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setIaSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Ia Channel"
+                            sx={{ fontSize: "0.7rem" }}
+                          />
+                        )}
+                      />
+                      <FormHelperText>{iaChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      focused
+                      error={ibChannelError}
+                      color="warning"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="ib_signal"
+                        value={ibSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setIbSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Ib Channel"
+                          />
+                        )}
+                      />
+                      <FormHelperText>{ibChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      focused
+                      error={icChannelError}
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="ic_signal"
+                        value={icSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setIcSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Ic Channel"
+                          />
+                        )}
+                      />
+                      <FormHelperText>{icChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      focused
+                      error={inChannelError}
+                      color="success"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="in_signal"
+                        value={inSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setInSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="In Channel"
+                          />
+                        )}
+                      />
+                      <FormHelperText>{inChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                </Grid2>
+                <Grid2 container rowSpacing={3} columnSpacing={1}>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      focused
+                      error={vaChannelError}
+                      color="error"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="va_signal"
+                        value={vaSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setVaSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Va Channel"
+                          />
+                        )}
+                      />
+                      <FormHelperText>{vaChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      focused
+                      error={vbChannelError}
+                      color="warning"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="vb_signal"
+                        value={vbSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setVbSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Vb Channel"
+                          />
+                        )}
+                      />
+                      <FormHelperText>{vbChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      required
+                      focused
+                      error={vcChannelError}
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...analogChannelProps}
+                        id="vc_signal"
+                        value={vcSignal}
+                        onChange={(_event: any, newValue: string | null) => {
+                          setVcSignal(newValue == null ? "" : newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Vc Channel"
+                          />
+                        )}
+                      />
+                      <FormHelperText>{vcChannelErrorMsg}</FormHelperText>
+                    </FormControl>
+                  </Grid2>
+                </Grid2>
+                <Grid2 container rowSpacing={3} columnSpacing={1}>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d1_signal"
+                        value={d1Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD1Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 1"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d2_signal"
+                        value={d2Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD2Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 2"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d3_signal"
+                        value={d3Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD3Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 3"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d4_signal"
+                        value={d4Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD4Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 4"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                </Grid2>
+                <Grid2 container rowSpacing={3} columnSpacing={1}>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d5_signal"
+                        value={d5Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD5Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 5"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d6_signal"
+                        value={d6Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD6Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 6"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d7_signal"
+                        value={d7Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD7Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 7"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d8_signal"
+                        value={d8Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD8Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 8"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                </Grid2>
+                <Grid2 container rowSpacing={3} columnSpacing={1}>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d9_signal"
+                        value={d9Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD9Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 9"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d10_signal"
+                        value={d10Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD10Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 10"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d11_signal"
+                        value={d11Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD11Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 11"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                  <Grid2 xs={3}>
+                    <FormControl
+                      size="small"
+                      sx={{
+                        width: "100%",
+                      }}
+                      focused
+                      color="secondary"
+                    >
+                      <Autocomplete
+                        {...defaultProps}
+                        {...digitalChannelProps}
+                        id="d12_signal"
+                        value={d12Signal}
+                        onChange={(
+                          _event: any,
+                          newValue: { id: number; title: string } | null
+                        ) => {
+                          setD12Signal(
+                            newValue == null ? { id: 0, title: "" } : newValue
+                          );
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            label="Digital Channel 12"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  </Grid2>
+                </Grid2>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </form>
     );
   };
 
+  const ListStationDetails = () => {
+    let file: ComtradeFile;
+    let tempTable: {
+      id: number;
+      station: string;
+      start_time: string;
+      trigger_time: string;
+      ia: string;
+      ib: string;
+      ic: string;
+      in: string;
+      va: string;
+      vb: string;
+      vc: string;
+    }[] = [];
+
+    for (let i = 0; i < project.files.length; i++) {
+      file = project.files[i];
+      tempTable.push({
+        id: file.file_id,
+        station: file.station_name,
+        start_time: String(file.start_time_stamp),
+        trigger_time: String(file.trigger_time_stamp),
+        ia: file.ia_channel,
+        ib: file.ib_channel,
+        ic: file.ic_channel,
+        in: file.in_channel,
+        va: file.va_channel,
+        vb: file.vb_channel,
+        vc: file.vc_channel,
+      });
+    }
+    const rows = tempTable;
+
+    const columns: GridColDef<(typeof rows)[number]>[] = [
+      {
+        field: "actions",
+        type: "actions",
+        width: 20,
+        getActions: ({ id, row }) => {
+          return [
+            <GridActionsCellItem
+              icon={<DeleteForeverIcon color="error" />}
+              label="Delete station"
+              onClick={() => {
+                setSelectedRow(Number(id));
+                setSelectedStation(row.station);
+                setOpen(true);
+              }}
+            />,
+          ];
+        },
+      },
+      {
+        field: "station",
+        headerName: "STATION",
+        description: "Station Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        minWidth: 100,
+        width: 100,
+      },
+      {
+        field: "start_time",
+        // type: "dateTime",
+        // valueGetter: (value) => value && new Date(value),
+        headerName: "Start Time",
+        description: "Record Start Time",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "center",
+        align: "left",
+        //   minWidth: 70,
+        width: 180,
+      },
+      {
+        field: "trigger_time",
+        // type: "dateTime",
+        // valueGetter: (value) => value && new Date(value),
+        headerName: "Trigger Time",
+        description: "Record Trigger Time",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "center",
+        align: "left",
+        //   minWidth: 70,
+        width: 180,
+      },
+      {
+        field: "ia",
+        headerName: "IA-Channel",
+        description: "Ia - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+      {
+        field: "ib",
+        headerName: "IB-Channel",
+        description: "Ib - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+      {
+        field: "ic",
+        headerName: "IC-Channel",
+        description: "Ic - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+      {
+        field: "in",
+        headerName: "IN-Channel",
+        description: "In - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+      {
+        field: "va",
+        headerName: "VA-Channel",
+        description: "Va - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+      {
+        field: "vb",
+        headerName: "VB-Channel",
+        description: "Vb - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+      {
+        field: "vc",
+        headerName: "VC-Channel",
+        description: "Vc - Channel Name",
+        sortable: false,
+        headerClassName: "MuiDataGridPro-columnHeader--alignCenter",
+        headerAlign: "left",
+        align: "left",
+        width: 120,
+      },
+    ];
+
+    return (
+      <>
+        <CardContent>
+          {project.files.length > 0 ? (
+            <DataGridPro
+              rows={rows}
+              columns={columns}
+              hideFooterRowCount
+              checkboxSelection={false}
+              //disableRowSelectionOnClick
+              showCellVerticalBorder={true}
+              showColumnVerticalBorder={true}
+              disableColumnMenu={true}
+              rowHeight={60}
+              density={"compact"}
+              // slots={{ toolbar: CustomToolbar }}
+              sx={{
+                width: "100%",
+                height: "100%",
+                fontSize: "0.7rem",
+              }}
+              hideFooter={true}
+              onRowClick={onRowSelect}
+            />
+          ) : (
+            <Typography sx={{ fontSize: 13 }}>No Stations Added</Typography>
+          )}
+        </CardContent>
+        <Dialog
+          //  fullScreen={fullScreen}
+          open={open}
+          keepMounted
+        >
+          <DialogTitle id="responsive-dialog-title">
+            {"Delete Confirmation"}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete the {selectedStation} station ?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleOk} autoFocus>
+              Yes
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </>
+    );
+  };
+
   const resetAddFields = () => {
-    setIaSignal("");
-    setIbSignal("");
-    setIcSignal("");
-    setVaSignal("");
-    setVbSignal("");
-    setVcSignal("");
-    setD1Signal("");
-    setD2Signal("");
-    setD3Signal("");
-    setD4Signal("");
+    setIaSignal(null);
+    setIbSignal(null);
+    setIcSignal(null);
+    setInSignal(null);
+    setVaSignal(null);
+    setVbSignal(null);
+    setVcSignal(null);
+    setD1Signal(null);
+    setD2Signal(null);
+    setD3Signal(null);
+    setD4Signal(null);
+    setD5Signal(null);
+    setD6Signal(null);
+    setD7Signal(null);
+    setD8Signal(null);
+    setD9Signal(null);
+    setD10Signal(null);
+    setD11Signal(null);
+    setD12Signal(null);
+
+    setIaChannelErrorMsg("");
+    setIbChannelErrorMsg("");
+    setIcChannelErrorMsg("");
+    setInChannelErrorMsg("");
+    setVaChannelErrorMsg("");
+    setVbChannelErrorMsg("");
+    setVcChannelErrorMsg("");
+
+    setIaChannelError(false);
+    setIbChannelError(false);
+    setIcChannelError(false);
+    setInChannelError(false);
+    setVaChannelError(false);
+    setVbChannelError(false);
+    setVcChannelError(false);
 
     setCfgFileName("Select CFG File");
     setDatFileName("Select DAT File");
@@ -920,66 +1660,24 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
             </Typography>
           }
           sx={{ paddingBottom: 1, height: 60, borderBottom: 0.5 }}
+          action={
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddLocationIcon />}
+              sx={{ ml: 0 }}
+              onClick={() => {
+                setAddStationVisible(true);
+                setSelectedRow(-1);
+              }}
+              color="success"
+            >
+              Add Station
+            </Button>
+          }
         />
-        <CardContent>
-          {project.files.length !== 0 ? (
-            project.files.map((file: ComtradeFile) => (
-              <Box key={file.file_id}>
-                <Grid
-                  container
-                  display="flex"
-                  alignItems="baseline"
-                  alignContent="center"
-                  direction="row"
-                  sx={{ ml: 0 }}
-                >
-                  <Grid item xs={0.5}>
-                    <IconButton
-                      aria-label="delete"
-                      size="large"
-                      onClick={() => handleFileDelete(file.file_id)}
-                    >
-                      <DeleteForeverIcon fontSize="medium" color="error" />
-                    </IconButton>
-                  </Grid>
-
-                  <Grid item xs={1.5}>
-                    <Typography gutterBottom width="80px" variant="overline">
-                      {file.station_name}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={2.5}>
-                    <Typography gutterBottom width="200px" variant="overline">
-                      {String(file.start_time_stamp)}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={7}>
-                    <Typography gutterBottom variant="overline">
-                      Ia: {file.ia_channel}, Ib: {file.ib_channel}, Ic:{" "}
-                      {file.ic_channel}, Va: {file.va_channel}, Vb:
-                      {file.vb_channel}, Vc: {file.vc_channel}
-                    </Typography>
-                  </Grid>
-                </Grid>
-                <Divider variant="inset" />
-              </Box>
-            ))
-          ) : (
-            <Typography variant="overline">No Files uploaded</Typography>
-          )}
-          {fileAdding && <FileListSkeleton />}
-        </CardContent>
-        <CardActions
-          sx={{
-            backgroundColor: (theme) =>
-              theme.palette.mode === "light" ? "#EEEEEE" : "#323232",
-            mb: 0,
-          }}
-        >
-          <FileAddForm />
-        </CardActions>
+        {!addStationVisible && <ListStationDetails />}
+        {addStationVisible && <FileAddForm />}
       </Card>
     </>
   );
@@ -997,20 +1695,3 @@ const VisuallyHiddenInput = styled("input")({
   whiteSpace: "nowrap",
   width: 1,
 });
-
-const FileListSkeleton = () => {
-  return (
-    <Stack
-      display="flex"
-      alignItems="center"
-      direction="row"
-      spacing={3}
-      sx={{ ml: 4, mt: 1 }}
-    >
-      <Skeleton variant="circular" width="15px" />
-      <Skeleton variant="text" width="80px" />
-      <Skeleton variant="text" width="200px" />
-      <Skeleton variant="text" width="300px" />
-    </Stack>
-  );
-};

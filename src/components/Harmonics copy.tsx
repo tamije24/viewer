@@ -111,9 +111,9 @@ const Harmonics = ({
   useEffect(() => {
     // reset all data
     dataset = [];
-    let harmonicsRead = 0;
     if (dataIndex - secondaryIndex >= N && N > 0) {
       setHarmonicsLoading(true);
+      // get harmonics from backend
 
       // let results = JSON.parse(String(res.data));
       //       let m = 0;
@@ -123,26 +123,20 @@ const Harmonics = ({
       //         if (returned_fileid === project.files[k].file_id) m = k;
       //       }
 
-      // get harmonics from backend
-      for (let i = 0; i < selectedFile.length; i++) {
-        harmonicService
-          .getAllHarmonics(selectedFile[0], secondaryIndex, dataIndex, 1)
-          .then((res) => {
-            dataset = JSON.parse(String(res.data)).harmonics;
-            // setMaxHarmonic(5);
-            harmonicsRead = harmonicsRead + 1;
-            if (harmonicsRead >= selectedFile.length) {
-              setHarmonicsLoading(false);
-              setHarmonicsError("");
-            }
-          })
-          .catch((err) => {
-            if (err instanceof TypeError) return;
-            setHarmonicsError(err.message);
-            setHarmonicsLoading(false);
-            console.log("Error .. ", err.message);
-          });
-      }
+      harmonicService
+        .getAllHarmonics(selectedFile[0], secondaryIndex, dataIndex)
+        .then((res) => {
+          dataset = JSON.parse(String(res.data)).harmonics;
+          setHarmonicsLoading(false);
+          setHarmonicsError("");
+          // setMaxHarmonic(5);
+        })
+        .catch((err) => {
+          if (err instanceof TypeError) return;
+          setHarmonicsError(err.message);
+          setHarmonicsLoading(false);
+          console.log("Error .. ", err.message);
+        });
     }
   }, [selectedFile, secondaryIndex, dataIndex, samplingFrequency]);
 

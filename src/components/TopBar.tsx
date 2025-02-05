@@ -5,7 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import LogoutIcon from "@mui/icons-material/LogoutSharp";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import AdbSharpIcon from "@mui/icons-material/AdbSharp";
+import ThunderstormIcon from "@mui/icons-material/Thunderstorm";
 
 interface User {
   id: number;
@@ -36,9 +36,9 @@ const TopBar = ({ user, onLogoutRequest }: Props) => {
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
       >
         <Toolbar>
-          <AdbSharpIcon sx={{ ml: 0, mr: 2 }} />
+          <ThunderstormIcon sx={{ ml: 0, mr: 2 }} fontSize="large" />
           <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
-            Signal Analyser 4.0
+            Signal Analyser 1.0
           </Typography>
 
           {user.id !== 0 && (

@@ -107,7 +107,7 @@ const ChartFooter = ({
       <CardContent
         sx={{
           bgcolor: "secondary",
-          height: "70px",
+          height: "60px",
           paddingTop: 0,
           paddingLeft: 0,
           paddingRight: 0,

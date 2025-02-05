@@ -14,9 +14,12 @@ import SignIn from "./components/SignIn";
 import TopBar from "./components/TopBar";
 import Paper from "@mui/material/Paper";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
-import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
+import Grid from "@mui/material/Grid";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+//import {Typography } from "@mui/material";
 
-// import ChromeReaderModeIcon from "@mui/icons-material/ChromeReaderMode";
+import ChromeReaderModeIcon from "@mui/icons-material/ChromeReaderMode";
 // import MicrowaveIcon from "@mui/icons-material/Microwave";
 // import ViewArrayIcon from "@mui/icons-material/ViewArray";
 // import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
@@ -33,6 +36,7 @@ export interface AccessCodes {
 
 function App() {
   const [mode, setMode] = useState<"light" | "dark">("light");
+  const [navbarStatus, setNavbarStatus] = useState(true);
   const [sidebarStatus, setSidebarStatus] = useState(true);
   const [tooltipStatus, setTooltipStatus] = useState(true);
   const colorMode = useMemo(
@@ -118,6 +122,7 @@ function App() {
           {currentUser.id !== 0 ? (
             <MainComponent
               pointCount={pointCount === null ? 0 : parseInt(pointCount)}
+              navbarStatus={navbarStatus}
               sidebarStatus={sidebarStatus}
               tooltipStatus={tooltipStatus}
             />
@@ -170,7 +175,7 @@ function App() {
                 )}
               />
             </Grid>
-            <Grid item xs={3} sx={{ bgcolor: "" }}>
+            <Grid item xs={6} sx={{ bgcolor: "" }}>
               <BottomNavigation
                 showLabels
                 sx={{
@@ -205,6 +210,15 @@ function App() {
                 />
                 <BottomNavigationAction
                   sx={{ ml: 1 }}
+                  label={navbarStatus ? "hide nav bar" : "show nav bar"}
+                  value="navbar"
+                  icon={
+                    navbarStatus ? <ChromeReaderModeIcon /> : <WebAssetIcon />
+                  }
+                  onClick={() => setNavbarStatus(!navbarStatus)}
+                />
+                <BottomNavigationAction
+                  sx={{ ml: 1 }}
                   label={sidebarStatus ? "hide side bar" : "show side bar"}
                   value="sidebar"
                   icon={sidebarStatus ? <WebIcon /> : <WebAssetIcon />}
@@ -220,9 +234,9 @@ function App() {
               </BottomNavigation>
             </Grid>
 
-            <Grid
+            {/* <Grid
               item
-              xs={5}
+              xs={1}
               sx={{
                 display: "flex",
                 justifyContent: "flex-end",
@@ -232,10 +246,7 @@ function App() {
                 bgcolor: "",
               }}
             >
-              <Typography variant="caption" sx={{ fontSize: "0.6rem" }}>
-                Copyright © 2024 Tenaga Nasional Berhad. All Rights Reserved.
-              </Typography>
-            </Grid>
+            </Grid> */}
             {/* <Grid item>
               <ChromeReaderModeIcon />
               <MicrowaveIcon />

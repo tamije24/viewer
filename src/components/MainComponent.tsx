@@ -8,44 +8,74 @@ import AnalogChannels from "./AnalogChannels";
 import ChartComponent from "./ChartComponent";
 import DigitalChannels from "./DigitalChannels";
 import GeneralInfo from "./GeneralInfo";
+import MergeView from "./MergeView";
 import ProjectDetails from "./ProjectDetails";
 import ProjectList from "./ProjectList";
 import ProjectSettings from "./ProjectSettings";
 import ProjectToolbar from "./ProjectToolbar";
 
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+
 // Our Services
-import analogSignalService, {
-  AnalogSignal,
-} from "../services/analog-signal-service";
-import digitalSignalService, {
-  DigitalSignal,
-} from "../services/digital-signal-service";
-import phasorService, { Phasor } from "../services/phasor-service";
-// import harmonicService, { Harmonic } from "../services/harmonic-service";
+import analogSignalService from "../services/analog-signal-service";
+import digitalSignalService from "../services/digital-signal-service";
+import phasorService from "../services/phasor-service";
 import projectService, { Project } from "../services/project-service";
 import { ComtradeFile } from "../services/comtrade-file-service";
 import analogChannelService, {
   AnalogChannel,
 } from "../services/analog-channel-service";
 
-let analogSignals: AnalogSignal[][] = [];
-let digitalSignals: DigitalSignal[][] = [];
-let dftPhasors: Phasor[][] = [];
+import { GridRowSelectionModel } from "@mui/x-data-grid-pro";
+import resampleService from "../services/resample-service";
+import Button from "@mui/material/Button";
+
+let analogSignals: number[][][] = [];
+let digitalSignals: number[][][] = [];
+let timeValues: number[][] = [];
+let timeStamps: string[][] = [];
+let dftPhasors: number[][][] = [];
 let analogChannelInfo: AnalogChannel[][] = [];
 let analogSignalNames: string[][] = [];
 let digitalSignalNames: string[][] = [];
+let digitalChannelCount: number[] = [];
 
-let tableValues: {
-  id: string;
-  channel: string;
-  unit: string;
-  inst: number;
-  phasor_mag: number;
-  phasor_ang: number;
-  true_rms: number;
-  pos_peak: number;
-  neg_peak: number;
-}[] = [];
+let merge_type: string = "";
+let sampling_frequency_merged: number = 0;
+let timeValues_tomerge: number[][] = [];
+let timeStamps_tomerge: string[][] = [];
+let analogSignals_tomerge: number[][][] = [];
+let digitalSignals_tomerge: number[][][] = [];
+let dftPhasors_tomerge: number[][][] = [];
+
+let resampleDone: boolean[] = [];
+let analogDataReceived: boolean[] = [];
+let digitalDataReceived: boolean[] = [];
+let phasorDataReceived: boolean[] = [];
+
+let selectedIndex = 0;
+let tempRowSelectionModel: GridRowSelectionModel[] = [];
+let tempDigitalRowSelectionModel: GridRowSelectionModel[] = [];
+
+let merged_files: number[] = [];
+// let tempAxisClick = [
+//   {
+//     dataIndex: 0,
+//     dataIndexReduced: 0,
+//     axisValue: 0,
+//     timestamp: "",
+//     secondaryIndex: 0,
+//     secondaryIndexReduced: 0,
+//     secondaryValue: 0,
+//     secondaryTimestamp: "",
+//   },
+// ];
+
+//let rowSelectionModel: GridRowSelectionModel[];
 
 const emptyFile: ComtradeFile = {
   file_id: 0,
@@ -58,9 +88,11 @@ const emptyFile: ComtradeFile = {
   trigger_time_stamp: new Date(),
   line_frequency: 0,
   sampling_frequency: 0,
+  resampled_frequency: 0,
   ia_channel: "",
   ib_channel: "",
   ic_channel: "",
+  in_channel: "",
   va_channel: "",
   vb_channel: "",
   vc_channel: "",
@@ -68,6 +100,14 @@ const emptyFile: ComtradeFile = {
   d2_channel: "",
   d3_channel: "",
   d4_channel: "",
+  d5_channel: "",
+  d6_channel: "",
+  d7_channel: "",
+  d8_channel: "",
+  d9_channel: "",
+  d10_channel: "",
+  d11_channel: "",
+  d12_channel: "",
 };
 
 const emptyProject: Project = {
@@ -84,11 +124,17 @@ const emptyProject: Project = {
 
 interface Props {
   pointCount: number;
+  navbarStatus: boolean;
   sidebarStatus: boolean;
   tooltipStatus: boolean;
 }
 
-const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
+const MainComponent = ({
+  pointCount,
+  navbarStatus,
+  sidebarStatus,
+  tooltipStatus,
+}: Props) => {
   const [presentZoomValues, setPresentZoomValues] = useState([
     {
       startPercent: 0,
@@ -97,6 +143,21 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
       endTime: 0,
     },
   ]);
+
+  // let axisClick = [
+  //   {
+  //     dataIndex: 0,
+  //     dataIndexReduced: 0,
+  //     axisValue: 0,
+  //     timestamp: "",
+  //     secondaryIndex: 0,
+  //     secondaryIndexReduced: 0,
+  //     secondaryValue: 0,
+  //     secondaryTimestamp: "",
+  //   },
+  // ];
+
+  // const [axisClicked, setAxisClicked] = useState(false);
 
   const [axisClick, setAxisClick] = useState([
     {
@@ -111,10 +172,26 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
     },
   ]);
 
+  const [rowSelectionModel, setRowSelectionModel] = useState<
+    GridRowSelectionModel[]
+  >([]);
+
+  const [digitalRowSelectionModel, setDigitalRowSelectionModel] = useState<
+    GridRowSelectionModel[]
+  >([]);
+
   const [selectedProject, setSelectedProject] = useState<Project>(emptyProject);
   const [selectedFile, setSelectedFile] = useState<number | null>(null);
   const [selectedPage, setSelectedPage] = useState("ProjectList");
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  //const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const [mergeViewEnabled, setMergeViewEnabled] = useState(false);
+  const [selectedMergeType, setSelectedMergeType] = useState("");
+  const [mergeError, setMergeError] = useState(false);
+  const [mergeErrorMessage, setMergeErrorMessage] = useState("");
+
+  const [resampleLoading, setResampleLoading] = useState(false);
+  const [resampleMessage, setResampleMessage] = useState("");
 
   const [navigationPages, setNavigationPages] = useState([""]);
   const [navigationHeader, setNavigationHeader] = useState("");
@@ -132,7 +209,14 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const handleSelectNavItem = (pageName: string, file_index?: number) => {
     setSelectedPage(pageName);
-    setSelectedIndex(file_index ? file_index : 0);
+
+    if (pageName === "MergeSingleView" || pageName === "MergeMultipleView") {
+      //setSelectedIndex(selectedProject.files.length);
+      selectedIndex = selectedProject.files.length;
+    } else {
+      // setSelectedIndex(file_index ? file_index : 0);
+      selectedIndex = file_index ? file_index : 0;
+    }
 
     if (file_index !== undefined && selectedProject !== null) {
       let file_id = selectedProject.files[file_index].file_id;
@@ -159,6 +243,8 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
       : console.log("no project!");
     setNavigationPages(navPages);
 
+    // Reset merge view type
+    setSelectedMergeType("");
     // Get signals from backend
     getSignalsFromBackend(project);
   };
@@ -176,6 +262,7 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
     secondaryTimestamp: string
   ) => {
     let aValue = [...axisClick];
+
     aValue[selectedIndex] = {
       dataIndex: dataIndex,
       dataIndexReduced: dataIndexReduced,
@@ -186,14 +273,44 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
       secondaryValue: secondaryValue,
       secondaryTimestamp: secondaryTimestamp,
     };
-
-    // console.log(axisClick);
-    // console.log(selectedIndex);
-    // console.log("main component: ", dataIndex, dataIndexReduced);
-    // console.log(aValue);
-
     setAxisClick(aValue);
+
+    // axisClick[selectedIndex] = {
+    //   dataIndex: dataIndex,
+    //   dataIndexReduced: dataIndexReduced,
+    //   axisValue: axisValue,
+    //   timestamp: timestamp,
+    //   secondaryIndex: secondaryIndex,
+    //   secondaryIndexReduced: secondaryIndexReduced,
+    //   secondaryValue: secondaryValue,
+    //   secondaryTimestamp: secondaryTimestamp,
+    // };
   };
+
+  const handleAnalogModelChange = (
+    newRowSelectionModel: GridRowSelectionModel
+  ) => {
+    if (tempRowSelectionModel[selectedIndex] !== newRowSelectionModel) {
+      tempRowSelectionModel[selectedIndex] = newRowSelectionModel;
+      setRowSelectionModel([...tempRowSelectionModel]);
+    }
+  };
+
+  const handleDigitalModelChange = (
+    newRowSelectionModel: GridRowSelectionModel
+  ) => {
+    if (
+      tempDigitalRowSelectionModel[selectedIndex] !== newRowSelectionModel &&
+      newRowSelectionModel.length !== 0
+    ) {
+      tempDigitalRowSelectionModel[selectedIndex] = newRowSelectionModel;
+      setDigitalRowSelectionModel([...tempDigitalRowSelectionModel]);
+    }
+  };
+
+  // HELPER FUNCTIONS
+  const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
+  const strArrayColumn = (arr: string[][], n: number) => arr.map((x) => x[n]);
 
   const changePresentZoomLimit = (zoomValues: {
     startPercent: number;
@@ -202,6 +319,17 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
     endTime: number;
   }) => {
     let newZb = [...presentZoomValues];
+
+    // for (let i = 0; i < selectedIndex; i++) {
+    //   if (newZb[selectedIndex] === undefined) {
+    //     newZb[i] = {
+    //       startPercent: 0,
+    //       endPercent: 100,
+    //       startTime: 0,
+    //       endTime: 100,
+    //     };
+    //   }
+    // }
     newZb[selectedIndex] = {
       startPercent: zoomValues.startPercent,
       endPercent: zoomValues.endPercent,
@@ -209,120 +337,7 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
       endTime: zoomValues.endTime,
     };
 
-    // console.log(
-    //   "chart comp - : ",
-    //   zoomValues.startPercent,
-    //   zoomValues.endPercent
-    // );
-
     setPresentZoomValues(newZb);
-  };
-
-  const fillSideTable = () => {
-    if (axisClick[selectedIndex] === undefined) {
-      tableValues = [];
-      return;
-    }
-
-    let dataIndex = axisClick[selectedIndex].dataIndex;
-    let secondaryIndex = axisClick[selectedIndex].secondaryIndex;
-
-    // reset table values
-    tableValues = [];
-
-    // Set table values to be displayed
-    let names: string[] = [];
-    if (analogSignalNames[selectedIndex] !== undefined) {
-      names = [...analogSignalNames[selectedIndex]];
-    } else {
-      return;
-    }
-
-    let units: string[] = [];
-    if (analogChannelInfo[selectedIndex] !== undefined && names.length > 0) {
-      names.forEach((channel) => {
-        analogChannelInfo[selectedIndex].forEach((ac) => {
-          ac.channel_name === channel ? units.push(ac.unit) : "";
-        });
-      });
-    } else {
-      return;
-    }
-
-    let sample_values =
-      analogSignals[selectedIndex] !== undefined &&
-      analogSignals[selectedIndex].length > 0
-        ? Object.values(analogSignals[selectedIndex][dataIndex])
-        : new Array(analogSignals.length).fill(0);
-
-    let phasor_values =
-      dftPhasors[selectedIndex] !== undefined &&
-      dftPhasors[selectedIndex].length > 0
-        ? Object.values(dftPhasors[selectedIndex][dataIndex])
-        : new Array((analogSignals.length - 1) * 2).fill(0);
-
-    // get range of values between primary and secondary cursors
-    const arrayColumn = (arr: number[][], n: number) => arr.map((x) => x[n]);
-
-    let ind: { start: number; end: number } =
-      dataIndex > secondaryIndex
-        ? { start: secondaryIndex, end: dataIndex }
-        : { start: dataIndex, end: secondaryIndex };
-
-    const a_sig = [];
-    for (let i = ind.start; i < ind.end; i++) {
-      let value = Object.values(analogSignals[selectedIndex][i]);
-      a_sig.push(value);
-    }
-
-    // indexes for rms
-    let fs = selectedProject.files[selectedIndex].sampling_frequency;
-    let N = Math.round(fs / 50);
-    let end_rms = dataIndex;
-    let start_rms = dataIndex > N ? dataIndex - N + 1 : 0;
-    const a_sig_rms = [];
-    for (let i = start_rms; i < end_rms + 1; i++) {
-      let value = Object.values(analogSignals[selectedIndex][i]);
-      a_sig_rms.push(value);
-    }
-
-    let id = ["IA", "IB", "IC", "VA", "VB", "VC"];
-    for (let i = 0; i < names.length; i++) {
-      let label = names[i];
-      let unit = units[i];
-      let positivePeak =
-        a_sig.length > 0 ? Math.max(...arrayColumn(a_sig, i + 1)) : 0;
-      let negativePeak =
-        a_sig.length > 0 ? Math.min(...arrayColumn(a_sig, i + 1)) : 0;
-
-      let rowValue = {
-        id: id[i],
-        channel: label,
-        unit: unit,
-        inst: sample_values[i + 1],
-        phasor_mag: phasor_values[2 * i],
-        phasor_ang: phasor_values[2 * i + 1],
-        true_rms: calculateRMS([...arrayColumn(a_sig_rms, i + 1)]),
-        pos_peak: positivePeak,
-        neg_peak: negativePeak,
-      };
-      tableValues.push(rowValue);
-    }
-  };
-
-  const calculateRMS = (values: number[]) => {
-    let N = values.length;
-
-    // squaring values
-    let rmsValue = 0;
-    for (let i = 0; i < N; i++) {
-      rmsValue = rmsValue + values[i] * values[i];
-    }
-
-    // root and mean
-    rmsValue = Math.sqrt(rmsValue / N);
-
-    return rmsValue;
   };
 
   const getSignalsFromBackend = (project: Project) => {
@@ -343,10 +358,22 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const getAnalogSignals = (project: Project) => {
     // reset all data
+    timeValues = [];
+    timeStamps = [];
+    analogSignals = [];
+    analogSignalNames = [];
+    //    let newRowSelectionModel: GridRowSelectionModel[] = [];
+
+    tempRowSelectionModel = [];
     for (let i = 0; i < project.files.length; i++) {
+      timeValues.push([]);
+      timeStamps.push([]);
       analogSignals.push([]);
       analogSignalNames.push([]);
+      tempRowSelectionModel.push([]);
     }
+    // add one more row for merge view
+    tempRowSelectionModel.push([]);
 
     // get analog signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -357,7 +384,7 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         setAsigLoading(a);
 
         analogSignalService
-          .getAllAnalogSignals(file_id)
+          .getAllAnalogSignals(file_id, 1)
           .then((res) => {
             // check which file has returned
             let results = JSON.parse(String(res.data));
@@ -371,17 +398,48 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
               project.files[m].ia_channel,
               project.files[m].ib_channel,
               project.files[m].ic_channel,
+              project.files[m].in_channel,
               project.files[m].va_channel,
               project.files[m].vb_channel,
               project.files[m].vc_channel,
             ];
-
-            analogSignals[m] = results.signals;
             analogSignalNames[m] = [...sig_names];
+
+            const analogSignals_split: any[] = [];
+            let L = results.signals.length;
+            for (let i = 0; i < L; i++) {
+              let value = Object.values(results.signals[i]);
+              analogSignals_split.push(value);
+            }
+
+            timeValues[m] = [];
+            timeValues[m] = arrayColumn(analogSignals_split, 7);
+            timeStamps[m] = [];
+            timeStamps[m] = strArrayColumn(analogSignals_split, 8);
+
+            analogSignals[m] = [];
+            for (let i = 0; i < 7; i++) {
+              analogSignals[m].push(arrayColumn(analogSignals_split, i));
+            }
+
+            let n = m + 1;
+            tempRowSelectionModel[m] = [
+              "IA-" + n,
+              "IB-" + n,
+              "IC-" + n,
+              "IN-" + n,
+              "VA-" + n,
+              "VB-" + n,
+              "VC-" + n,
+            ];
+
+            setRowSelectionModel([...tempRowSelectionModel]);
 
             a = [...asigLoading];
             a[m] = false;
             setAsigLoading(a);
+
+            setMergeViewEnabled(checkIfMergeViewPossible(project.files.length));
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
@@ -400,10 +458,19 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const getDigitalSignals = (project: Project) => {
     // reset all data
+    digitalSignals = [];
+    digitalSignalNames = [];
+    digitalChannelCount = [];
+
+    tempDigitalRowSelectionModel = [];
     for (let i = 0; i < project.files.length; i++) {
       digitalSignals.push([]);
       digitalSignalNames.push([]);
+      tempDigitalRowSelectionModel.push([]);
+      digitalChannelCount.push(0);
     }
+    // add one more row for merge view
+    tempDigitalRowSelectionModel.push([]);
 
     // get digital signals from backend
     if (project !== null && project.files.length !== 0) {
@@ -414,7 +481,7 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         setDsigLoading(a);
 
         digitalSignalService
-          .getAllDigitalSignals(file_id)
+          .getAllDigitalSignals(file_id, 1)
           .then((res) => {
             // check which file has returned
             let results = JSON.parse(String(res.data));
@@ -429,14 +496,57 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
               project.files[m].d2_channel,
               project.files[m].d3_channel,
               project.files[m].d4_channel,
+              project.files[m].d5_channel,
+              project.files[m].d6_channel,
+              project.files[m].d7_channel,
+              project.files[m].d8_channel,
+              project.files[m].d9_channel,
+              project.files[m].d10_channel,
+              project.files[m].d11_channel,
+              project.files[m].d12_channel,
             ];
 
-            digitalSignals[m] = results.signals;
-            digitalSignalNames[m] = [...sig_names];
+            digitalSignalNames[m] = [];
+            for (let i = 0; i < sig_names.length; i++) {
+              if (sig_names[i] !== "") digitalSignalNames[m].push(sig_names[i]);
+            }
+            // digitalSignalNames[m] = [...sig_names];
+
+            const digitalSignals_split: any[] = [];
+            let L = results.signals.length;
+            //let factor = 0.3;
+            for (let i = 0; i < L; i++) {
+              let value = Object.values(results.signals[i]);
+              for (let j = 0; j < value.length; j++) {
+                //value[j] = factor * Number(value[j]) + j + factor;
+                value[j] = Number(value[j]);
+              }
+              digitalSignals_split.push(value);
+            }
+
+            digitalSignals[m] = [];
+            for (let i = 0; i < digitalSignals_split[0].length; i++) {
+              if (sig_names[i] !== "")
+                digitalSignals[m].push(arrayColumn(digitalSignals_split, i));
+            }
+
+            let n = m + 1;
+            let temp = [];
+            for (let i = 1; i <= digitalSignalNames[m].length; i++) {
+              temp.push("D" + i + "-" + n);
+            }
+            //     let tempFull = [...digitalRowSelectionModel];
+            let tempRow: GridRowSelectionModel = temp;
+            tempDigitalRowSelectionModel[m] = tempRow;
+            setDigitalRowSelectionModel([...tempDigitalRowSelectionModel]);
+
+            digitalChannelCount[m] = digitalSignalNames[m].length;
 
             a = [...dsigLoading];
             a[m] = false;
             setDsigLoading(a);
+
+            setMergeViewEnabled(checkIfMergeViewPossible(project.files.length));
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
@@ -455,8 +565,10 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
 
   const getPhasors = (project: Project) => {
     // reset all data
+    let phLoading: boolean[] = [];
     for (let i = 0; i < project.files.length; i++) {
       dftPhasors.push([]);
+      phLoading.push(true);
     }
 
     // get phasors from backend
@@ -468,7 +580,7 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         setPhasorLoading(a);
 
         phasorService
-          .getAllAPhasors(file_id)
+          .getAllAPhasors(file_id, 1)
           .then((res) => {
             let results = JSON.parse(String(res.data));
             let m = 0;
@@ -477,10 +589,21 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
               if (returned_fileid === project.files[k].file_id) m = k;
             }
 
-            dftPhasors[m] = results.phasors;
-            a = [...phasorLoading];
-            a[m] = false;
-            setPhasorLoading(a);
+            const phasors_split: any[] = [];
+            let L = results.phasors.length;
+            for (let i = 0; i < L; i++) {
+              let value = Object.values(results.phasors[i]);
+              phasors_split.push(value);
+            }
+
+            dftPhasors[m] = [];
+            for (let i = 0; i < 14; i++) {
+              dftPhasors[m].push(arrayColumn(phasors_split, i));
+            }
+
+            phLoading[m] = false;
+            setPhasorLoading(phLoading);
+            setMergeViewEnabled(checkIfMergeViewPossible(project.files.length));
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
@@ -520,7 +643,6 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
               let returned_fileid = res.data[0].file;
               if (returned_fileid === project.files[k].file_id) m = k;
             }
-
             analogChannelInfo[m] = res.data;
             a = [...analogChannelLoading];
             a[m] = false;
@@ -536,6 +658,549 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
     }
   };
 
+  const checkIfMergeViewPossible = (fileCount: number) => {
+    for (let i = 0; i < fileCount; i++) {
+      if (analogSignals[i].length === 0) return false;
+      if (digitalSignals[i].length === 0) return false;
+      if (dftPhasors[i].length === 0) return false;
+    }
+    return true;
+  };
+
+  const handleMerging = (newMergeType: string) => {
+    merge_type = newMergeType;
+
+    let file_count = selectedProject.files.length;
+
+    analogSignals[file_count] === undefined
+      ? analogSignals.push([])
+      : (analogSignals[file_count] = []);
+    digitalSignals[file_count] === undefined
+      ? digitalSignals.push([])
+      : (digitalSignals[file_count] = []);
+
+    timeValues[file_count] === undefined
+      ? timeValues.push([])
+      : (timeValues[file_count] = []);
+    timeStamps[file_count] === undefined
+      ? timeStamps.push([])
+      : (timeStamps[file_count] = []);
+    analogChannelInfo[file_count] === undefined
+      ? analogChannelInfo.push([])
+      : (analogChannelInfo[file_count] = []);
+    analogSignalNames[file_count] === undefined
+      ? analogSignalNames.push([])
+      : (analogSignalNames[file_count] = []);
+    digitalSignalNames[file_count] === undefined
+      ? digitalSignalNames.push([])
+      : (digitalSignalNames[file_count] = []);
+
+    dftPhasors[file_count] === undefined
+      ? dftPhasors.push([])
+      : (dftPhasors[file_count] = []);
+
+    let sampling_frequencies = [];
+    merged_files = [];
+    for (let i = 0; i < file_count; i++) {
+      sampling_frequencies.push(selectedProject.files[i].sampling_frequency);
+      merged_files.push(selectedProject.files[i].file_id);
+    }
+
+    // Check if sampling frequencies of all ends are same
+    if (sampling_frequencies.every((val, _i, arr) => val === arr[0])) {
+      // all sampling frequencies equal
+      sampling_frequency_merged = sampling_frequencies[0];
+      timeValues_tomerge = timeValues;
+      timeStamps_tomerge = timeStamps;
+      analogSignals_tomerge = analogSignals;
+      digitalSignals_tomerge = digitalSignals;
+      dftPhasors_tomerge = dftPhasors;
+
+      mergeWaveforms();
+    } else {
+      // all sampling frequencies are not equal
+      handleResampling(sampling_frequencies);
+    }
+  };
+
+  const handleResampling = (sampling_frequencies: number[]) => {
+    let max_samp_freq = Math.max(...sampling_frequencies);
+    let file_count = selectedProject.files.length;
+
+    resampleDone = new Array(file_count).fill(true);
+
+    sampling_frequency_merged = max_samp_freq;
+
+    for (let i = 0; i < file_count; i++) {
+      if (selectedProject.files[i].sampling_frequency < max_samp_freq) {
+        timeValues_tomerge[i] = [];
+        timeStamps_tomerge[i] = [];
+        analogSignals_tomerge[i] = [];
+        digitalSignals_tomerge[i] = [];
+        dftPhasors_tomerge[i] = [];
+
+        resampleDone[i] = false;
+        resampleSignals(selectedProject.files[i].file_id, max_samp_freq);
+      } else {
+        timeValues_tomerge[i] = timeValues[i];
+        timeStamps_tomerge[i] = timeStamps[i];
+        analogSignals_tomerge[i] = analogSignals[i];
+        digitalSignals_tomerge[i] = digitalSignals[i];
+        dftPhasors_tomerge[i] = dftPhasors[i];
+      }
+    }
+    setResampleMessage("Resampling ... ");
+    setResampleLoading(true);
+
+    // setMergeError(true);
+    // setMergeErrorMessage(
+    //   "Unable to merge waveforms of different sampling frequencies"
+    // );
+  };
+
+  const resampleSignals = (file_id: number, new_samp_rate: number) => {
+    resampleService
+      .doResample(file_id, new_samp_rate)
+      .then((res) => {
+        // check which file is returning
+
+        if (res.status === 201) {
+          let returned_file_id = res.data;
+
+          for (let i = 0; i < selectedProject.files.length; i++) {
+            if (selectedProject.files[i].file_id === returned_file_id) {
+              resampleDone[i] = true;
+              break;
+            }
+          }
+
+          let resetLoading = true;
+          for (let i = 0; i < selectedProject.files.length; i++) {
+            if (resampleDone[i] === false) {
+              resetLoading = false;
+            }
+          }
+          if (resetLoading === true) {
+            getResampledSignalsFromBackend(new_samp_rate);
+          }
+        } else {
+          console.log(res.statusText);
+          setResampleMessage(res.statusText);
+        }
+      })
+      .catch((err) => {
+        if (err instanceof TypeError) return;
+        console.log("Error: ", err.message);
+      });
+  };
+
+  const getResampledSignalsFromBackend = (new_samp_rate: number) => {
+    console.log("getting resampled signals from backend");
+
+    let file_count = selectedProject.files.length;
+    analogDataReceived = new Array(file_count).fill(false);
+    digitalDataReceived = new Array(file_count).fill(false);
+    phasorDataReceived = new Array(file_count).fill(false);
+
+    setResampleMessage("Getting data from backend ...");
+
+    // get analog signals
+    getResampledAnalogSignals(new_samp_rate);
+    // get digital signals
+    getResampledDigitalSignals(new_samp_rate);
+    // get phasors
+    getResampledPhasors(new_samp_rate);
+  };
+
+  const getResampledAnalogSignals = (new_samp_rate: number) => {
+    // get analog signals from backend
+    if (selectedProject !== null && selectedProject.files.length !== 0) {
+      for (let i = 0; i < selectedProject.files.length; i++) {
+        if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
+          let file_id = selectedProject.files[i].file_id;
+          analogSignalService
+            .getAllAnalogSignals(file_id, 2)
+            .then((res) => {
+              // check which file has returned
+              let results = JSON.parse(String(res.data));
+              let m = 0;
+              let returned_fileid = results.file;
+              for (let k = 0; k < selectedProject.files.length; k++) {
+                if (returned_fileid === selectedProject.files[k].file_id) m = k;
+              }
+
+              const analogSignals_split: any[] = [];
+              let L = results.signals.length;
+              for (let i = 0; i < L; i++) {
+                let value = Object.values(results.signals[i]);
+                analogSignals_split.push(value);
+              }
+
+              timeValues_tomerge[m] = arrayColumn(analogSignals_split, 7);
+              timeStamps_tomerge[m] = strArrayColumn(analogSignals_split, 8);
+
+              for (let i = 0; i < 7; i++) {
+                analogSignals_tomerge[m].push(
+                  arrayColumn(analogSignals_split, i)
+                );
+              }
+              analogDataReceived[m] = true;
+
+              if (checkIfAllSignalsReceived()) {
+                mergeWaveforms();
+                setResampleLoading(false);
+              }
+            })
+            .catch((err) => {
+              if (err instanceof TypeError) return;
+              console.log("Error:", err);
+            });
+        } else {
+          analogDataReceived[i] = true;
+        }
+      }
+    }
+  };
+
+  const getResampledDigitalSignals = (new_samp_rate: number) => {
+    // get digital signals from backend
+    if (selectedProject !== null && selectedProject.files.length !== 0) {
+      for (let i = 0; i < selectedProject.files.length; i++) {
+        if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
+          let file_id = selectedProject.files[i].file_id;
+          digitalSignalService
+            .getAllDigitalSignals(file_id, 1)
+            .then((res) => {
+              // check which file has returned
+              let results = JSON.parse(String(res.data));
+              let m = 0;
+              let returned_fileid = results.file;
+
+              for (let k = 0; k < selectedProject.files.length; k++) {
+                if (returned_fileid === selectedProject.files[k].file_id) m = k;
+              }
+              let sig_names = [
+                selectedProject.files[m].d1_channel,
+                selectedProject.files[m].d2_channel,
+                selectedProject.files[m].d3_channel,
+                selectedProject.files[m].d4_channel,
+                selectedProject.files[m].d5_channel,
+                selectedProject.files[m].d6_channel,
+                selectedProject.files[m].d7_channel,
+                selectedProject.files[m].d8_channel,
+                selectedProject.files[m].d9_channel,
+                selectedProject.files[m].d10_channel,
+                selectedProject.files[m].d11_channel,
+                selectedProject.files[m].d12_channel,
+              ];
+
+              const digitalSignals_split: any[] = [];
+              let L = results.signals.length;
+              for (let i = 0; i < L; i++) {
+                let value = Object.values(results.signals[i]);
+                for (let j = 0; j < value.length; j++) {
+                  value[j] = Number(value[j]);
+                }
+                digitalSignals_split.push(value);
+              }
+
+              for (let i = 0; i < digitalSignals_split[0].length; i++) {
+                if (sig_names[i] !== "")
+                  digitalSignals_tomerge[m].push(
+                    arrayColumn(digitalSignals_split, i)
+                  );
+              }
+              digitalDataReceived[i] = true;
+              if (checkIfAllSignalsReceived()) {
+                mergeWaveforms();
+                setResampleLoading(false);
+              }
+            })
+            .catch((err) => {
+              if (err instanceof TypeError) return;
+              console.log("Error:", err);
+            });
+        } else {
+          digitalDataReceived[i] = true;
+        }
+      }
+    }
+  };
+
+  const getResampledPhasors = (new_samp_rate: number) => {
+    // get phasors from backend
+    if (selectedProject !== null && selectedProject.files.length !== 0) {
+      for (let i = 0; i < selectedProject.files.length; i++) {
+        if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
+          let file_id = selectedProject.files[i].file_id;
+          phasorService
+            .getAllAPhasors(file_id, 1)
+            .then((res) => {
+              let results = JSON.parse(String(res.data));
+              let m = 0;
+              let returned_fileid = results.file;
+              for (let k = 0; k < selectedProject.files.length; k++) {
+                if (returned_fileid === selectedProject.files[k].file_id) m = k;
+              }
+
+              const phasors_split: any[] = [];
+              let L = results.phasors.length;
+              for (let i = 0; i < L; i++) {
+                let value = Object.values(results.phasors[i]);
+                phasors_split.push(value);
+              }
+              for (let i = 0; i < 14; i++) {
+                dftPhasors_tomerge[m].push(arrayColumn(phasors_split, i));
+              }
+              phasorDataReceived[m] = true;
+              if (checkIfAllSignalsReceived()) {
+                mergeWaveforms();
+                setResampleLoading(false);
+              }
+            })
+            .catch((err) => {
+              if (err instanceof TypeError) return;
+              console.log("Error:", err);
+            });
+        } else {
+          phasorDataReceived[i] = true;
+        }
+      }
+    }
+  };
+
+  const checkIfAllSignalsReceived = () => {
+    let file_count = selectedProject.files.length;
+    for (let i = 0; i < file_count; i++) {
+      if (analogDataReceived[i] === false) return false;
+      if (digitalDataReceived[i] === false) return false;
+      if (phasorDataReceived[i] === false) return false;
+    }
+    return true;
+  };
+
+  const mergeWaveforms = () => {
+    // Set this so that the plots types start to be visible in the neavigation bar
+    setSelectedMergeType(merge_type);
+
+    let file_count = selectedProject.files.length;
+    let indexes: { error: string; startIndex: number[]; endIndex: number[] } = {
+      error: "",
+      startIndex: [],
+      endIndex: [],
+    };
+
+    if (merge_type === "real") {
+      indexes = mergeByRealTime(file_count, timeValues_tomerge);
+    } else if (merge_type === "trigger") {
+      indexes = mergeByTriggerTime(file_count, timeValues_tomerge);
+    } else if (merge_type === "manual") {
+      indexes = mergeByManualSelection(file_count, timeValues_tomerge);
+    }
+
+    let startIndex = indexes.startIndex;
+    let endIndex = indexes.endIndex;
+
+    if (indexes.startIndex.length > 0) {
+      // MERGE SIGNALS BASED ON START AND END INDEXES
+
+      // Merged time signals
+      timeValues[file_count] = timeValues_tomerge[0].slice(
+        startIndex[0],
+        endIndex[0]
+      );
+      timeStamps[file_count] = timeStamps_tomerge[0].slice(
+        startIndex[0],
+        endIndex[0]
+      );
+
+      let tempAnalog: string[] = []; // no analog channel is selected
+      let tempDigital: string[] = []; //no digital channel is selected
+
+      for (let i = 0; i < file_count; i++) {
+        // Merged analog signals
+        for (let j = 0; j < analogSignals[i].length; j++) {
+          analogSignals[file_count].push(
+            analogSignals_tomerge[i][j].slice(startIndex[i], endIndex[i])
+          );
+          analogSignalNames[file_count].push(analogSignalNames[i][j]);
+          analogChannelInfo[file_count].push(analogChannelInfo[i][j]);
+        }
+
+        // Merged digital signals
+        for (let j = 0; j < digitalSignals[i].length; j++) {
+          digitalSignals[file_count].push(
+            digitalSignals_tomerge[i][j].slice(startIndex[i], endIndex[i])
+          );
+          digitalSignalNames[file_count].push(digitalSignalNames[i][j]);
+        }
+
+        // Merged phasors
+        for (let j = 0; j < dftPhasors[i].length; j++) {
+          dftPhasors[file_count].push(
+            dftPhasors_tomerge[i][j].slice(startIndex[i], endIndex[i])
+          );
+        }
+      }
+
+      let fullAnalog: GridRowSelectionModel = tempAnalog;
+      let fullDigital: GridRowSelectionModel = tempDigital;
+
+      tempRowSelectionModel[file_count] = fullAnalog;
+      setRowSelectionModel([...tempRowSelectionModel]);
+
+      tempDigitalRowSelectionModel[file_count] = fullDigital;
+      setDigitalRowSelectionModel([...tempDigitalRowSelectionModel]);
+
+      setMergeErrorMessage("");
+    } else {
+      setMergeError(true);
+      if (indexes.error === "")
+        setMergeErrorMessage("Unable to merge waveforms");
+      else setMergeErrorMessage(indexes.error);
+    }
+  };
+
+  const mergeByRealTime = (
+    file_count: number,
+    timeValues_tomerge: number[][]
+  ) => {
+    let error = "";
+    let startTimes = [];
+    let endTimes = [];
+
+    let duration = [];
+    for (let i = 0; i < file_count; i++) {
+      // GET AND CONVERT TIMES TO MILLISECONDS SINCE EPOCH
+      startTimes.push(
+        new Date(selectedProject.files[i].start_time_stamp).getTime()
+      );
+
+      // Convert time to microseconds
+      startTimes[i] = startTimes[i] * 1000;
+
+      // Add micro seconds portion of the time stamp to the above times
+      startTimes[i] =
+        startTimes[i] +
+        Number(String(selectedProject.files[i].start_time_stamp).slice(20, 26));
+
+      // Convert back to milli seconds
+      startTimes[i] = startTimes[i] / 1000;
+
+      duration.push(
+        timeValues_tomerge[i][timeValues_tomerge[i].length - 1] -
+          timeValues_tomerge[i][0]
+      );
+      endTimes.push(startTimes[i] + duration[i] * 1000);
+    }
+
+    let startIndex: number[] = [];
+    let endIndex: number[] = [];
+    let offset = 0;
+    let timeValues_corrected: number[] = [];
+
+    let startTime = Math.max(...startTimes);
+    let endTime = Math.min(...endTimes);
+
+    if (endTime > startTime) {
+      // overlap present
+      for (let i = 0; i < file_count; i++) {
+        // start time
+        offset = (startTime - startTimes[i]) / 1000;
+        timeValues_corrected = [];
+        for (let j = 0; j < timeValues_tomerge[i].length; j++)
+          timeValues_corrected.push(
+            timeValues_tomerge[i][j] - timeValues_tomerge[i][0] - offset
+          );
+        startIndex.push(
+          timeValues_corrected.findIndex((element) => element >= 0)
+        );
+
+        // end time
+        offset = (endTime - startTimes[i]) / 1000;
+        timeValues_corrected = [];
+        for (let j = 0; j < timeValues_tomerge[i].length; j++)
+          timeValues_corrected.push(
+            timeValues_tomerge[i][j] - timeValues_tomerge[i][0] - offset
+          );
+        endIndex.push(
+          timeValues_corrected.findIndex((element) => element >= 0)
+        );
+      }
+    } else {
+      //overlap not present
+      error = "No overlap between the records";
+    }
+    return { error: error, startIndex: startIndex, endIndex: endIndex };
+  };
+
+  const mergeByTriggerTime = (
+    file_count: number,
+    timeValues_tomerge: number[][]
+  ) => {
+    let error = "";
+    let triggerIndexes = [];
+    let postFaultLengths = [];
+    for (let i = 0; i < file_count; i++) {
+      triggerIndexes.push(
+        timeValues_tomerge[i].findIndex((element) => element >= 0)
+      );
+      postFaultLengths.push(timeValues_tomerge[i].length - triggerIndexes[i]);
+    }
+
+    let min_prefault_length = Math.min(...triggerIndexes);
+    let min_postfault_length = Math.min(...postFaultLengths);
+
+    let startIndex: number[] = [];
+    let endIndex: number[] = [];
+    for (let i = 0; i < file_count; i++) {
+      startIndex[i] = triggerIndexes[i] - min_prefault_length;
+      endIndex[i] = triggerIndexes[i] + min_postfault_length;
+    }
+
+    return { error: error, startIndex: startIndex, endIndex: endIndex };
+  };
+
+  const mergeByManualSelection = (
+    file_count: number,
+    timeValues_tomerge: number[][]
+  ) => {
+    let error = "";
+    let startIndex: number[] = [];
+    let endIndex: number[] = [];
+
+    let mergeIndexes: number[] = [];
+    let postFaultLengths = [];
+    for (let i = 0; i < file_count; i++) {
+      if (axisClick[i] === undefined) {
+        error = "One or more primary indexes not selected";
+        return { error: error, startIndex: startIndex, endIndex: endIndex };
+      }
+
+      let corrected_index = timeValues_tomerge[i].findIndex(
+        (element) => element >= timeValues[i][axisClick[i].dataIndex]
+      );
+
+      mergeIndexes.push(corrected_index);
+      postFaultLengths.push(timeValues_tomerge[i].length - mergeIndexes[i]);
+    }
+
+    let min_prefault_length = Math.min(...mergeIndexes);
+    let min_postfault_length = Math.min(...postFaultLengths);
+
+    // const indexIsZero = mergeIndexes.some((item) => item === 0);
+    // if (indexIsZero === false) {
+    for (let i = 0; i < file_count; i++) {
+      startIndex[i] = mergeIndexes[i] - min_prefault_length;
+      endIndex[i] = mergeIndexes[i] + min_postfault_length;
+    }
+    // } else {
+    //   error = "One or more primary indexes not selected";
+    // }
+
+    return { error: error, startIndex: startIndex, endIndex: endIndex };
+  };
+
   const handleAddFiles = () => {
     projectService
       .getProject(selectedProject ? selectedProject.project_id : 0)
@@ -546,8 +1211,6 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         console.log(err.message);
       });
   };
-
-  if (selectedIndex <= axisClick.length) fillSideTable();
 
   return (
     <Grid
@@ -560,33 +1223,67 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
         overflow: "hidden",
       }}
     >
+      {navbarStatus && (
+        <Grid
+          item
+          sx={{
+            backgroundColor: (theme) =>
+              theme.palette.mode === "light" ? "#DDDDDD" : "#323232",
+          }}
+        >
+          <ProjectToolbar
+            navigationHeader={navigationHeader}
+            navigationPages={navigationPages}
+            onSelectNavItem={handleSelectNavItem}
+            mergeViewEnabled={mergeViewEnabled}
+            selectedMergeType={selectedMergeType}
+          />
+        </Grid>
+      )}
       <Grid
         item
-        sx={{
-          backgroundColor: (theme) =>
-            theme.palette.mode === "light" ? "#DDDDDD" : "#323232",
-        }}
+        sx={{ width: navbarStatus ? `calc(100% - 260px)` : `calc(100%)` }}
       >
-        <ProjectToolbar
-          navigationHeader={navigationHeader}
-          navigationPages={navigationPages}
-          onSelectNavItem={handleSelectNavItem}
-        />
-      </Grid>
-      <Grid item sx={{ width: `calc(100% - 260px)` }}>
-        {(selectedPage === "SingleAxis" || selectedPage === "MultipleAxis") && (
+        {(selectedPage === "SingleAxis" ||
+          selectedPage === "MultipleAxis" ||
+          selectedPage === "MergeSingleView" ||
+          selectedPage === "MergeMultipleView") && (
           <ChartComponent
-            stationName={selectedProject.files[selectedIndex].station_name}
+            stationName={
+              selectedPage.slice(0, 5) === "Merge"
+                ? "Merged Waveforms"
+                : selectedProject.files[selectedIndex].station_name
+            }
             plotName={selectedPage}
-            analogSignals={analogSignals[selectedIndex]}
+            selectedIndex={
+              selectedPage.slice(0, 5) === "Merge" ? -1 : selectedIndex
+            }
+            digitalChannelCount={digitalChannelCount}
+            timeValues_original={timeValues[selectedIndex]}
+            timeStamps_original={timeStamps[selectedIndex]}
+            analog_Values_original={analogSignals[selectedIndex]}
             analogSignalNames={analogSignalNames[selectedIndex]}
-            digitalSignals={digitalSignals[selectedIndex]}
+            digital_Values_original={digitalSignals[selectedIndex]}
             digitalSignalNames={digitalSignalNames[selectedIndex]}
-            error={asigError[selectedIndex]}
-            isAnLoading={asigLoading[selectedIndex]}
-            isDigLoading={dsigLoading[selectedIndex]}
+            dftPhasors={dftPhasors[selectedIndex]}
+            error={
+              selectedPage.slice(0, 5) === "Merge"
+                ? ""
+                : asigError[selectedIndex]
+            }
+            isAnLoading={
+              selectedPage.slice(0, 5) === "Merge"
+                ? false
+                : asigLoading[selectedIndex]
+            }
+            isDigLoading={
+              selectedPage.slice(0, 5) === "Merge"
+                ? false
+                : dsigLoading[selectedIndex]
+            }
             presentZoomValues={
-              presentZoomValues.length >= selectedIndex + 1
+              //  presentZoomValues.length >= selectedIndex + 1
+              presentZoomValues[selectedIndex] !== undefined
                 ? {
                     startPercent: presentZoomValues[selectedIndex].startPercent,
                     endPercent: presentZoomValues[selectedIndex].endPercent,
@@ -602,7 +1299,8 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
             }
             changePresentZoomLimit={changePresentZoomLimit}
             cursorValues={
-              axisClick.length >= selectedIndex + 1
+              // axisClick.length >= selectedIndex + 1
+              axisClick[selectedIndex] !== undefined
                 ? {
                     primary: axisClick[selectedIndex].dataIndex,
                     primaryReduced: axisClick[selectedIndex].dataIndexReduced,
@@ -628,15 +1326,26 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
             }
             onAxisClick={handleAxisClick}
             analogChannelInfo={analogChannelInfo[selectedIndex]}
-            dftPhasors={dftPhasors[selectedIndex]}
             sampling_frequency={
-              selectedProject.files[selectedIndex].sampling_frequency
+              selectedPage.slice(0, 5) === "Merge"
+                ? sampling_frequency_merged
+                : selectedProject.files[selectedIndex].sampling_frequency
             }
             pointCount={pointCount}
             sidebarStatus={sidebarStatus}
             tooltipStatus={tooltipStatus}
-            selectedFile={selectedFile === null ? 0 : selectedFile}
+            selectedFile={
+              selectedPage.slice(0, 5) === "Merge"
+                ? merged_files
+                : selectedFile === null
+                ? [0]
+                : [selectedFile]
+            }
             projectId={selectedProject.project_id}
+            rowSelectionModel={rowSelectionModel[selectedIndex]}
+            digitalRowSelectionModel={digitalRowSelectionModel[selectedIndex]}
+            onRowSelectionModelChange={handleAnalogModelChange}
+            onDigitalRowSelectionModelChange={handleDigitalModelChange}
           />
         )}
         {selectedPage === "ProjectList" && (
@@ -676,6 +1385,45 @@ const MainComponent = ({ pointCount, sidebarStatus, tooltipStatus }: Props) => {
             station_name={selectedProject.files[selectedIndex].station_name}
             file_id={selectedFile ? selectedFile : 0}
           />
+        )}
+        {selectedPage === "MergeView" && (
+          <>
+            <MergeView
+              mergeError={mergeError}
+              mergeErrorMessage={mergeErrorMessage}
+              onMergeErrorClose={() => {
+                setMergeError(false);
+              }}
+              selectedMergeType={selectedMergeType}
+              onMergeTypeChange={(newMergeType: string) => {
+                handleMerging(newMergeType);
+              }}
+            />
+            <Dialog
+              open={resampleLoading}
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+            >
+              <DialogTitle id="alert-dialog-title">
+                {"Resampling in Progress ... "}
+              </DialogTitle>
+              <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                  {resampleMessage}
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={() => {
+                    setResampleLoading(false);
+                  }}
+                  autoFocus
+                >
+                  CANCEL
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </>
         )}
       </Grid>
     </Grid>

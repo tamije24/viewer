@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
+import { GridRowSelectionModel } from "@mui/x-data-grid-pro";
 
 // Out Components
 import MultipleAxisChart from "./MultipleAxisChart";
@@ -10,6 +11,8 @@ import SingleAxisChart from "./SingleAxisChart";
 
 interface Props {
   plotName: string;
+  selectedIndex: number;
+  digitalChannelCount: number[];
   analogSignalNames: string[];
   digitalSignalNames: string[];
   analogValues_window: number[][];
@@ -35,7 +38,7 @@ interface Props {
     axisValue: number,
     timestamp: string,
     secondaryIndex: number,
-    secondaryIndexRedduced: number,
+    secondaryIndexReduced: number,
     secondaryValue: number,
     secondaryTimestamp: string
   ) => void;
@@ -47,10 +50,16 @@ interface Props {
     start: number;
     end: number;
   }[];
+  onSinglePlotSelected: (plotNumber: number) => void;
+  onMultipleAxisPlotSelected: (plotNumber: number) => void;
+  rowSelectionModel: GridRowSelectionModel;
+  digitalRowSelectionModel: GridRowSelectionModel;
 }
 
 const ChartBody = ({
   plotName,
+  selectedIndex,
+  digitalChannelCount,
   analogSignalNames,
   digitalSignalNames,
   analogValues_window,
@@ -64,6 +73,10 @@ const ChartBody = ({
   onAxisClick,
   presentMaxisYZoomValues,
   presentSaxisYZoomValues,
+  onSinglePlotSelected,
+  onMultipleAxisPlotSelected,
+  rowSelectionModel,
+  digitalRowSelectionModel,
 }: Props) => {
   if (
     analogSignalNames === undefined ||
@@ -85,6 +98,73 @@ const ChartBody = ({
     );
 
   // OTHER VARIABLES
+  let selectedWaveform = new Array(analogSignalNames.length).fill(false);
+  let id_temp = ["IA", "IB", "IC", "IN", "VA", "VB", "VC"];
+
+  if (rowSelectionModel !== undefined) {
+    let j = 0;
+    let station_count = 1;
+    let temp_name = "";
+    if (selectedIndex === -1) {
+      for (let i = 0; i < selectedWaveform.length; i++) {
+        temp_name = id_temp[j] + "-" + station_count;
+        selectedWaveform[i] = rowSelectionModel.some((waveform: any) => {
+          return waveform === temp_name;
+        });
+        j++;
+        if (j > 6) {
+          j = 0;
+          station_count = station_count + 1;
+        }
+      }
+    } else {
+      station_count = selectedIndex + 1;
+      for (let i = 0; i < selectedWaveform.length; i++) {
+        temp_name = id_temp[j] + "-" + station_count;
+        selectedWaveform[i] = rowSelectionModel.some((waveform: any) => {
+          return waveform === temp_name;
+        });
+        j++;
+      }
+    }
+  }
+
+  let selectedDigitalWaveform = new Array(digitalSignalNames.length).fill(
+    false
+  );
+
+  if (digitalRowSelectionModel !== undefined) {
+    let j = 1;
+    let station_count = 1;
+    let temp_name = "";
+    if (selectedIndex === -1) {
+      for (let i = 0; i < selectedDigitalWaveform.length; i++) {
+        temp_name = "D" + j + "-" + station_count;
+        selectedDigitalWaveform[i] = digitalRowSelectionModel.some(
+          (waveform: any) => {
+            return waveform === temp_name;
+          }
+        );
+        j++;
+        if (j > digitalChannelCount[station_count]) {
+          j = 1;
+          station_count = station_count + 1;
+        }
+      }
+    } else {
+      station_count = selectedIndex + 1;
+      for (let i = 0; i < selectedDigitalWaveform.length; i++) {
+        j = i + 1;
+        temp_name = "D" + j + "-" + station_count;
+
+        selectedDigitalWaveform[i] = digitalRowSelectionModel.some(
+          (waveform: any) => {
+            return waveform === temp_name;
+          }
+        );
+      }
+    }
+  }
 
   // EVENT HANDLERS
   const handleAxisClick = (
@@ -114,12 +194,18 @@ const ChartBody = ({
       <CardContent
         sx={{ height: `calc(100vh - 290px)`, bgcolor: "", padding: 0 }}
       >
-        {plotName === "SingleAxis" ? (
+        {plotName === "SingleAxis" || plotName === "MergeSingleView" ? (
           <SingleAxisChart
+            digitalChannelCount={digitalChannelCount}
             analogSignalNames={analogSignalNames}
             digitalSignalNames={digitalSignalNames}
             analogValues_window={analogValues_window}
             digitalValues_window={digitalValues_window}
+            stationCount={
+              plotName === "SingleAxis"
+                ? 1
+                : Math.round(selectedWaveform.length / 7)
+            }
             timeValues={timeValues}
             timeStamps={timeStamps}
             originalIndexes={originalIndexes}
@@ -128,11 +214,19 @@ const ChartBody = ({
             cursorValues={cursorValues}
             onAxisClick={handleAxisClick}
             presentSaxisYZoomValues={presentSaxisYZoomValues}
+            onSinglePlotSelected={onSinglePlotSelected}
+            selectedWaveform={selectedWaveform}
+            selectedDigitalWaveform={selectedDigitalWaveform}
           />
         ) : (
           <MultipleAxisChart
             analogSignalNames={analogSignalNames}
             analogValues_window={analogValues_window}
+            stationCount={
+              plotName === "MultipleAxis"
+                ? 1
+                : Math.round(selectedWaveform.length / 7)
+            }
             timeValues={timeValues}
             timeStamps={timeStamps}
             originalIndexes={originalIndexes}
@@ -141,6 +235,8 @@ const ChartBody = ({
             cursorValues={cursorValues}
             onAxisClick={handleAxisClick}
             presentMaxisYZoomValues={presentMaxisYZoomValues}
+            onMultipleAxisPlotSelected={onMultipleAxisPlotSelected}
+            selectedWaveform={selectedWaveform}
           />
         )}
       </CardContent>

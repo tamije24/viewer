@@ -1,12 +1,10 @@
 import { ChangeEvent, useState } from "react";
 
 // MUI Components
-import Autocomplete from "@mui/material/Autocomplete";
 import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Checkbox from "@mui/material/Checkbox";
-import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
@@ -14,7 +12,6 @@ import IconButton from "@mui/material/IconButton";
 import Input from "@mui/material/Input";
 import Stack from "@mui/material/Stack";
 import styled from "@mui/material/styles/styled";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
 
@@ -50,7 +47,7 @@ interface Props {
   onZoomInClick: (fromValue: number, toValue: number) => void;
   markerStatus: boolean;
   onMarkerStatusChange: (markerStatus: boolean) => void;
-  onYZoomClick: (signal: string, zoomType: number) => void;
+  onYZoomClick: (zoomType: number) => void;
   timeRange: {
     minTime: number;
     maxTime: number;
@@ -59,8 +56,6 @@ interface Props {
 }
 
 const TOOLTIP_DELAY = 10000;
-const signalsToZoom = ["Ia", "Ib", "Ic", "Va", "Vb", "Vc"];
-const signalsToZoom_single = ["Currents", "Voltages"];
 
 const ChartHeader = ({
   stationName,
@@ -78,12 +73,6 @@ const ChartHeader = ({
   // STATE VARIABLES
   const [open, setOpen] = useState(false);
   const [errMessage, setErrorMessage] = useState("");
-  const [zoomSignal, setZoomSignal] = useState<string | null>("Ia");
-  const [singleZoomSignal, setSingleZoomSignal] = useState<string | null>(
-    "Currents"
-  );
-  // const [startTime, setStartTime] = useState(presentZoomValues.startTime);
-  // const [endTime, setEndTime] = useState(presentZoomValues.endTime);
 
   // OTHER VARIABLE
   let isMarker = markerStatus;
@@ -247,15 +236,7 @@ const ChartHeader = ({
   };
 
   const handleYZoom = (code: number) => {
-    let selectedSignal = "";
-
-    plotSubtitle === "Single Axis View"
-      ? (selectedSignal =
-          singleZoomSignal === null ? "Currents" : singleZoomSignal)
-      : (selectedSignal = zoomSignal === null ? "Ia" : zoomSignal);
-
-    onYZoomClick(selectedSignal, code);
-    //  console.log(selectedSignal, code);
+    onYZoomClick(code);
   };
 
   const handleClose = (
@@ -329,228 +310,173 @@ const ChartHeader = ({
                 justifyContent="space-between"
                 sx={{ padding: 0.5 }}
               >
-                <Grid item xs={5} sx={{ bgcolor: "" }}>
+                <Grid item xs={6.8}>
                   <Stack direction="column">
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ border: 0, pl: 0 }}
+                    <Typography variant="caption" color="primary">
+                      Time-Axis controls
+                    </Typography>
+                    <Grid
+                      container
+                      display="flex"
+                      justifyContent="space-between"
+                      sx={{ border: 0.2, pl: 1, height: "55px" }}
                     >
-                      <Typography variant="caption" color="primary">
-                        Time-Axis controls
-                      </Typography>
-                    </Stack>
-
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ border: 0.2, pl: 2 }}
-                    >
-                      <FormControl
-                        id="fromValue_form"
-                        variant="standard"
-                        sx={{ width: "70px" }}
-                      >
-                        {/* {tooltipStatus && */}
-
-                        <ZoomTextInput
-                          id="fromValue"
-                          type="number"
-                          value={startTime}
-                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                            if (!isNaN(parseFloat(event.target.value)))
-                              handleZoomViewClick();
-                            //  startTime = parseFloat(event.target.value);
-                            // setStartTime(parseFloat(event.target.value));
-                          }}
-                          aria-describedby="x-from-text"
-                          inputProps={{
-                            "aria-label": "from-x",
-                          }}
-                        />
-                        <Tooltip
-                          title="Zoom start time"
-                          placement="bottom"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                      <Grid item xs={3} sx={{ pr: 1 }}>
+                        <FormControl id="fromValue_form" variant="standard">
+                          <ZoomTextInput
+                            id="fromValue"
+                            type="number"
+                            value={startTime}
+                            onChange={(
+                              event: ChangeEvent<HTMLInputElement>
+                            ) => {
+                              if (!isNaN(parseFloat(event.target.value)))
+                                handleZoomViewClick();
+                            }}
+                            aria-describedby="x-from-text"
+                            inputProps={{
+                              "aria-label": "from-x",
+                            }}
+                          />
+                          <Tooltip
+                            title="Zoom start time"
+                            placement="bottom"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <FormHelperText id="x-from-text">
+                              from
+                            </FormHelperText>
+                          </Tooltip>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={3} sx={{ pr: 1 }}>
+                        <FormControl id="toValue_form" variant="standard">
+                          <ZoomTextInput
+                            id="toValue"
+                            type="number"
+                            value={endTime}
+                            onChange={(
+                              event: ChangeEvent<HTMLInputElement>
+                            ) => {
+                              if (!isNaN(parseFloat(event.target.value)))
+                                handleZoomViewClick();
+                              //  endTime = parseFloat(event.target.value);
+                              // setEndTime(parseFloat(event.target.value));
+                            }}
+                            aria-describedby="x-to-text"
+                            inputProps={{
+                              "aria-label": "to-x",
+                            }}
+                          />
+                          <Tooltip
+                            title="Zoom end time"
+                            placement="bottom"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <FormHelperText id="x-to-text">to</FormHelperText>
+                          </Tooltip>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={2}>
+                        <IconButton
+                          color="primary"
+                          aria-label="Zoom-in"
+                          onClick={handleZoomInClick}
+                          //  sx={{ width: "30px" }}
                         >
-                          <FormHelperText id="x-from-text">from</FormHelperText>
-                        </Tooltip>
-                      </FormControl>
-                      <FormControl
-                        id="toValue_form"
-                        variant="standard"
-                        sx={{ width: "70px" }}
-                      >
-                        <ZoomTextInput
-                          id="toValue"
-                          type="number"
-                          value={endTime}
-                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                            if (!isNaN(parseFloat(event.target.value)))
-                              handleZoomViewClick();
-                            //  endTime = parseFloat(event.target.value);
-                            // setEndTime(parseFloat(event.target.value));
-                          }}
-                          aria-describedby="x-to-text"
-                          inputProps={{
-                            "aria-label": "to-x",
-                          }}
-                        />
-                        <Tooltip
-                          title="Zoom end time"
-                          placement="bottom"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          <Tooltip
+                            title="Zoom IN"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <ZoomInIcon fontSize="medium" />
+                          </Tooltip>
+                        </IconButton>
+                      </Grid>
+                      <Grid item xs={2}>
+                        <IconButton
+                          color="primary"
+                          aria-label="Zoom-out"
+                          onClick={handleZoomOutClick}
+                          //       sx={{ width: "30px" }}
                         >
-                          <FormHelperText id="x-to-text">to</FormHelperText>
-                        </Tooltip>
-                      </FormControl>
-                      <Divider orientation="vertical" flexItem />
-
-                      <IconButton
-                        color="primary"
-                        aria-label="Zoom-in"
-                        onClick={handleZoomInClick}
-                        sx={{ width: "30px" }}
-                      >
-                        <Tooltip
-                          title="Zoom IN"
-                          placement="top"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          <Tooltip
+                            title="Zoom OUT"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <ZoomOutIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </Grid>
+                      <Grid item xs={2}>
+                        <IconButton
+                          color="primary"
+                          aria-label="Reset-time-axis"
+                          onClick={handleZoomResetClick}
+                          //       sx={{ width: "30px" }}
                         >
-                          <ZoomInIcon />
-                        </Tooltip>
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        aria-label="Zoom-out"
-                        onClick={handleZoomOutClick}
-                        sx={{ width: "30px" }}
-                      >
-                        <Tooltip
-                          title="Zoom OUT"
-                          placement="top"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                        >
-                          <ZoomOutIcon />
-                        </Tooltip>
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        aria-label="Reset-time-axis"
-                        onClick={handleZoomResetClick}
-                        sx={{ width: "30px" }}
-                      >
-                        <Tooltip
-                          title="Reset time axis"
-                          placement="top"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                        >
-                          <RestoreIcon />
-                        </Tooltip>
-                      </IconButton>
-                    </Stack>
+                          <Tooltip
+                            title="Reset time axis"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <RestoreIcon fontSize="small" />
+                          </Tooltip>
+                        </IconButton>
+                      </Grid>
+                    </Grid>
                   </Stack>
                 </Grid>
-                <Grid item xs={5.5}>
+                <Grid item xs={3.8}>
                   <Stack direction="column">
                     <Typography variant="caption" color="secondary">
                       Y-Axis controls
                     </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ border: 0.2, height: "53px" }}
+                    <Grid
+                      container
+                      display="flex"
+                      justifyContent="space-between"
+                      sx={{ border: 0.2, pl: 0.5, pr: 0.5, height: "55px" }}
                     >
-                      {plotSubtitle === "Multiple Axis View" && (
-                        <Autocomplete
-                          // disablePortal
-                          size="small"
-                          value={zoomSignal}
-                          defaultValue={signalsToZoom[0]}
-                          onChange={(_event: any, newValue: string | null) => {
-                            setZoomSignal(newValue);
-                          }}
-                          options={signalsToZoom}
-                          sx={{ width: 150, pl: 0.5, pt: 1 }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Signal to control" />
-                          )}
-                        />
-                      )}
-                      {plotSubtitle === "Single Axis View" && (
-                        <Autocomplete
-                          //disablePortal
-                          // disableClearable
-                          size="small"
-                          value={singleZoomSignal}
-                          defaultValue={signalsToZoom_single[0]}
-                          onChange={(_event: any, newValue: string | null) => {
-                            setSingleZoomSignal(newValue);
-                          }}
-                          options={signalsToZoom_single}
-                          sx={{ width: 150, pl: 0.5, pt: 1 }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Signal to control" />
-                          )}
-                        />
-                      )}
-                      <IconButton
-                        color="secondary"
-                        aria-label="View"
-                        onClick={handleYZoomInClick}
-                        sx={{ width: "30px" }}
-                      >
-                        <Tooltip
-                          title="Zoom IN"
-                          placement="top"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                        >
-                          <ZoomInIcon />
-                        </Tooltip>
-                      </IconButton>
-                      <IconButton
-                        color="secondary"
-                        aria-label="View"
-                        onClick={handleYZoomOutClick}
-                        sx={{ width: "30px" }}
-                      >
-                        <Tooltip
-                          title="Zoom OUT"
-                          placement="top"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                        >
-                          <ZoomOutIcon />
-                        </Tooltip>
-                      </IconButton>
-                      <IconButton
-                        color="secondary"
-                        aria-label="View"
-                        onClick={handleYReset}
-                        sx={{ width: "30px" }}
-                      >
-                        <Tooltip
-                          title="Reset magnitude axis"
-                          placement="top"
-                          enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
-                        >
-                          <RestoreIcon />
-                        </Tooltip>
-                      </IconButton>
-                      <Stack
-                        direction="column"
-                        width="37px"
-                        sx={{
-                          borderLeft: 0.3,
-                          borderColor: "divider",
-                          pl: 0.5,
-                          bgcolor: "",
-                        }}
-                      >
+                      <Grid item xs={2.5}>
                         <IconButton
                           color="secondary"
                           aria-label="View"
+                          onClick={handleYZoomInClick}
+                        >
+                          <Tooltip
+                            title="Zoom IN"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <ZoomInIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </Grid>
+                      <Grid item xs={2.5}>
+                        <IconButton
+                          color="secondary"
+                          aria-label="View"
+                          onClick={handleYZoomOutClick}
+                        >
+                          <Tooltip
+                            title="Zoom OUT"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <ZoomOutIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </Grid>
+                      <Grid item xs={2.0}>
+                        <IconButton
+                          color="secondary"
+                          aria-label="Pan Up"
                           onClick={handleYPanUpClick}
-                          sx={{ height: "25px" }}
+                          disabled={
+                            plotSubtitle === "Multiple Axis View" ? true : false
+                          }
                         >
                           <Tooltip
                             title="Pan UP"
@@ -560,11 +486,15 @@ const ChartHeader = ({
                             <ExpandLessIcon />
                           </Tooltip>
                         </IconButton>
+                      </Grid>
+                      <Grid item xs={2.0}>
                         <IconButton
                           color="secondary"
-                          aria-label="View"
+                          aria-label="Pan Down"
                           onClick={handleYPanDownClick}
-                          sx={{ height: "25px" }}
+                          disabled={
+                            plotSubtitle === "Multiple Axis View" ? true : false
+                          }
                         >
                           <Tooltip
                             title="Pan DOWN"
@@ -574,8 +504,23 @@ const ChartHeader = ({
                             <ExpandMoreIcon />
                           </Tooltip>
                         </IconButton>
-                      </Stack>
-                    </Stack>
+                      </Grid>
+                      <Grid item xs={3.0}>
+                        <IconButton
+                          color="secondary"
+                          aria-label="View"
+                          onClick={handleYReset}
+                        >
+                          <Tooltip
+                            title="Reset magnitude axis"
+                            placement="top"
+                            enterDelay={tooltipStatus ? 0 : TOOLTIP_DELAY}
+                          >
+                            <RestoreIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </Grid>
+                    </Grid>
                   </Stack>
                 </Grid>
                 <Grid item xs={1}>
@@ -591,7 +536,11 @@ const ChartHeader = ({
                     </Tooltip>
                     <FormControl
                       variant="standard"
-                      sx={{ height: "53px", width: "55px", border: 0.2 }}
+                      sx={{
+                        height: "55px",
+                        //width: "55px",
+                        border: 0.2,
+                      }}
                     >
                       <Checkbox
                         checked={isMarker}

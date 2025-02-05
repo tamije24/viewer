@@ -6,6 +6,7 @@ export interface Harmonic{
     ia: number;
     ib: number;
     ic: number;
+    in: number;
     va: number;
     vb: number;
     vc: number;
@@ -13,8 +14,8 @@ export interface Harmonic{
 
 class HarmonicService {
     
-    getAllHarmonics(file_id: number, start_sample: number, end_sample: number) {
-        const endpoint = `/comtrade_reader/harmonics/${file_id}/${start_sample}/${end_sample}/`;
+    getAllHarmonics(file_id: number, start_sample: number, end_sample: number, src: number) {
+        const endpoint = `/comtrade_reader/harmonics/${file_id}/${start_sample}/${end_sample}/${src}/`;
         return apiClient.get<Harmonic[]>(endpoint)    
     }
 }
