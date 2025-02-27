@@ -38,7 +38,7 @@ const TopBar = ({ user, onLogoutRequest }: Props) => {
         <Toolbar>
           <ThunderstormIcon sx={{ ml: 0, mr: 2 }} fontSize="large" />
           <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
-            Signal Analyser 1.0
+            Signal Analyser 1.1
           </Typography>
 
           {user.id !== 0 && (

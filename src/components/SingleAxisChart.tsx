@@ -8,7 +8,7 @@ import {
   //  axisClasses,
   ChartsAxisHighlight,
   ChartsClipPath,
-  ChartsGrid,
+  //ChartsGrid,
   //  ChartsLegend,
   ChartsOnAxisClickHandler,
   ChartsReferenceLine,
