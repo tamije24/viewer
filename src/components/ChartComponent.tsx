@@ -939,7 +939,6 @@ const ChartComponent = ({
     }
   }
 
-  console.log(selectedIndex, usedIndex);
   if (analogSignalNames !== undefined) {
     if (usedIndex === undefined) {
       setUsedIndex(selectedIndex);
@@ -987,9 +986,6 @@ const ChartComponent = ({
     setPrevPointCount(pointCount);
     reduceAllArrays(false);
   }
-
-  console.log("chart component before render");
-  console.log(tableValues);
 
   return (
     <Grid container sx={{ mt: 7.5, ml: 0.5, mb: 0.5 }}>
