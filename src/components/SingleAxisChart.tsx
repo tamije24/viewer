@@ -545,7 +545,7 @@ const SingleAxisChart = ({
               >
                 <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
                 <ChartsAxisHighlight />
-                <ChartsGrid horizontal />
+                {/* <ChartsGrid horizontal /> */}
                 <ChartsOnAxisClickHandler
                   onAxisClick={(event, data) => {
                     handleAxisClick(
@@ -688,7 +688,7 @@ const SingleAxisChart = ({
               >
                 <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
                 <ChartsAxisHighlight />
-                <ChartsGrid horizontal />
+                {/* <ChartsGrid horizontal /> */}
                 <ChartsOnAxisClickHandler
                   onAxisClick={(event, data) => {
                     handleAxisClick(

@@ -376,7 +376,8 @@ const MultipleAxisChart = ({
                       }}
                       sx={{
                         bgcolor: selectedPlot == index + 1 ? "azure" : "",
-                        borderTop: 0.3,
+                        borderTop: 0,
+                        borderBottom: 0,
                         "& .MuiLineElement-root": {
                           strokeWidth: 1.5,
                         },
@@ -384,7 +385,7 @@ const MultipleAxisChart = ({
                     >
                       <ChartsTooltip trigger={markerStatus ? "axis" : "none"} />
                       <ChartsAxisHighlight />
-                      <ChartsGrid horizontal />
+                      {/* <ChartsGrid horizontal /> */}
                       <ChartsOnAxisClickHandler
                         onAxisClick={(event, data) => {
                           handleAxisClick(

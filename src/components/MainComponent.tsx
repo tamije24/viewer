@@ -75,8 +75,6 @@ let merged_files: number[] = [];
 //   },
 // ];
 
-//let rowSelectionModel: GridRowSelectionModel[];
-
 const emptyFile: ComtradeFile = {
   file_id: 0,
   cfg_file: "",
@@ -661,7 +659,6 @@ const MainComponent = ({
   const checkIfMergeViewPossible = (fileCount: number) => {
     for (let i = 0; i < fileCount; i++) {
       if (analogSignals[i].length === 0) return false;
-      if (digitalSignals[i].length === 0) return false;
       if (dftPhasors[i].length === 0) return false;
     }
     return true;
@@ -756,6 +753,63 @@ const MainComponent = ({
     // setMergeErrorMessage(
     //   "Unable to merge waveforms of different sampling frequencies"
     // );
+  };
+
+  const getMultipliers = (file_number: number) => {
+    let multipliers = new Array(7).fill(1);
+
+    for (let i = 0; i < analogChannelInfo[file_number].length; i++) {
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].ia_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+          multipliers[0] = 1000;
+      }
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].ib_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+          multipliers[1] = 1000;
+      }
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].ic_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+          multipliers[2] = 1000;
+      }
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].in_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+          multipliers[3] = 1000;
+      }
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].va_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
+          multipliers[4] = 1000;
+      }
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].vb_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
+          multipliers[5] = 1000;
+      }
+      if (
+        analogChannelInfo[file_number][i].channel_name ===
+        selectedProject.files[file_number].vc_channel
+      ) {
+        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
+          multipliers[6] = 1000;
+      }
+    }
+    return multipliers;
   };
 
   const resampleSignals = (file_id: number, new_samp_rate: number) => {
@@ -1018,6 +1072,15 @@ const MainComponent = ({
       let tempDigital: string[] = []; //no digital channel is selected
 
       for (let i = 0; i < file_count; i++) {
+        // Convert all currents to A and all voltages to V
+        let multipliers = getMultipliers(i);
+        for (let j = 0; j < 7; j++) {
+          if (multipliers[j] === 1000)
+            analogSignals_tomerge[i][j] = analogSignals_tomerge[i][j].map(
+              (x) => x * multipliers[j]
+            );
+        }
+
         // Merged analog signals
         for (let j = 0; j < analogSignals[i].length; j++) {
           analogSignals[file_count].push(

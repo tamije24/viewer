@@ -86,6 +86,24 @@ interface Props {
   ) => void;
 }
 
+let tableValues: {
+  id: string;
+  channel: string;
+  unit: string;
+  inst: number;
+  phasor_mag: number;
+  phasor_ang: number;
+  true_rms: number;
+  pos_peak: number;
+  neg_peak: number;
+}[] = [];
+
+let tableValuesDigital: {
+  id: string;
+  channel: string;
+  status: number;
+}[] = [];
+
 const ChartComponent = ({
   stationName,
   plotName,
@@ -121,8 +139,7 @@ const ChartComponent = ({
   const [sliderValue, setSliderValue] = useState(70);
   const [markerStatus, setMarkerStatus] = useState(false);
 
-  const [usedAnalogSignalNames, setUsedAnalogSignalNames] =
-    useState(analogSignalNames);
+  const [usedIndex, setUsedIndex] = useState(-2);
 
   const [presentMaxisYZoomValues, setPresentMaxisYZoomValues] = useState<
     {
@@ -143,26 +160,27 @@ const ChartComponent = ({
 
   const [selectedSinglePlot, SetSelectedSinglePlot] = useState(0);
   const [selectedMultipleAxisPlot, SetSelectedMultipleAxisPlot] = useState(0);
-  const [tableValues, setTableValues] = useState<
-    {
-      id: string;
-      channel: string;
-      unit: string;
-      inst: number;
-      phasor_mag: number;
-      phasor_ang: number;
-      true_rms: number;
-      pos_peak: number;
-      neg_peak: number;
-    }[]
-  >([]);
-  const [tableValuesDigital, setTableValuesDigital] = useState<
-    {
-      id: string;
-      channel: string;
-      status: number;
-    }[]
-  >([]);
+
+  // const [tableValues, setTableValues] = useState<
+  //   {
+  //     id: string;
+  //     channel: string;
+  //     unit: string;
+  //     inst: number;
+  //     phasor_mag: number;
+  //     phasor_ang: number;
+  //     true_rms: number;
+  //     pos_peak: number;
+  //     neg_peak: number;
+  //   }[]
+  // >([]);
+  // const [tableValuesDigital, setTableValuesDigital] = useState<
+  //   {
+  //     id: string;
+  //     channel: string;
+  //     status: number;
+  //   }[]
+  // >([]);
 
   const [tickInterval, setTickInterval] = useState<number[]>([]);
   const [prevZoomValue, setPrevZoomValue] = useState<number[]>([0, 100]);
@@ -186,19 +204,6 @@ const ChartComponent = ({
   const [prevPointCount, setPrevPointCount] = useState(500);
   const [prevAnalogSignalNames, setPrevAnalogSignalNames] =
     useState(analogSignalNames);
-
-  // const [prevAxisClick, setPrevAxisClick] = useState([
-  //   {
-  //     dataIndex: 0,
-  //     dataIndexReduced: 0,
-  //     axisValue: 0,
-  //     timestamp: "",
-  //     secondaryIndex: 0,
-  //     secondaryIndexReduced: 0,
-  //     secondaryValue: 0,
-  //     secondaryTimestamp: "",
-  //   },
-  // ]);
 
   // OTHER VARIABLES
   let primaryCursor = {
@@ -237,8 +242,7 @@ const ChartComponent = ({
     analog_Values_original === undefined ||
     analog_Values_original.length === 0 ||
     isDigLoading ||
-    digital_Values_original === undefined ||
-    digital_Values_original.length === 0
+    digital_Values_original === undefined
   )
     return (
       <Box sx={{ display: "flex-box", mt: 30, ml: 10, mb: 2 }}>
@@ -741,17 +745,7 @@ const ChartComponent = ({
     let secondaryIndex = secondaryCursor.cursor;
 
     // ANALOG TABLE VALUES
-    let tempTable: {
-      id: string;
-      channel: string;
-      unit: string;
-      inst: number;
-      phasor_mag: number;
-      phasor_ang: number;
-      true_rms: number;
-      pos_peak: number;
-      neg_peak: number;
-    }[] = [];
+    tableValues = [];
 
     // Set table values to be displayed
     let names: string[] = [];
@@ -829,7 +823,6 @@ const ChartComponent = ({
         id.push(id_temp[j] + "-" + n);
       }
     }
-
     for (let i = 0; i < names.length; i++) {
       let label = names[i];
       let unit = units[i];
@@ -857,18 +850,12 @@ const ChartComponent = ({
         pos_peak: positivePeak,
         neg_peak: negativePeak,
       };
-      tempTable.push(rowValue);
+      tableValues.push(rowValue);
     }
-    setTableValues(tempTable);
-
     // DIGITAL TABLE VALUES
     // Set table values to be displayed
 
-    let tempTableDigital: {
-      id: string;
-      channel: string;
-      status: number;
-    }[] = [];
+    tableValuesDigital = [];
 
     // Set table values to be displayed
     let namesDigital: string[] = [];
@@ -905,9 +892,8 @@ const ChartComponent = ({
         channel: label,
         status: digital_sample_values ? Number(digital_sample_values[i]) : 0,
       };
-      tempTableDigital.push(rowValueDigital);
+      tableValuesDigital.push(rowValueDigital);
     }
-    setTableValuesDigital(tempTableDigital);
   };
 
   const calculateRMS = (values: number[]) => {
@@ -931,8 +917,7 @@ const ChartComponent = ({
     analog_Values_original !== undefined &&
     analog_Values_original.length > 0 &&
     !isDigLoading &&
-    digital_Values_original !== undefined &&
-    digital_Values_original.length > 0
+    digital_Values_original !== undefined
   ) {
     if (primaryCursor.cursor === 0) {
       primaryCursor.time = timeValues_original[0];
@@ -949,17 +934,18 @@ const ChartComponent = ({
       secondaryCursor.cursor === 0 &&
       tableValues.length === 0
     ) {
-      setUsedAnalogSignalNames([...analogSignalNames]);
+      setUsedIndex(selectedIndex);
       fillSideTable();
     }
   }
 
+  console.log(selectedIndex, usedIndex);
   if (analogSignalNames !== undefined) {
-    if (usedAnalogSignalNames === undefined) {
-      setUsedAnalogSignalNames([...analogSignalNames]);
+    if (usedIndex === undefined) {
+      setUsedIndex(selectedIndex);
       fillSideTable();
-    } else if (analogSignalNames[0] !== usedAnalogSignalNames[0]) {
-      setUsedAnalogSignalNames([...analogSignalNames]);
+    } else if (selectedIndex !== usedIndex) {
+      setUsedIndex(selectedIndex);
       fillSideTable();
     }
   }
@@ -969,7 +955,6 @@ const ChartComponent = ({
     analog_Values_original !== undefined &&
     analog_Values_original.length > 0 &&
     digital_Values_original !== undefined &&
-    digital_Values_original.length > 0 &&
     originalIndexes.length === 0
   ) {
     reduceAllArrays(true);
@@ -1002,6 +987,9 @@ const ChartComponent = ({
     setPrevPointCount(pointCount);
     reduceAllArrays(false);
   }
+
+  console.log("chart component before render");
+  console.log(tableValues);
 
   return (
     <Grid container sx={{ mt: 7.5, ml: 0.5, mb: 0.5 }}>

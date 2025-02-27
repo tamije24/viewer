@@ -36,7 +36,12 @@ class ProjectService {
     getProject(id: number) {
       const endpoint = `/comtrade_reader/projects/${id}/`;
       return apiClient.get<Project>(endpoint)    
-  }
+    }
+
+    // getProjectbyAFAId(id: string) {
+    //   const endpoint = `/comtrade_reader/projects/${id}/`;
+    //   return apiClient.get<Project>(endpoint)    
+    // }
 
     deleteProject(id: number) {
       const endpoint = `/comtrade_reader/projects/${id}/`; 

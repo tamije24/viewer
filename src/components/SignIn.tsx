@@ -1,5 +1,3 @@
-import axios from "axios";
-
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -11,6 +9,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { AccessCodes } from "../App";
 import { useState } from "react";
+import signinService from "../services/signin-service";
 
 interface Props {
   onAccessCodeReceive: (accessCodes: AccessCodes) => void;
@@ -28,7 +27,6 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-
     const user = {
       username: data.get("username"),
       password: data.get("password"),
@@ -36,13 +34,8 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
 
     if (usernameError || passwordError) return;
 
-    // TODO: have to convert this to calling using apiClient
-    axios
-      .post(
-        "https://signal-analyser-prod-9dcd276c75aa.herokuapp.com/auth/jwt/create",
-        // "http://127.0.0.1:8000/auth/jwt/create",
-        user
-      )
+    signinService
+      .SignIn(user)
       .then((response) => {
         const accessCodes: AccessCodes = {
           access: response.data["access"],

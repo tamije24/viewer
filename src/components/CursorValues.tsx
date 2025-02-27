@@ -312,11 +312,13 @@ const CursorValues = ({
     }
   } else {
     for (let i = digitalChannelCount[selectedIndex] - 1; i >= 0; i--) {
-      tempTableDigital.push({
-        id: tableValuesDigital[i].id,
-        channel: tableValuesDigital[i].channel,
-        status: tableValuesDigital[i].status,
-      });
+      if (tableValuesDigital[i] !== undefined) {
+        tempTableDigital.push({
+          id: tableValuesDigital[i].id,
+          channel: tableValuesDigital[i].channel,
+          status: tableValuesDigital[i].status,
+        });
+      }
     }
   }
 
@@ -368,7 +370,6 @@ const CursorValues = ({
   const handleCursorMove = (cursor: string, step: number) => {
     onCursorMove(cursor, step);
   };
-
   return (
     <>
       <Card
