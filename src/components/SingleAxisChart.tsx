@@ -26,6 +26,8 @@ import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
 import CardActionArea from "@mui/material/CardActionArea";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 interface Props {
   digitalChannelCount: number[];
@@ -418,17 +420,11 @@ const SingleAxisChart = ({
     digital_series.length === 0
   ) {
     return (
-      <Grid
-        container
-        rowSpacing={0}
-        columnSpacing={0}
-        padding="0"
-        margin="0"
-        height={`calc(100vh - 290px)`}
-        sx={{ bgcolor: "" }}
-      >
-        No Waveform selected
-      </Grid>
+      <Box sx={{ display: "flex-box", mt: 2, ml: 2, mb: 2 }}>
+        <Typography variant="overline" component="div" color="forestgreen">
+          Please select waveforms to view
+        </Typography>
+      </Box>
     );
   } else if (
     current_series.length === 0 &&

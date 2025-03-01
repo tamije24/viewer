@@ -45,6 +45,7 @@ import {
 } from "./PlotColors";
 
 interface Props {
+  isPhasorLoading: boolean;
   selectedIndex: number;
   digitalChannelCount: number[];
   axisClick: {
@@ -87,6 +88,7 @@ interface Props {
 const TOOLTIP_DELAY = 10000;
 
 const CursorValues = ({
+  isPhasorLoading,
   selectedIndex,
   digitalChannelCount,
   axisClick,
@@ -786,6 +788,7 @@ const CursorValues = ({
           )}
           {selectedTab === "phasors" && (
             <Phasors
+              isPhasorLoading={isPhasorLoading}
               signal_id={signal_id}
               passed_magnitudes={magnitudes}
               angles={angles}

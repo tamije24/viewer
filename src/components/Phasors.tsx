@@ -32,6 +32,7 @@ import Fab from "@mui/material/Fab";
 import Typography from "@mui/material/Typography";
 
 interface phasorProps {
+  isPhasorLoading: boolean;
   signal_id: string[];
   passed_magnitudes: number[];
   angles: number[];
@@ -44,6 +45,7 @@ interface phasorProps {
 }
 
 const Phasors = ({
+  isPhasorLoading,
   signal_id,
   passed_magnitudes,
   angles,
@@ -52,6 +54,18 @@ const Phasors = ({
   rowSelectionModel,
   onRowSelectionModelChange,
 }: phasorProps) => {
+  if (isPhasorLoading) {
+    return (
+      <Box sx={{ width: "100%", height: "100%", border: 0, mt: 0 }}>
+        <Box sx={{ display: "flex-box", mt: 2, ml: 2, mb: 2 }}>
+          <Typography variant="overline" component="div" color="forestgreen">
+            Data loading ... please wait.
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
   const [value, setValue] = useState(0);
   const [magnitudes, setMagnitudes] = useState<number[]>(passed_magnitudes);
 

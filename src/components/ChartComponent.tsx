@@ -33,8 +33,8 @@ interface Props {
   digitalSignalNames: string[];
   dftPhasors: number[][];
   error: string;
-  isAnLoading: boolean;
-  isDigLoading: boolean;
+  isLoading: boolean;
+  isPhasorLoading: boolean;
   presentZoomValues: {
     startPercent: number;
     endPercent: number;
@@ -117,8 +117,8 @@ const ChartComponent = ({
   digitalSignalNames,
   dftPhasors,
   error,
-  isAnLoading,
-  isDigLoading,
+  isLoading,
+  isPhasorLoading,
   presentZoomValues,
   changePresentZoomLimit,
   cursorValues,
@@ -238,10 +238,9 @@ const ChartComponent = ({
 
   // If data not loaded yet, display loading message
   if (
-    isAnLoading ||
+    isLoading ||
     analog_Values_original === undefined ||
     analog_Values_original.length === 0 ||
-    isDigLoading ||
     digital_Values_original === undefined
   )
     return (
@@ -913,10 +912,9 @@ const ChartComponent = ({
   };
 
   if (
-    !isAnLoading &&
+    !isLoading &&
     analog_Values_original !== undefined &&
     analog_Values_original.length > 0 &&
-    !isDigLoading &&
     digital_Values_original !== undefined
   ) {
     if (primaryCursor.cursor === 0) {
@@ -1084,6 +1082,7 @@ const ChartComponent = ({
           sx={{ borderLeft: 2, borderColor: "lightgray", pl: 0 }}
         >
           <CursorValues
+            isPhasorLoading={isPhasorLoading}
             selectedIndex={selectedIndex}
             digitalChannelCount={digitalChannelCount}
             axisClick={{

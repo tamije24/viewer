@@ -44,6 +44,11 @@ let analogSignalNames: string[][] = [];
 let digitalSignalNames: string[][] = [];
 let digitalChannelCount: number[] = [];
 
+let analogDataReceived: boolean[] = [];
+let digitalDataReceived: boolean[] = [];
+let phasorDataReceived: boolean[] = [];
+let dataLoading: boolean = true;
+
 let merge_type: string = "";
 let sampling_frequency_merged: number = 0;
 let timeValues_tomerge: number[][] = [];
@@ -52,10 +57,10 @@ let analogSignals_tomerge: number[][][] = [];
 let digitalSignals_tomerge: number[][][] = [];
 let dftPhasors_tomerge: number[][][] = [];
 
-let resampleDone: boolean[] = [];
-let analogDataReceived: boolean[] = [];
-let digitalDataReceived: boolean[] = [];
-let phasorDataReceived: boolean[] = [];
+let resampledAnalogDataReceived: boolean[] = [];
+let resampledDigitalDataReceived: boolean[] = [];
+let resampledPhasorDataReceived: boolean[] = [];
+let resampledDataLoading: boolean = true;
 
 let selectedIndex = 0;
 let tempRowSelectionModel: GridRowSelectionModel[] = [];
@@ -194,13 +199,15 @@ const MainComponent = ({
   const [navigationPages, setNavigationPages] = useState([""]);
   const [navigationHeader, setNavigationHeader] = useState("");
 
-  const [asigLoading, setAsigLoading] = useState([false]);
+  const [phasorDataLoading, setPhasorDataLoading] = useState(true);
+
+  // const [asigLoading, setAsigLoading] = useState([false]);
   const [asigError, setAsigError] = useState([""]);
 
-  const [dsigLoading, setDsigLoading] = useState([false]);
+  // const [dsigLoading, setDsigLoading] = useState([false]);
   const [dsigError, setDsigError] = useState([""]);
 
-  const [phasorLoading, setPhasorLoading] = useState([false]);
+  // const [phasorLoading, setPhasorLoading] = useState([false]);
   const [phasorError, setPhasorError] = useState([""]);
 
   const [analogChannelLoading, setAnalogChannelLoading] = useState([false]);
@@ -341,6 +348,13 @@ const MainComponent = ({
   const getSignalsFromBackend = (project: Project) => {
     console.log("getting signals from backend");
 
+    let file_count = selectedProject.files.length;
+    setPhasorDataLoading(true);
+    dataLoading = true;
+    analogDataReceived = new Array(file_count).fill(false);
+    digitalDataReceived = new Array(file_count).fill(false);
+    phasorDataReceived = new Array(file_count).fill(false);
+
     // get analog channel information
     getAnalogChannels(project);
 
@@ -377,10 +391,6 @@ const MainComponent = ({
     if (project !== null && project.files.length !== 0) {
       for (let i = 0; i < project.files.length; i++) {
         let file_id = project.files[i].file_id;
-        let a = [...asigLoading];
-        a.length >= i + 1 ? (a[i] = true) : a.push(true);
-        setAsigLoading(a);
-
         analogSignalService
           .getAllAnalogSignals(file_id, 1)
           .then((res) => {
@@ -433,22 +443,15 @@ const MainComponent = ({
 
             setRowSelectionModel([...tempRowSelectionModel]);
 
-            a = [...asigLoading];
-            a[m] = false;
-            setAsigLoading(a);
-
-            setMergeViewEnabled(checkIfMergeViewPossible(project.files.length));
+            analogDataReceived[m] = true;
+            dataLoading = !checkIfAllSignalsReceived();
+            setMergeViewEnabled(!dataLoading);
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
             let e = [...asigError];
             e[i] = err.message;
             setAsigError(e);
-
-            a = [...asigLoading];
-            a[i] = false;
-            setAsigLoading(a);
-            console.log("Error .. i .. ", asigError);
           });
       }
     }
@@ -474,10 +477,6 @@ const MainComponent = ({
     if (project !== null && project.files.length !== 0) {
       for (let i = 0; i < project.files.length; i++) {
         let file_id = project.files[i].file_id;
-        let a = [...dsigLoading];
-        a.length >= i + 1 ? (a[i] = true) : a.push(true);
-        setDsigLoading(a);
-
         digitalSignalService
           .getAllDigitalSignals(file_id, 1)
           .then((res) => {
@@ -540,21 +539,15 @@ const MainComponent = ({
 
             digitalChannelCount[m] = digitalSignalNames[m].length;
 
-            a = [...dsigLoading];
-            a[m] = false;
-            setDsigLoading(a);
-
-            setMergeViewEnabled(checkIfMergeViewPossible(project.files.length));
+            digitalDataReceived[m] = true;
+            dataLoading = !checkIfAllSignalsReceived();
+            setMergeViewEnabled(!dataLoading);
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
             let e = [...dsigError];
             e[i] = err.message;
             setDsigError(e);
-
-            a = [...dsigLoading];
-            a[i] = false;
-            setDsigLoading(a);
             console.log("Error .. i .. ", dsigError);
           });
       }
@@ -573,12 +566,8 @@ const MainComponent = ({
     if (project !== null && project.files.length !== 0) {
       for (let i = 0; i < project.files.length; i++) {
         let file_id = project.files[i].file_id;
-        let a = [...phasorLoading];
-        a.length >= i + 1 ? (a[i] = true) : a.push(true);
-        setPhasorLoading(a);
-
         phasorService
-          .getAllAPhasors(file_id, 1)
+          .getAllAPhasors(file_id)
           .then((res) => {
             let results = JSON.parse(String(res.data));
             let m = 0;
@@ -600,18 +589,15 @@ const MainComponent = ({
             }
 
             phLoading[m] = false;
-            setPhasorLoading(phLoading);
-            setMergeViewEnabled(checkIfMergeViewPossible(project.files.length));
+            phasorDataReceived[m] = true;
+            let temp = !checkIfAllPhasorsReceived();
+            if (phasorDataLoading != temp) setPhasorDataLoading(temp);
           })
           .catch((err) => {
             if (err instanceof TypeError) return;
             let e = [...phasorError];
             e[i] = err.message;
             setPhasorError(e);
-
-            a = [...phasorLoading];
-            a[i] = false;
-            setPhasorLoading(a);
             console.log("Error .. i .. ", phasorError);
           });
       }
@@ -656,10 +642,19 @@ const MainComponent = ({
     }
   };
 
-  const checkIfMergeViewPossible = (fileCount: number) => {
-    for (let i = 0; i < fileCount; i++) {
-      if (analogSignals[i].length === 0) return false;
-      if (dftPhasors[i].length === 0) return false;
+  const checkIfAllSignalsReceived = () => {
+    let file_count = selectedProject.files.length;
+    for (let i = 0; i < file_count; i++) {
+      if (analogDataReceived[i] === false) return false;
+      if (digitalDataReceived[i] === false) return false;
+    }
+    return true;
+  };
+
+  const checkIfAllPhasorsReceived = () => {
+    let file_count = selectedProject.files.length;
+    for (let i = 0; i < file_count; i++) {
+      if (phasorDataReceived[i] === false) return false;
     }
     return true;
   };
@@ -703,140 +698,103 @@ const MainComponent = ({
       merged_files.push(selectedProject.files[i].file_id);
     }
 
-    // Check if sampling frequencies of all ends are same
-    if (sampling_frequencies.every((val, _i, arr) => val === arr[0])) {
-      // all sampling frequencies equal
-      sampling_frequency_merged = sampling_frequencies[0];
-      timeValues_tomerge = timeValues;
-      timeStamps_tomerge = timeStamps;
-      analogSignals_tomerge = analogSignals;
-      digitalSignals_tomerge = digitalSignals;
-      dftPhasors_tomerge = dftPhasors;
+    // // Check if sampling frequencies of all ends are same
+    // if (sampling_frequencies.every((val, _i, arr) => val === arr[0])) {
+    //   // all sampling frequencies equal
+    //   sampling_frequency_merged = sampling_frequencies[0];
+    //   timeValues_tomerge = timeValues;
+    //   timeStamps_tomerge = timeStamps;
+    //   analogSignals_tomerge = analogSignals;
+    //   digitalSignals_tomerge = digitalSignals;
+    //   dftPhasors_tomerge = dftPhasors;
 
-      mergeWaveforms();
-    } else {
-      // all sampling frequencies are not equal
-      handleResampling(sampling_frequencies);
-    }
+    //   mergeWaveforms();
+    // } else {
+    //   // all sampling frequencies are not equal
+    handleResampling(sampling_frequencies);
+    // }
   };
 
   const handleResampling = (sampling_frequencies: number[]) => {
     let max_samp_freq = Math.max(...sampling_frequencies);
     let file_count = selectedProject.files.length;
 
-    resampleDone = new Array(file_count).fill(true);
-
     sampling_frequency_merged = max_samp_freq;
-
     for (let i = 0; i < file_count; i++) {
-      if (selectedProject.files[i].sampling_frequency < max_samp_freq) {
-        timeValues_tomerge[i] = [];
-        timeStamps_tomerge[i] = [];
-        analogSignals_tomerge[i] = [];
-        digitalSignals_tomerge[i] = [];
-        dftPhasors_tomerge[i] = [];
-
-        resampleDone[i] = false;
-        resampleSignals(selectedProject.files[i].file_id, max_samp_freq);
-      } else {
-        timeValues_tomerge[i] = timeValues[i];
-        timeStamps_tomerge[i] = timeStamps[i];
-        analogSignals_tomerge[i] = analogSignals[i];
-        digitalSignals_tomerge[i] = digitalSignals[i];
-        dftPhasors_tomerge[i] = dftPhasors[i];
-      }
+      timeValues_tomerge[i] = [];
+      timeStamps_tomerge[i] = [];
+      analogSignals_tomerge[i] = [];
+      digitalSignals_tomerge[i] = [];
+      dftPhasors_tomerge[i] = [];
     }
+    resampleSignals(selectedProject.project_id, max_samp_freq);
     setResampleMessage("Resampling ... ");
     setResampleLoading(true);
-
-    // setMergeError(true);
-    // setMergeErrorMessage(
-    //   "Unable to merge waveforms of different sampling frequencies"
-    // );
   };
 
-  const getMultipliers = (file_number: number) => {
-    let multipliers = new Array(7).fill(1);
+  // const getMultipliers = (file_number: number) => {
+  //   let multipliers = new Array(7).fill(1);
 
-    for (let i = 0; i < analogChannelInfo[file_number].length; i++) {
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].ia_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
-          multipliers[0] = 1000;
-      }
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].ib_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
-          multipliers[1] = 1000;
-      }
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].ic_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
-          multipliers[2] = 1000;
-      }
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].in_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
-          multipliers[3] = 1000;
-      }
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].va_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
-          multipliers[4] = 1000;
-      }
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].vb_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
-          multipliers[5] = 1000;
-      }
-      if (
-        analogChannelInfo[file_number][i].channel_name ===
-        selectedProject.files[file_number].vc_channel
-      ) {
-        if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
-          multipliers[6] = 1000;
-      }
-    }
-    return multipliers;
-  };
+  //   for (let i = 0; i < analogChannelInfo[file_number].length; i++) {
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].ia_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+  //         multipliers[0] = 1000;
+  //     }
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].ib_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+  //         multipliers[1] = 1000;
+  //     }
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].ic_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+  //         multipliers[2] = 1000;
+  //     }
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].in_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "ka")
+  //         multipliers[3] = 1000;
+  //     }
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].va_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
+  //         multipliers[4] = 1000;
+  //     }
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].vb_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
+  //         multipliers[5] = 1000;
+  //     }
+  //     if (
+  //       analogChannelInfo[file_number][i].channel_name ===
+  //       selectedProject.files[file_number].vc_channel
+  //     ) {
+  //       if (analogChannelInfo[file_number][i].unit.toLowerCase() === "kv")
+  //         multipliers[6] = 1000;
+  //     }
+  //   }
+  //   return multipliers;
+  // };
 
-  const resampleSignals = (file_id: number, new_samp_rate: number) => {
+  const resampleSignals = (project_id: number, new_samp_rate: number) => {
     resampleService
-      .doResample(file_id, new_samp_rate)
+      .doResample(project_id, new_samp_rate)
       .then((res) => {
-        // check which file is returning
-
         if (res.status === 201) {
-          let returned_file_id = res.data;
-
-          for (let i = 0; i < selectedProject.files.length; i++) {
-            if (selectedProject.files[i].file_id === returned_file_id) {
-              resampleDone[i] = true;
-              break;
-            }
-          }
-
-          let resetLoading = true;
-          for (let i = 0; i < selectedProject.files.length; i++) {
-            if (resampleDone[i] === false) {
-              resetLoading = false;
-            }
-          }
-          if (resetLoading === true) {
-            getResampledSignalsFromBackend(new_samp_rate);
-          }
+          getResampledSignalsFromBackend(new_samp_rate);
         } else {
           console.log(res.statusText);
           setResampleMessage(res.statusText);
@@ -845,73 +803,78 @@ const MainComponent = ({
       .catch((err) => {
         if (err instanceof TypeError) return;
         console.log("Error: ", err.message);
+        setResampleMessage("Error:" + err);
       });
   };
 
   const getResampledSignalsFromBackend = (new_samp_rate: number) => {
     console.log("getting resampled signals from backend");
 
+    resampledDataLoading = true;
+
     let file_count = selectedProject.files.length;
-    analogDataReceived = new Array(file_count).fill(false);
-    digitalDataReceived = new Array(file_count).fill(false);
-    phasorDataReceived = new Array(file_count).fill(false);
+    resampledAnalogDataReceived = new Array(file_count).fill(false);
+    resampledDigitalDataReceived = new Array(file_count).fill(false);
+    resampledPhasorDataReceived = new Array(file_count).fill(false);
 
     setResampleMessage("Getting data from backend ...");
 
     // get analog signals
-    getResampledAnalogSignals(new_samp_rate);
+    getResampledAnalogSignals();
     // get digital signals
     getResampledDigitalSignals(new_samp_rate);
     // get phasors
-    getResampledPhasors(new_samp_rate);
+    getResampledPhasors();
   };
 
-  const getResampledAnalogSignals = (new_samp_rate: number) => {
+  const getResampledAnalogSignals = () => {
     // get analog signals from backend
     if (selectedProject !== null && selectedProject.files.length !== 0) {
       for (let i = 0; i < selectedProject.files.length; i++) {
-        if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
-          let file_id = selectedProject.files[i].file_id;
-          analogSignalService
-            .getAllAnalogSignals(file_id, 2)
-            .then((res) => {
-              // check which file has returned
-              let results = JSON.parse(String(res.data));
-              let m = 0;
-              let returned_fileid = results.file;
-              for (let k = 0; k < selectedProject.files.length; k++) {
-                if (returned_fileid === selectedProject.files[k].file_id) m = k;
-              }
+        // if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
+        let file_id = selectedProject.files[i].file_id;
+        analogSignalService
+          .getAllAnalogSignals(file_id, 2)
+          .then((res) => {
+            // check which file has returned
+            let results = JSON.parse(String(res.data));
+            let m = 0;
+            let returned_fileid = results.file;
+            for (let k = 0; k < selectedProject.files.length; k++) {
+              if (returned_fileid === selectedProject.files[k].file_id) m = k;
+            }
 
-              const analogSignals_split: any[] = [];
-              let L = results.signals.length;
-              for (let i = 0; i < L; i++) {
-                let value = Object.values(results.signals[i]);
-                analogSignals_split.push(value);
-              }
+            const analogSignals_split: any[] = [];
+            let L = results.signals.length;
+            for (let i = 0; i < L; i++) {
+              let value = Object.values(results.signals[i]);
+              analogSignals_split.push(value);
+            }
 
-              timeValues_tomerge[m] = arrayColumn(analogSignals_split, 7);
-              timeStamps_tomerge[m] = strArrayColumn(analogSignals_split, 8);
+            timeValues_tomerge[m] = arrayColumn(analogSignals_split, 7);
+            timeStamps_tomerge[m] = strArrayColumn(analogSignals_split, 8);
 
-              for (let i = 0; i < 7; i++) {
-                analogSignals_tomerge[m].push(
-                  arrayColumn(analogSignals_split, i)
-                );
-              }
-              analogDataReceived[m] = true;
+            for (let i = 0; i < 7; i++) {
+              analogSignals_tomerge[m].push(
+                arrayColumn(analogSignals_split, i)
+              );
+            }
+            resampledAnalogDataReceived[m] = true;
+            resampledDataLoading = !checkIfAllResampledSignalsReceived();
+          })
+          .catch((err) => {
+            if (err instanceof TypeError) return;
+            console.log("Error:", err);
+            setResampleMessage("Error:" + err);
+          });
+        // } else {
+        //   timeValues_tomerge[i] = timeValues[i];
+        //   timeStamps_tomerge[i] = timeStamps[i];
+        //   analogSignals_tomerge[i] = analogSignals[i];
 
-              if (checkIfAllSignalsReceived()) {
-                mergeWaveforms();
-                setResampleLoading(false);
-              }
-            })
-            .catch((err) => {
-              if (err instanceof TypeError) return;
-              console.log("Error:", err);
-            });
-        } else {
-          analogDataReceived[i] = true;
-        }
+        //   resampledAnalogDataReceived[i] = true;
+        //   resampledDataLoading = checkIfAllResampledSignalsReceived();
+        // }
       }
     }
   };
@@ -964,73 +927,114 @@ const MainComponent = ({
                     arrayColumn(digitalSignals_split, i)
                   );
               }
-              digitalDataReceived[i] = true;
-              if (checkIfAllSignalsReceived()) {
-                mergeWaveforms();
-                setResampleLoading(false);
-              }
+              resampledDigitalDataReceived[i] = true;
+              resampledDataLoading = !checkIfAllResampledSignalsReceived();
             })
             .catch((err) => {
               if (err instanceof TypeError) return;
               console.log("Error:", err);
+              setResampleMessage("Error:" + err);
             });
         } else {
-          digitalDataReceived[i] = true;
+          digitalSignals_tomerge[i] = digitalSignals[i];
+          resampledDigitalDataReceived[i] = true;
+          resampledDataLoading = !checkIfAllResampledSignalsReceived();
         }
       }
     }
   };
 
-  const getResampledPhasors = (new_samp_rate: number) => {
+  const getResampledPhasors = () => {
     // get phasors from backend
     if (selectedProject !== null && selectedProject.files.length !== 0) {
-      for (let i = 0; i < selectedProject.files.length; i++) {
-        if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
-          let file_id = selectedProject.files[i].file_id;
-          phasorService
-            .getAllAPhasors(file_id, 1)
-            .then((res) => {
-              let results = JSON.parse(String(res.data));
-              let m = 0;
-              let returned_fileid = results.file;
-              for (let k = 0; k < selectedProject.files.length; k++) {
-                if (returned_fileid === selectedProject.files[k].file_id) m = k;
-              }
+      phasorService
+        .getAllResampledAPhasors(selectedProject.project_id)
+        .then((res) => {
+          let results = JSON.parse(String(res.data));
 
-              const phasors_split: any[] = [];
-              let L = results.phasors.length;
-              for (let i = 0; i < L; i++) {
-                let value = Object.values(results.phasors[i]);
-                phasors_split.push(value);
-              }
-              for (let i = 0; i < 14; i++) {
-                dftPhasors_tomerge[m].push(arrayColumn(phasors_split, i));
-              }
-              phasorDataReceived[m] = true;
-              if (checkIfAllSignalsReceived()) {
-                mergeWaveforms();
-                setResampleLoading(false);
-              }
-            })
-            .catch((err) => {
-              if (err instanceof TypeError) return;
-              console.log("Error:", err);
-            });
-        } else {
-          phasorDataReceived[i] = true;
-        }
-      }
+          const phasors_split: any[] = [];
+          let L = results.phasors.length;
+          for (let i = 0; i < L; i++) {
+            let value = Object.values(results.phasors[i]);
+            phasors_split.push(value);
+          }
+          for (let i = 0; i < selectedProject.files.length; i++) {
+            for (let j = 0; j < 14; j++) {
+              dftPhasors_tomerge[i].push(
+                arrayColumn(phasors_split, i * 14 + j)
+              );
+            }
+            resampledPhasorDataReceived[i] = true;
+          }
+          resampledDataLoading = !checkIfAllResampledSignalsReceived();
+        })
+        .catch((err) => {
+          if (err instanceof TypeError) return;
+          console.log("Error:", err);
+          setResampleMessage("Error:" + err);
+        });
     }
   };
 
-  const checkIfAllSignalsReceived = () => {
+  // const getResampledPhasors = (new_samp_rate: number) => {
+  //   // get phasors from backend
+  //   if (selectedProject !== null && selectedProject.files.length !== 0) {
+  //     for (let i = 0; i < selectedProject.files.length; i++) {
+  //       if (selectedProject.files[i].sampling_frequency < new_samp_rate) {
+  //         let file_id = selectedProject.files[i].file_id;
+  //         phasorService
+  //           .getAllAPhasors(file_id, 1)
+  //           .then((res) => {
+  //             let results = JSON.parse(String(res.data));
+  //             let m = 0;
+  //             let returned_fileid = results.file;
+  //             for (let k = 0; k < selectedProject.files.length; k++) {
+  //               if (returned_fileid === selectedProject.files[k].file_id) m = k;
+  //             }
+
+  //             const phasors_split: any[] = [];
+  //             let L = results.phasors.length;
+  //             for (let i = 0; i < L; i++) {
+  //               let value = Object.values(results.phasors[i]);
+  //               phasors_split.push(value);
+  //             }
+  //             for (let i = 0; i < 14; i++) {
+  //               dftPhasors_tomerge[m].push(arrayColumn(phasors_split, i));
+  //             }
+  //             resampledPhasorDataReceived[m] = true;
+  //             resampledDataLoading = checkIfAllResampledSignalsReceived();
+  //           })
+  //           .catch((err) => {
+  //             if (err instanceof TypeError) return;
+  //             console.log("Error:", err);
+  //           });
+  //       } else {
+  //         resampledPhasorDataReceived[i] = true;
+  //         resampledDataLoading = checkIfAllResampledSignalsReceived();
+  //       }
+  //     }
+  //   }
+  // };
+
+  const checkIfAllResampledSignalsReceived = () => {
     let file_count = selectedProject.files.length;
     for (let i = 0; i < file_count; i++) {
-      if (analogDataReceived[i] === false) return false;
-      if (digitalDataReceived[i] === false) return false;
-      if (phasorDataReceived[i] === false) return false;
+      if (resampledAnalogDataReceived[i] === false) return false;
+      if (resampledDigitalDataReceived[i] === false) return false;
     }
+
+    setResampleMessage("Getting merged phasors from backend ...");
+
+    for (let i = 0; i < file_count; i++) {
+      if (resampledPhasorDataReceived[i] === false) return false;
+    }
+    resamplingDone();
     return true;
+  };
+
+  const resamplingDone = () => {
+    mergeWaveforms();
+    setResampleLoading(false);
   };
 
   const mergeWaveforms = () => {
@@ -1073,13 +1077,13 @@ const MainComponent = ({
 
       for (let i = 0; i < file_count; i++) {
         // Convert all currents to A and all voltages to V
-        let multipliers = getMultipliers(i);
-        for (let j = 0; j < 7; j++) {
-          if (multipliers[j] === 1000)
-            analogSignals_tomerge[i][j] = analogSignals_tomerge[i][j].map(
-              (x) => x * multipliers[j]
-            );
-        }
+        // let multipliers = getMultipliers(i);
+        // for (let j = 0; j < 7; j++) {
+        //   if (multipliers[j] === 1000)
+        //     analogSignals_tomerge[i][j] = analogSignals_tomerge[i][j].map(
+        //       (x) => x * multipliers[j]
+        //     );
+        // }
 
         // Merged analog signals
         for (let j = 0; j < analogSignals[i].length; j++) {
@@ -1116,6 +1120,7 @@ const MainComponent = ({
       setDigitalRowSelectionModel([...tempDigitalRowSelectionModel]);
 
       setMergeErrorMessage("");
+      setSelectedPage("MergeSingleView");
     } else {
       setMergeError(true);
       if (indexes.error === "")
@@ -1334,15 +1339,13 @@ const MainComponent = ({
                 ? ""
                 : asigError[selectedIndex]
             }
-            isAnLoading={
+            isLoading={
               selectedPage.slice(0, 5) === "Merge"
-                ? false
-                : asigLoading[selectedIndex]
+                ? resampledDataLoading
+                : dataLoading
             }
-            isDigLoading={
-              selectedPage.slice(0, 5) === "Merge"
-                ? false
-                : dsigLoading[selectedIndex]
+            isPhasorLoading={
+              selectedPage.slice(0, 5) === "Merge" ? false : phasorDataLoading
             }
             presentZoomValues={
               //  presentZoomValues.length >= selectedIndex + 1

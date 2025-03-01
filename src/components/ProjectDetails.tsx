@@ -433,6 +433,8 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
       setVcChannelErrorMsg("");
     }
 
+    // TODO: CHECK ORDER OF DIGITAL CHANNELS - higher channels cannot be selected without filling lower channels
+
     return isValid;
   };
 
