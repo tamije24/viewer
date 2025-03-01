@@ -863,7 +863,6 @@ const MainComponent = ({
             resampledDataLoading = !checkIfAllResampledSignalsReceived();
           })
           .catch((err) => {
-            if (err instanceof TypeError) return;
             console.log("Error:", err);
             setResampleMessage("Error:" + err);
           });
@@ -931,7 +930,6 @@ const MainComponent = ({
               resampledDataLoading = !checkIfAllResampledSignalsReceived();
             })
             .catch((err) => {
-              if (err instanceof TypeError) return;
               console.log("Error:", err);
               setResampleMessage("Error:" + err);
             });
@@ -969,7 +967,6 @@ const MainComponent = ({
           resampledDataLoading = !checkIfAllResampledSignalsReceived();
         })
         .catch((err) => {
-          if (err instanceof TypeError) return;
           console.log("Error:", err);
           setResampleMessage("Error:" + err);
         });
@@ -1471,7 +1468,7 @@ const MainComponent = ({
               aria-describedby="alert-dialog-description"
             >
               <DialogTitle id="alert-dialog-title">
-                {"Resampling in Progress ... "}
+                {"Merging in Progress ... "}
               </DialogTitle>
               <DialogContent>
                 <DialogContentText id="alert-dialog-description">
