@@ -170,6 +170,12 @@ const ProjectDetails = ({ project, onAddFiles }: Props) => {
           ? cfgFileText.split("\r\n")
           : "";
 
+      if (cfgContent.length <= 1)
+        cfgContent =
+          cfgFileText !== undefined && cfgFileText !== null
+            ? cfgFileText.split("\n")
+            : "";
+
       // Skip first line if cff file
       let i = isCFFFile ? 1 : 0;
 
