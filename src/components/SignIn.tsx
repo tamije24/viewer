@@ -89,11 +89,12 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
           alignItems: "center",
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+        {/* <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
           <LockOutlinedIcon />
-        </Avatar>
+        </Avatar> */}
+        <img src="http://10.215.129.126/img/backend/brand/logo.svg" style={{ width: '240px', height: '150px' }}/>
         <Typography component="h1" variant="h5">
-          Sign in
+          Login
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
           <TextField
@@ -104,7 +105,7 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
             fullWidth
             id="username"
             type="text"
-            label="Username"
+            label="Staff ID Number"
             name="username"
             autoComplete="username"
             autoFocus
