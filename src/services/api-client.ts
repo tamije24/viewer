@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-   //baseURL: 'http://127.0.0.1:8000/',
-   baseURL: 'https://signal-analyser-prod-9dcd276c75aa.herokuapp.com/',
+    baseURL: 'http://10.249.53.47:8001/',
 })
 
 // Add a request interceptor
