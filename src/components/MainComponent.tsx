@@ -306,7 +306,7 @@ const MainComponent = ({
   ) => {
     if (
       tempDigitalRowSelectionModel[selectedIndex] !== newRowSelectionModel &&
-      newRowSelectionModel.length !== 0
+      digitalSignalNames[selectedIndex].length !== 0
     ) {
       tempDigitalRowSelectionModel[selectedIndex] = newRowSelectionModel;
       setDigitalRowSelectionModel([...tempDigitalRowSelectionModel]);
@@ -698,21 +698,7 @@ const MainComponent = ({
       merged_files.push(selectedProject.files[i].file_id);
     }
 
-    // // Check if sampling frequencies of all ends are same
-    // if (sampling_frequencies.every((val, _i, arr) => val === arr[0])) {
-    //   // all sampling frequencies equal
-    //   sampling_frequency_merged = sampling_frequencies[0];
-    //   timeValues_tomerge = timeValues;
-    //   timeStamps_tomerge = timeStamps;
-    //   analogSignals_tomerge = analogSignals;
-    //   digitalSignals_tomerge = digitalSignals;
-    //   dftPhasors_tomerge = dftPhasors;
-
-    //   mergeWaveforms();
-    // } else {
-    //   // all sampling frequencies are not equal
     handleResampling(sampling_frequencies);
-    // }
   };
 
   const handleResampling = (sampling_frequencies: number[]) => {
@@ -1030,8 +1016,8 @@ const MainComponent = ({
   };
 
   const resamplingDone = () => {
-    mergeWaveforms();
     setResampleLoading(false);
+    mergeWaveforms();
   };
 
   const mergeWaveforms = () => {
@@ -1073,15 +1059,6 @@ const MainComponent = ({
       let tempDigital: string[] = []; //no digital channel is selected
 
       for (let i = 0; i < file_count; i++) {
-        // Convert all currents to A and all voltages to V
-        // let multipliers = getMultipliers(i);
-        // for (let j = 0; j < 7; j++) {
-        //   if (multipliers[j] === 1000)
-        //     analogSignals_tomerge[i][j] = analogSignals_tomerge[i][j].map(
-        //       (x) => x * multipliers[j]
-        //     );
-        // }
-
         // Merged analog signals
         for (let j = 0; j < analogSignals[i].length; j++) {
           analogSignals[file_count].push(
@@ -1089,6 +1066,7 @@ const MainComponent = ({
           );
           analogSignalNames[file_count].push(analogSignalNames[i][j]);
           analogChannelInfo[file_count].push(analogChannelInfo[i][j]);
+          // tempAnalog.push(analogSignalNames[i][j]);
         }
 
         // Merged digital signals
@@ -1097,6 +1075,7 @@ const MainComponent = ({
             digitalSignals_tomerge[i][j].slice(startIndex[i], endIndex[i])
           );
           digitalSignalNames[file_count].push(digitalSignalNames[i][j]);
+          // tempDigital.push(digitalSignalNames[i][j]);
         }
 
         // Merged phasors
@@ -1116,8 +1095,12 @@ const MainComponent = ({
       tempDigitalRowSelectionModel[file_count] = fullDigital;
       setDigitalRowSelectionModel([...tempDigitalRowSelectionModel]);
 
+      // console.log(tempRowSelectionModel[file_count]);
+      // console.log(tempDigitalRowSelectionModel[file_count]);
+
       setMergeErrorMessage("");
       setSelectedPage("MergeSingleView");
+      selectedIndex = selectedProject.files.length;
     } else {
       setMergeError(true);
       if (indexes.error === "")

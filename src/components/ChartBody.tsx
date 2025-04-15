@@ -137,7 +137,9 @@ const ChartBody = ({
     let j = 1;
     let station_count = 1;
     let temp_name = "";
+
     if (selectedIndex === -1) {
+      station_count = 1;
       for (let i = 0; i < selectedDigitalWaveform.length; i++) {
         temp_name = "D" + j + "-" + station_count;
         selectedDigitalWaveform[i] = digitalRowSelectionModel.some(
@@ -146,7 +148,7 @@ const ChartBody = ({
           }
         );
         j++;
-        if (j > digitalChannelCount[station_count]) {
+        if (j > digitalChannelCount[station_count - 1]) {
           j = 1;
           station_count = station_count + 1;
         }
@@ -156,7 +158,6 @@ const ChartBody = ({
       for (let i = 0; i < selectedDigitalWaveform.length; i++) {
         j = i + 1;
         temp_name = "D" + j + "-" + station_count;
-
         selectedDigitalWaveform[i] = digitalRowSelectionModel.some(
           (waveform: any) => {
             return waveform === temp_name;

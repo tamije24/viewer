@@ -262,6 +262,8 @@ const SingleAxisChart = ({
   let digCount = selectedDigitalWaveform.filter((x) => x === true).length;
   let baseline = digCount * 0.3;
 
+  // console.log(digitalValues_window);
+
   for (let station = stationCount - 1; station >= 0; station--) {
     let offset = station * 7;
     for (let i = 0; i < 4; i++) {

@@ -58,6 +58,7 @@ interface Props {
     secondaryTime: number;
     secondaryTimestamp: string;
   };
+
   onAxisClick: (
     dataIndex: number,
     dataIndexReduced: number,

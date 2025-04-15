@@ -372,6 +372,7 @@ const CursorValues = ({
   const handleCursorMove = (cursor: string, step: number) => {
     onCursorMove(cursor, step);
   };
+
   return (
     <>
       <Card
@@ -414,8 +415,8 @@ const CursorValues = ({
                     size="small"
                     color="secondary"
                     label={`${(
-                      Math.round(axisClick.axisValue * 1000) / 1000
-                    ).toFixed(3)} s`}
+                      Math.round(axisClick.axisValue * 10000) / 10000
+                    ).toFixed(4)} s`}
                     sx={{ minWidth: "40px", fontSize: "0.7rem" }}
                   />
                 </Tooltip>
@@ -487,8 +488,8 @@ const CursorValues = ({
                     size="small"
                     color="success"
                     label={`${(
-                      Math.round(axisClick.secondaryValue * 1000) / 1000
-                    ).toFixed(3)} s`}
+                      Math.round(axisClick.secondaryValue * 10000) / 10000
+                    ).toFixed(4)} s`}
                     sx={{ minWidth: "40px", fontSize: "0.7rem" }}
                   />
                 </Tooltip>
