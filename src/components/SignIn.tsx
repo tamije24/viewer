@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import { AccessCodes } from "../App";
 import { useState } from "react";
 import signinService from "../services/signin-service";
+import CircularProgress from "@mui/material/CircularProgress";
 
 interface Props {
   onAccessCodeReceive: (accessCodes: AccessCodes) => void;
@@ -23,6 +24,7 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
   const [usernameErrorMessage, setUsernameErrorMessage] = useState("");
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,7 +49,8 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
         if (err.response.status === 401)
           setError("Incorrect username or password");
         else setError(err.message);
-      });
+      })
+      .finally(() => setLoading(false));
   };
 
   const validateInputs = () => {
@@ -131,9 +134,10 @@ const SignIn = ({ onAccessCodeReceive }: Props) => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
             onClick={validateInputs}
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </Button>
           <Grid container>
             <Grid item xs>
